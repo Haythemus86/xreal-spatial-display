@@ -24,6 +24,8 @@ add_library(
     xreal-sensors
     src/sensors/XrealDevice.cpp
     src/sensors/XrealHidConnection.cpp
+    src/sensors/XrealImuPacketDecoder.cpp
+    src/sensors/XrealImuStream.cpp
 )
 
 target_include_directories(
@@ -78,6 +80,11 @@ add_executable(
     src/diagnostics/InterfaceProbeMain.cpp
 )
 
+add_executable(
+    xreal-imu-diagnostic
+    src/diagnostics/ImuDiagnosticMain.cpp
+)
+
 target_link_libraries(
     xreal-sensor-diagnostic
     PRIVATE
@@ -92,7 +99,13 @@ target_link_libraries(
         xreal-sensors
 )
 
-foreach(target xreal-sensor-diagnostic xreal-interface-probe)
+target_link_libraries(
+    xreal-imu-diagnostic
+    PRIVATE
+        xreal-sensors
+)
+
+foreach(target xreal-sensor-diagnostic xreal-interface-probe xreal-imu-diagnostic)
     add_custom_command(
         TARGET ${target}
         POST_BUILD
@@ -108,6 +121,7 @@ set(xreal_project_targets
     xreal-platform-windows
     xreal-sensor-diagnostic
     xreal-interface-probe
+    xreal-imu-diagnostic
 )
 
 foreach(target IN LISTS xreal_project_targets)
@@ -141,4 +155,24 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME xreal-interface-probe-tests COMMAND xreal-interface-probe-tests)
+
+    add_executable(
+        xreal-imu-packet-decoder-tests
+        tests/XrealImuPacketDecoderTests.cpp
+    )
+
+    target_link_libraries(
+        xreal-imu-packet-decoder-tests
+        PRIVATE
+            xreal-sensors
+    )
+
+    target_compile_options(
+        xreal-imu-packet-decoder-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+
+    add_test(NAME xreal-imu-packet-decoder-tests COMMAND xreal-imu-packet-decoder-tests)
 endif()

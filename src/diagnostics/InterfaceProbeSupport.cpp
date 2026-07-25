@@ -1,5 +1,7 @@
 #include "diagnostics/InterfaceProbeSupport.hpp"
 
+#include "sensors/XrealImuProtocol.hpp"
+
 #include <algorithm>
 #include <charconv>
 #include <iomanip>
@@ -203,18 +205,7 @@ std::array<std::byte, 64> buildImuActivationReport(std::uint32_t requestId)
 
 std::array<std::byte, 10> buildDirectImuActivationReport() noexcept
 {
-    return {
-        std::byte{0x00},
-        std::byte{0xAA},
-        std::byte{0xC5},
-        std::byte{0xD1},
-        std::byte{0x21},
-        std::byte{0x42},
-        std::byte{0x04},
-        std::byte{0x00},
-        std::byte{0x19},
-        std::byte{0x01},
-    };
+    return sensors::directImuActivationReport;
 }
 
 bool containsLittleEndianValue(std::span<const std::byte> packet, std::uint32_t value) noexcept
