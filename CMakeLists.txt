@@ -48,6 +48,23 @@ add_library(
     src/diagnostics/InterfaceProbeSupport.cpp
 )
 
+add_library(
+    xreal-platform-windows
+    src/platform/windows/HidDeviceCapabilities.cpp
+)
+
+target_include_directories(
+    xreal-platform-windows
+    PUBLIC
+        src
+)
+
+target_link_libraries(
+    xreal-platform-windows
+    PRIVATE
+        hid
+)
+
 target_include_directories(
     xreal-interface-probe-support
     PUBLIC
@@ -56,6 +73,8 @@ target_include_directories(
 
 add_executable(
     xreal-interface-probe
+    src/diagnostics/ActiveInterfaceExperiment.cpp
+    src/diagnostics/DirectImuExperiment.cpp
     src/diagnostics/InterfaceProbeMain.cpp
 )
 
@@ -69,6 +88,7 @@ target_link_libraries(
     xreal-interface-probe
     PRIVATE
         xreal-interface-probe-support
+        xreal-platform-windows
         xreal-sensors
 )
 
@@ -85,6 +105,7 @@ endforeach()
 set(xreal_project_targets
     xreal-sensors
     xreal-interface-probe-support
+    xreal-platform-windows
     xreal-sensor-diagnostic
     xreal-interface-probe
 )

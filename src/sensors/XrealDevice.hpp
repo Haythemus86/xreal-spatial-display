@@ -12,6 +12,8 @@ struct XrealDeviceInfo
     std::uint16_t vendorId{};
     std::uint16_t productId{};
     int interfaceNumber{};
+    std::uint16_t usagePage{};
+    std::uint16_t usage{};
     std::wstring manufacturerName;
     std::wstring productName;
     std::wstring serialNumber;

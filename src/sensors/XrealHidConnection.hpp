@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <span>
 #include <string>
@@ -25,6 +26,13 @@ struct HidReadResult
     std::wstring errorMessage;
 };
 
+struct HidWriteResult
+{
+    bool success{};
+    int returnValue{-1};
+    std::wstring errorMessage;
+};
+
 class XrealHidConnection
 {
 public:
@@ -41,6 +49,10 @@ public:
     [[nodiscard]] HidReadResult readTimeout(
         std::span<std::byte> buffer,
         std::chrono::milliseconds timeout) const;
+    [[nodiscard]] HidWriteResult writeOutputReport(
+        std::uint8_t reportId,
+        std::span<const std::byte> reportPayload) const;
+    [[nodiscard]] HidWriteResult writeRawReport(std::span<const std::byte> report) const;
 
 private:
     struct HandleDeleter

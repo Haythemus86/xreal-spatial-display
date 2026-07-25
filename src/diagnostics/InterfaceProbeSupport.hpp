@@ -1,7 +1,9 @@
 #pragma once
 
+#include <array>
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <map>
 #include <optional>
 #include <set>
@@ -18,6 +20,9 @@ struct ProbeOptions
     std::chrono::seconds duration{5};
     std::optional<int> interfaceNumber;
     bool verbose{};
+    bool enableImu{};
+    bool enableImuDirect{};
+    std::chrono::milliseconds prelistenDuration{500};
 };
 
 struct ProbeOptionsResult
@@ -29,6 +34,13 @@ struct ProbeOptionsResult
 
 [[nodiscard]] ProbeOptionsResult parseProbeOptions(std::span<const std::string_view> arguments);
 [[nodiscard]] std::string formatHexPrefix(std::span<const std::byte> packet, std::size_t maximumBytes = 32);
+[[nodiscard]] std::uint32_t crc32(std::span<const std::byte> bytes) noexcept;
+[[nodiscard]] std::array<std::byte, 64> buildImuActivationReport(std::uint32_t requestId);
+[[nodiscard]] std::array<std::byte, 10> buildDirectImuActivationReport() noexcept;
+[[nodiscard]] bool containsLittleEndianValue(std::span<const std::byte> packet, std::uint32_t value) noexcept;
+[[nodiscard]] bool isCompatibleImuActivationAck(
+    std::span<const std::byte> packet,
+    std::uint32_t requestId) noexcept;
 
 class PacketStatistics
 {

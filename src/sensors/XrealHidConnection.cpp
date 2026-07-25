@@ -3,6 +3,7 @@
 #include <hidapi.h>
 
 #include <limits>
+#include <vector>
 
 namespace xreal::sensors
 {
@@ -75,6 +76,56 @@ HidReadResult XrealHidConnection::readTimeout(
     }
 
     return {HidReadStatus::error, 0, hidError(handle_.get())};
+}
+
+HidWriteResult XrealHidConnection::writeOutputReport(
+    std::uint8_t reportId,
+    std::span<const std::byte> reportPayload) const
+{
+    if (handle_ == nullptr)
+    {
+        return {false, -1, L"The HID interface is not open."};
+    }
+
+    std::vector<unsigned char> transportBuffer(reportPayload.size() + 1);
+    transportBuffer[0] = reportId;
+
+    for (std::size_t index = 0; index < reportPayload.size(); ++index)
+    {
+        transportBuffer[index + 1] = std::to_integer<unsigned char>(reportPayload[index]);
+    }
+
+    const int writtenLength = hid_write(handle_.get(), transportBuffer.data(), transportBuffer.size());
+    if (writtenLength < 0)
+    {
+        return {false, writtenLength, hidError(handle_.get())};
+    }
+
+    return {true, writtenLength, {}};
+}
+
+HidWriteResult XrealHidConnection::writeRawReport(std::span<const std::byte> report) const
+{
+    if (handle_ == nullptr)
+    {
+        return {false, -1, L"The HID interface is not open."};
+    }
+
+    std::vector<unsigned char> transportBuffer;
+    transportBuffer.reserve(report.size());
+
+    for (const std::byte byte : report)
+    {
+        transportBuffer.push_back(std::to_integer<unsigned char>(byte));
+    }
+
+    const int writtenLength = hid_write(handle_.get(), transportBuffer.data(), transportBuffer.size());
+    if (writtenLength < 0)
+    {
+        return {false, writtenLength, hidError(handle_.get())};
+    }
+
+    return {true, writtenLength, {}};
 }
 
 } // namespace xreal::sensors

@@ -56,6 +56,8 @@ std::vector<XrealDeviceInfo> XrealDevice::enumerate() const
             device->vendor_id,
             device->product_id,
             device->interface_number,
+            device->usage_page,
+            device->usage,
             copyString(device->manufacturer_string),
             copyString(device->product_string),
             copyString(device->serial_number),

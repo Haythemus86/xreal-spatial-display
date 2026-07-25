@@ -1,3 +1,5 @@
+#include "diagnostics/ActiveInterfaceExperiment.hpp"
+#include "diagnostics/DirectImuExperiment.hpp"
 #include "diagnostics/InterfaceProbeSupport.hpp"
 #include "sensors/XrealDevice.hpp"
 #include "sensors/XrealHidConnection.hpp"
@@ -20,7 +22,9 @@ constexpr std::size_t readBufferSize = 4096;
 
 void printUsage()
 {
-    std::cout << "Usage: xreal-interface-probe [--duration <seconds>] [--interface <number>] [--verbose]\n";
+    std::cout << "Usage: xreal-interface-probe [--duration <seconds>] [--interface <number>]"
+                 " [--verbose] [--enable-imu | --enable-imu-direct]"
+                 " [--prelisten-ms <milliseconds>]\n";
 }
 
 void printDeviceIdentity(const xreal::sensors::XrealDeviceInfo& device, bool verbose)
@@ -144,8 +148,24 @@ int main(int argc, char* argv[])
     {
         const xreal::sensors::XrealDevice xrealDevice;
         const auto devices = xrealDevice.enumerate();
-        std::size_t selectedDeviceCount{};
 
+        if (optionResult.options->enableImu && optionResult.options->enableImuDirect)
+        {
+            std::cerr << "Error: --enable-imu and --enable-imu-direct are mutually exclusive.\n";
+            return 2;
+        }
+
+        if (optionResult.options->enableImu)
+        {
+            return xreal::diagnostics::runActiveInterfaceExperiment(devices, *optionResult.options);
+        }
+
+        if (optionResult.options->enableImuDirect)
+        {
+            return xreal::diagnostics::runDirectImuExperiment(devices, *optionResult.options);
+        }
+
+        std::size_t selectedDeviceCount{};
         for (const auto& device : devices)
         {
             if (optionResult.options->interfaceNumber.has_value()
