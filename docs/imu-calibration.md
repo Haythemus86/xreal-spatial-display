@@ -103,6 +103,7 @@ exit code.
 ```powershell
 .\build-msvc-x64\Debug\xreal-imu-diagnostic.exe `
   --gyro-calibrate-seconds 2 `
+  --gyro-warmup-seconds 1 `
   --apply-gyro-bias `
   --duration 10 `
   --print-rate 10 `
@@ -125,6 +126,12 @@ The startup calibrator defaults to:
 - maximum observed range of 5,000 raw units on every axis;
 - an acceptable device-timestamp packet rate of 800 to 1,200 packets/s.
 
+The default warm-up is sample based: 100 samples are about 0.1 seconds at the
+validated 1,000 Hz rate. `--gyro-warmup-seconds <seconds>` adds an explicit
+device-timestamp duration. When both controls are present, collection begins
+only after both the sample count and duration have elapsed. The suggested
+hardware command uses one second to give the sensor additional startup time.
+
 Stationary hardware captures generally showed standard deviations around 240
 to 450 raw units. The 750-unit default provides practical noise margin while
 being much stricter than the older 5,000-unit diagnostic capture threshold.
@@ -136,6 +143,7 @@ configurable:
 --gyro-max-stddev <raw-units>
 --gyro-max-range <raw-units>
 --gyro-min-samples <count>
+--gyro-warmup-seconds <seconds>
 ```
 
 An accepted result reports a valid `bias_raw`. A rejected result reports no
@@ -161,8 +169,9 @@ are never used as a device-specific fallback.
 The JSON written by `--gyro-calibration-output` contains device metadata,
 accepted/rejected status, rejection reason, raw bias when valid, per-axis mean,
 standard deviation, minimum, maximum and range, device timestamp statistics,
-packet rate, and the full configuration used. It contains no serial number and
-no unverified SI conversion.
+packet rate, requested and measured calibration durations, and the full
+configuration used. It contains no serial number and no unverified SI
+conversion.
 
 If calibration is rejected:
 
@@ -172,3 +181,6 @@ If calibration is rejected:
   packet rate before changing a threshold;
 - increase a threshold only when captured statistics justify it, rather than
   hard-coding a bias from another run or another device.
+
+This milestone does not implement quaternion integration, orientation filters,
+pose prediction, or any gyroscope scale conversion.

@@ -227,6 +227,7 @@ void GyroscopeBiasCalibrator::reject(GyroscopeBiasCalibrationRejectionReason rea
     result_ = GyroscopeBiasCalibrationResult{
         false,
         reason,
+        configuration_.calibrationDuration,
         configuration_,
         statistics(),
         std::nullopt,
@@ -278,6 +279,7 @@ void GyroscopeBiasCalibrator::evaluateCompletedCapture() noexcept
     result_ = GyroscopeBiasCalibrationResult{
         true,
         GyroscopeBiasCalibrationRejectionReason::none,
+        configuration_.calibrationDuration,
         configuration_,
         currentStatistics,
         GyroscopeBias{mean.x, mean.y, mean.z},
@@ -353,7 +355,9 @@ std::string serializeGyroscopeBiasCalibrationJson(
            << (result.accepted ? "true" : "false")
            << ",\"rejection_reason\":\""
            << escapeJson(gyroscopeBiasCalibrationRejectionReasonText(result.rejectionReason))
-           << "\",\"duration_seconds\":"
+           << "\",\"requested_duration_seconds\":"
+           << std::chrono::duration<double>(result.requestedDuration).count()
+           << ",\"measured_duration_seconds\":"
            << std::chrono::duration<double>(result.statistics.captureDuration).count()
            << ",\"sample_count\":" << result.statistics.sampleCount
            << ",\"bias_valid\":" << (result.biasRaw.has_value() ? "true" : "false")

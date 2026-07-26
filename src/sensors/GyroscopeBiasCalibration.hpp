@@ -68,6 +68,7 @@ struct GyroscopeBiasCalibrationResult
     bool accepted{};
     GyroscopeBiasCalibrationRejectionReason rejectionReason{
         GyroscopeBiasCalibrationRejectionReason::none};
+    std::chrono::nanoseconds requestedDuration{};
     GyroscopeBiasCalibrationConfig configuration;
     GyroscopeBiasCalibrationStatistics statistics;
     std::optional<GyroscopeBias> biasRaw;

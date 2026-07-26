@@ -29,6 +29,7 @@ void testValidGyroscopeOptions()
 {
     constexpr std::array arguments{
         std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--gyro-warmup-seconds"), std::string_view("1"),
         std::string_view("--apply-gyro-bias"),
         std::string_view("--duration"), std::string_view("10"),
         std::string_view("--print-rate"), std::string_view("10"),
@@ -42,6 +43,8 @@ void testValidGyroscopeOptions()
     expect(result.options->gyroscopeCalibration.has_value(), "gyroscope configuration is created");
     expect(result.options->gyroscopeCalibration->calibrationDuration == std::chrono::seconds(2),
            "gyroscope duration is parsed");
+    expect(result.options->gyroscopeCalibration->warmupDuration == std::chrono::seconds(1),
+           "gyroscope warm-up duration is parsed");
     expect(result.options->gyroscopeCalibration->minimumSampleCount == 1600,
            "minimum sample count is parsed");
     expect(result.options->gyroscopeCalibration->maximumStandardDeviationRaw == 650.5,
@@ -61,6 +64,16 @@ void testInvalidGyroscopeOptions()
         std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
         std::string_view("--gyro-max-stddev"), std::string_view("-1")};
     expect(!parse(negativeThreshold).options.has_value(), "negative threshold is rejected");
+
+    constexpr std::array zeroWarmup{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--gyro-warmup-seconds"), std::string_view("0")};
+    expect(!parse(zeroWarmup).options.has_value(), "zero warm-up duration is rejected");
+
+    constexpr std::array negativeWarmup{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--gyro-warmup-seconds"), std::string_view("-1")};
+    expect(!parse(negativeWarmup).options.has_value(), "negative warm-up duration is rejected");
 
     constexpr std::array thresholdWithoutCalibration{
         std::string_view("--gyro-max-range"), std::string_view("5000")};

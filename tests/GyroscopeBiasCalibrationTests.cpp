@@ -82,6 +82,8 @@ void testAcceptedStatisticsAndKnownBias()
     expect(result.statistics.sampleCount == 5, "all calibration samples are counted");
     expect(result.statistics.captureDuration == std::chrono::milliseconds(4),
            "capture duration uses device timestamps");
+    expect(result.requestedDuration == std::chrono::milliseconds(4),
+           "result preserves the requested calibration duration");
     expect(near(result.statistics.packetRate, 1000.0), "packet rate uses device timestamps");
 }
 
@@ -178,6 +180,13 @@ void testInvalidTimestampAndWraparound()
                == xreal::sensors::GyroscopeBiasCalibrationRejectionReason::invalidDeviceTimestamp,
            "non-monotonic timestamps are rejected");
 
+    xreal::sensors::GyroscopeBiasCalibrator decreasing(configuration);
+    decreasing.consume(makeSample(5'000'000, {1, 2, 3}));
+    decreasing.consume(makeSample(4'000'000, {1, 2, 3}));
+    expect(decreasing.finish().rejectionReason
+               == xreal::sensors::GyroscopeBiasCalibrationRejectionReason::invalidDeviceTimestamp,
+           "decreasing timestamps are rejected");
+
     xreal::sensors::GyroscopeBiasCalibrator wrapped(configuration);
     wrapped.consume(makeSample(std::numeric_limits<std::uint64_t>::max() - 499'999U, {1, 2, 3}));
     wrapped.consume(makeSample(500'000U, {1, 2, 3}));
@@ -189,13 +198,23 @@ void testPacketRateRejection()
     auto configuration = testConfiguration();
     configuration.minimumSampleCount = 3;
     configuration.calibrationDuration = std::chrono::milliseconds(4);
-    xreal::sensors::GyroscopeBiasCalibrator calibrator(configuration);
-    calibrator.consume(makeSample(0, {1, 2, 3}));
-    calibrator.consume(makeSample(2'000'000, {1, 2, 3}));
-    calibrator.consume(makeSample(4'000'000, {1, 2, 3}));
-    expect(calibrator.finish().rejectionReason
+    xreal::sensors::GyroscopeBiasCalibrator slow(configuration);
+    slow.consume(makeSample(0, {1, 2, 3}));
+    slow.consume(makeSample(2'000'000, {1, 2, 3}));
+    slow.consume(makeSample(4'000'000, {1, 2, 3}));
+    expect(slow.finish().rejectionReason
                == xreal::sensors::GyroscopeBiasCalibrationRejectionReason::packetRateOutOfRange,
-           "unexpected device-timestamp packet rate is rejected");
+           "packet rate below the configured minimum is rejected");
+
+    configuration.minimumSampleCount = 9;
+    xreal::sensors::GyroscopeBiasCalibrator fast(configuration);
+    for (std::uint64_t index = 0; index < 9; ++index)
+    {
+        fast.consume(makeSample(index * 500'000U, {1, 2, 3}));
+    }
+    expect(fast.finish().rejectionReason
+               == xreal::sensors::GyroscopeBiasCalibrationRejectionReason::packetRateOutOfRange,
+           "packet rate above the configured maximum is rejected");
 }
 
 void testBiasCorrectionPreservesOriginal()
@@ -223,6 +242,9 @@ void testAcceptedAndRejectedJson()
                && acceptedJson.find("\"configuration\":") != std::string::npos
                && acceptedJson.find("\"device_timestamp_delta_ns\":") != std::string::npos,
            "accepted JSON contains bias, statistics and configuration");
+    expect(acceptedJson.find("\"requested_duration_seconds\":") != std::string::npos
+               && acceptedJson.find("\"measured_duration_seconds\":") != std::string::npos,
+           "accepted JSON distinguishes requested and measured durations");
 
     auto configuration = testConfiguration();
     configuration.minimumSampleCount = 10;

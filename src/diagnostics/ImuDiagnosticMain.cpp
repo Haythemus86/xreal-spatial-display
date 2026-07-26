@@ -254,7 +254,17 @@ int main(int argc, char* argv[])
                       << std::chrono::duration<double>(configuration.calibrationDuration).count()
                       << " seconds (device time)\n"
                       << "  Warm-up samples: " << configuration.warmupSampleCount << '\n'
-                      << "  Maximum stddev: " << configuration.maximumStandardDeviationRaw
+                      << "  Warm-up duration: ";
+            if (configuration.warmupDuration.has_value())
+            {
+                std::cout << std::chrono::duration<double>(*configuration.warmupDuration).count()
+                          << " seconds (device time)\n";
+            }
+            else
+            {
+                std::cout << "not configured\n";
+            }
+            std::cout << "  Maximum stddev: " << configuration.maximumStandardDeviationRaw
                       << " raw units per axis\n"
                       << "  Maximum range: " << configuration.maximumRangeRaw
                       << " raw units per axis\n";

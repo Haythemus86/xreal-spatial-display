@@ -42,6 +42,7 @@ namespace
         || argument == "--stationary-seconds"
         || argument == "--calibration-output"
         || argument == "--gyro-calibrate-seconds"
+        || argument == "--gyro-warmup-seconds"
         || argument == "--gyro-calibration-output"
         || argument == "--gyro-max-stddev"
         || argument == "--gyro-max-range"
@@ -171,6 +172,15 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
             gyroscopeConfiguration.calibrationDuration = std::chrono::seconds(*parsed);
             options.gyroscopeCalibration = gyroscopeConfiguration;
         }
+        else if (argument == "--gyro-warmup-seconds")
+        {
+            if (*parsed > 3600U)
+            {
+                return {std::nullopt, "--gyro-warmup-seconds must not exceed 3600 seconds.", false};
+            }
+            gyroscopeConfiguration.warmupDuration = std::chrono::seconds(*parsed);
+            gyroscopeConfigurationCustomized = true;
+        }
         else if (argument == "--gyro-min-samples")
         {
             gyroscopeConfiguration.minimumSampleCount = *parsed;
@@ -233,6 +243,7 @@ std::string imuDiagnosticUsage()
     return "Usage: xreal-imu-diagnostic [--duration <seconds>] [--print-rate <hz>]"
            " [--csv <file>] [--calibration <name>] [--stationary-seconds <seconds>]"
            " [--calibration-output <file.json>] [--gyro-calibrate-seconds <seconds>]"
+           " [--gyro-warmup-seconds <seconds>]"
            " [--apply-gyro-bias] [--gyro-calibration-output <file.json>]"
            " [--gyro-max-stddev <raw-units>] [--gyro-max-range <raw-units>]"
            " [--gyro-min-samples <count>] [--verbose]\n";
