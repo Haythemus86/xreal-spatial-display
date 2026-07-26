@@ -22,6 +22,8 @@ add_subdirectory(third_party/hidapi)
 
 add_library(
     xreal-sensors
+    src/sensors/AccelerometerCalibration.cpp
+    src/sensors/ImuCalibration.cpp
     src/sensors/XrealDevice.cpp
     src/sensors/XrealHidConnection.cpp
     src/sensors/XrealImuPacketDecoder.cpp
@@ -85,6 +87,11 @@ add_executable(
     src/diagnostics/ImuDiagnosticMain.cpp
 )
 
+add_executable(
+    xreal-calibration-analyzer
+    src/diagnostics/CalibrationAnalyzerMain.cpp
+)
+
 target_link_libraries(
     xreal-sensor-diagnostic
     PRIVATE
@@ -101,6 +108,12 @@ target_link_libraries(
 
 target_link_libraries(
     xreal-imu-diagnostic
+    PRIVATE
+        xreal-sensors
+)
+
+target_link_libraries(
+    xreal-calibration-analyzer
     PRIVATE
         xreal-sensors
 )
@@ -122,6 +135,7 @@ set(xreal_project_targets
     xreal-sensor-diagnostic
     xreal-interface-probe
     xreal-imu-diagnostic
+    xreal-calibration-analyzer
 )
 
 foreach(target IN LISTS xreal_project_targets)
@@ -175,4 +189,47 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME xreal-imu-packet-decoder-tests COMMAND xreal-imu-packet-decoder-tests)
+
+    add_executable(
+        xreal-imu-calibration-tests
+        tests/ImuCalibrationTests.cpp
+    )
+
+    target_link_libraries(
+        xreal-imu-calibration-tests
+        PRIVATE
+            xreal-sensors
+    )
+
+    target_compile_options(
+        xreal-imu-calibration-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+
+    add_test(NAME xreal-imu-calibration-tests COMMAND xreal-imu-calibration-tests)
+
+    add_executable(
+        xreal-accelerometer-calibration-tests
+        tests/AccelerometerCalibrationTests.cpp
+    )
+
+    target_link_libraries(
+        xreal-accelerometer-calibration-tests
+        PRIVATE
+            xreal-sensors
+    )
+
+    target_compile_options(
+        xreal-accelerometer-calibration-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+
+    add_test(
+        NAME xreal-accelerometer-calibration-tests
+        COMMAND xreal-accelerometer-calibration-tests
+    )
 endif()

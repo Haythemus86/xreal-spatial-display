@@ -1,6 +1,8 @@
 #include "sensors/XrealDevice.hpp"
+#include "sensors/ImuCalibration.hpp"
 #include "sensors/XrealImuStream.hpp"
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <charconv>
@@ -25,8 +27,13 @@ namespace
 struct Options
 {
     std::chrono::seconds duration{10};
+    bool durationExplicit{};
     unsigned int printRateHz{10};
     std::optional<std::string> csvPath;
+    std::optional<std::string> calibrationName;
+    std::chrono::seconds stationaryDuration{5};
+    bool stationaryDurationExplicit{};
+    std::optional<std::string> calibrationOutputPath;
     bool verbose{};
 };
 
@@ -78,7 +85,8 @@ private:
 void printUsage()
 {
     std::cout << "Usage: xreal-imu-diagnostic [--duration <seconds>] [--print-rate <hz>]"
-                 " [--csv <file>] [--verbose]\n";
+                 " [--csv <file>] [--calibration <name>] [--stationary-seconds <seconds>]"
+                 " [--calibration-output <file.json>] [--verbose]\n";
 }
 
 std::optional<unsigned int> parsePositiveInteger(std::string_view value)
@@ -111,7 +119,12 @@ OptionResult parseOptions(std::span<const std::string_view> arguments)
             continue;
         }
 
-        if (argument != "--duration" && argument != "--print-rate" && argument != "--csv")
+        if (argument != "--duration"
+            && argument != "--print-rate"
+            && argument != "--csv"
+            && argument != "--calibration"
+            && argument != "--stationary-seconds"
+            && argument != "--calibration-output")
         {
             return {std::nullopt, "Unknown option: " + std::string(argument), false};
         }
@@ -122,13 +135,42 @@ OptionResult parseOptions(std::span<const std::string_view> arguments)
         }
 
         const std::string_view value = arguments[index];
-        if (argument == "--csv")
+        if (argument == "--csv" || argument == "--calibration-output")
         {
             if (value.empty())
             {
-                return {std::nullopt, "--csv requires a non-empty file path.", false};
+                return {std::nullopt,
+                        std::string(argument) + " requires a non-empty file path.",
+                        false};
             }
-            options.csvPath = value;
+            if (argument == "--csv")
+            {
+                options.csvPath = value;
+            }
+            else
+            {
+                options.calibrationOutputPath = value;
+            }
+            continue;
+        }
+
+        if (argument == "--calibration")
+        {
+            const bool validName = !value.empty()
+                && std::all_of(value.begin(), value.end(), [](char character) {
+                       return (character >= 'a' && character <= 'z')
+                           || (character >= 'A' && character <= 'Z')
+                           || (character >= '0' && character <= '9')
+                           || character == '-'
+                           || character == '_';
+                   });
+            if (!validName)
+            {
+                return {std::nullopt,
+                        "--calibration must contain only letters, digits, '-' or '_'.",
+                        false};
+            }
+            options.calibrationName = value;
             continue;
         }
 
@@ -141,6 +183,12 @@ OptionResult parseOptions(std::span<const std::string_view> arguments)
         if (argument == "--duration")
         {
             options.duration = std::chrono::seconds(*parsed);
+            options.durationExplicit = true;
+        }
+        else if (argument == "--stationary-seconds")
+        {
+            options.stationaryDuration = std::chrono::seconds(*parsed);
+            options.stationaryDurationExplicit = true;
         }
         else if (*parsed > 10U)
         {
@@ -149,6 +197,27 @@ OptionResult parseOptions(std::span<const std::string_view> arguments)
         else
         {
             options.printRateHz = *parsed;
+        }
+    }
+
+    if (options.calibrationOutputPath.has_value() && !options.calibrationName.has_value())
+    {
+        return {std::nullopt, "--calibration-output requires --calibration.", false};
+    }
+    if (options.stationaryDurationExplicit && !options.calibrationName.has_value())
+    {
+        return {std::nullopt, "--stationary-seconds requires --calibration.", false};
+    }
+    if (options.calibrationName.has_value())
+    {
+        const bool rotational = options.calibrationName->ends_with("-rotation");
+        if (!rotational && !options.durationExplicit)
+        {
+            options.duration = options.stationaryDuration;
+        }
+        if (!options.csvPath.has_value())
+        {
+            options.csvPath = "calibration-" + *options.calibrationName + ".csv";
         }
     }
 
@@ -237,6 +306,27 @@ void printSample(
     std::cout << '\n';
 }
 
+void printScalarStatistics(std::string_view label, const xreal::sensors::ScalarStatistics& statistics)
+{
+    std::cout << "  " << label
+              << ": mean=" << statistics.mean
+              << " min=" << statistics.minimum
+              << " max=" << statistics.maximum
+              << " stddev=" << statistics.standardDeviation
+              << " count=" << statistics.sampleCount << '\n';
+}
+
+void printVectorStatistics(
+    std::string_view label,
+    const xreal::sensors::VectorStatistics& statistics)
+{
+    printScalarStatistics(std::string(label) + "_x", statistics.x);
+    printScalarStatistics(std::string(label) + "_y", statistics.y);
+    printScalarStatistics(std::string(label) + "_z", statistics.z);
+}
+
+constexpr double stationaryGyroMovementThresholdRaw = 5000.0;
+
 } // namespace
 
 int main(int argc, char* argv[])
@@ -281,6 +371,13 @@ int main(int argc, char* argv[])
             std::cout << "  HID path: " << device->path << '\n';
         }
         std::cout << "  SI conversion: unavailable (upstream scale factors are explicitly unverified)\n";
+        if (options.calibrationName.has_value())
+        {
+            std::cout << "  Calibration: " << *options.calibrationName << '\n'
+                      << "  Raw CSV: " << *options.csvPath << '\n'
+                      << "  Stationary gyro stddev threshold: "
+                      << stationaryGyroMovementThresholdRaw << " raw units per axis\n";
+        }
 
         std::ofstream csv;
         if (options.csvPath.has_value())
@@ -296,6 +393,11 @@ int main(int argc, char* argv[])
 
         SampleQueue<xreal::sensors::ImuSample, 8192> samples;
         std::atomic_uint64_t diagnosticQueueDrops{};
+        std::optional<xreal::sensors::ImuCalibrationAccumulator> calibrationAccumulator;
+        if (options.calibrationName.has_value())
+        {
+            calibrationAccumulator.emplace(stationaryGyroMovementThresholdRaw);
+        }
         xreal::sensors::XrealImuStream stream(*device);
         if (!stream.start([&](std::span<const std::uint8_t, 64>, const xreal::sensors::ImuSample& sample) {
                 if (!samples.tryPush(sample))
@@ -311,7 +413,9 @@ int main(int argc, char* argv[])
         const auto start = std::chrono::steady_clock::now();
         const auto deadline = start + options.duration;
         const auto printInterval = std::chrono::milliseconds(1000U / options.printRateHz);
+        constexpr std::chrono::milliseconds processingInterval{20};
         auto nextPrint = start + printInterval;
+        auto nextProcessing = start + processingInterval;
         std::optional<xreal::sensors::ImuSample> latestSample;
         std::optional<xreal::sensors::ImuSample> previousSample;
         std::optional<std::uint64_t> deviceDelta;
@@ -327,6 +431,10 @@ int main(int argc, char* argv[])
                 if (csv)
                 {
                     writeCsvSample(csv, sample);
+                }
+                if (calibrationAccumulator.has_value())
+                {
+                    calibrationAccumulator->consume(sample);
                 }
 
                 if (previousSample.has_value())
@@ -349,9 +457,10 @@ int main(int argc, char* argv[])
                 }
                 nextPrint = now + printInterval;
             }
+            nextProcessing = now + processingInterval;
 
             std::unique_lock lock(timerMutex);
-            timer.wait_until(lock, std::min(nextPrint, deadline));
+            timer.wait_until(lock, std::min({nextPrint, nextProcessing, deadline}));
         }
 
         stream.stop();
@@ -361,6 +470,19 @@ int main(int argc, char* argv[])
             if (csv)
             {
                 writeCsvSample(csv, remainingSample);
+            }
+            if (calibrationAccumulator.has_value())
+            {
+                calibrationAccumulator->consume(remainingSample);
+            }
+        }
+        if (csv)
+        {
+            csv.flush();
+            if (!csv)
+            {
+                std::cerr << "Failed while writing CSV output file: " << *options.csvPath << '\n';
+                return 1;
             }
         }
 
@@ -377,6 +499,88 @@ int main(int argc, char* argv[])
                   << "  Malformed packets: " << statistics.invalid << '\n'
                   << "  Diagnostic queue drops: " << diagnosticQueueDrops.load() << '\n';
 
+        bool calibrationRejected{};
+        if (calibrationAccumulator.has_value())
+        {
+            const auto calibrationStatistics = calibrationAccumulator->statistics();
+            const auto stationary = calibrationAccumulator->stationaryResult();
+            if (!stationary.has_value())
+            {
+                std::cerr << "Calibration failed: no decoded sensor samples were recorded.\n";
+                return 1;
+            }
+
+            std::cout << "\nCalibration analysis (raw units)\n"
+                      << "  Name: " << *options.calibrationName << '\n'
+                      << "  Samples: " << calibrationStatistics.sampleCount << '\n'
+                      << "  Capture duration: "
+                      << std::chrono::duration<double>(calibrationStatistics.captureDuration).count()
+                      << " seconds\n";
+            printVectorStatistics("gyro_raw", calibrationStatistics.gyroscopeRaw);
+            printVectorStatistics("accel_raw", calibrationStatistics.accelerometerRaw);
+            printScalarStatistics(
+                "device_timestamp_delta_ns",
+                calibrationStatistics.timestampDeltas.deviceNanoseconds);
+            printScalarStatistics(
+                "host_timestamp_delta_ns",
+                calibrationStatistics.timestampDeltas.hostNanoseconds);
+            std::cout << "  Gyro stationary estimate: " << (stationary->accepted ? "accepted" : "rejected")
+                      << '\n'
+                      << "  Gyro bias raw: [" << stationary->gyroBias.x << ", "
+                      << stationary->gyroBias.y << ", " << stationary->gyroBias.z << "]\n"
+                      << "  Accel mean raw: [" << stationary->accelMean.x << ", "
+                      << stationary->accelMean.y << ", " << stationary->accelMean.z << "]\n"
+                      << "  Accel vector magnitude raw: " << stationary->accelVectorMagnitudeRaw << '\n';
+
+            const xreal::sensors::ImuCalibrationReport report{
+                *options.calibrationName,
+                calibrationStatistics,
+                *stationary,
+                seconds > 0.0 ? static_cast<double>(statistics.received) / seconds : 0.0,
+                statistics.dropped,
+                statistics.outOfSequence,
+                statistics.invalid,
+                diagnosticQueueDrops.load(),
+            };
+
+            if (options.calibrationOutputPath.has_value())
+            {
+                std::ofstream json(*options.calibrationOutputPath, std::ios::out | std::ios::trunc);
+                if (!json)
+                {
+                    std::cerr << "Failed to open calibration JSON output file: "
+                              << *options.calibrationOutputPath << '\n';
+                    return 1;
+                }
+                json << xreal::sensors::serializeCalibrationReportJson(report);
+                if (!json)
+                {
+                    std::cerr << "Failed while writing calibration JSON output file: "
+                              << *options.calibrationOutputPath << '\n';
+                    return 1;
+                }
+                std::cout << "  Calibration JSON: " << *options.calibrationOutputPath << '\n';
+            }
+
+            if (diagnosticQueueDrops.load() != 0U)
+            {
+                std::cerr << "Calibration rejected because decoded samples were dropped by the diagnostic queue.\n";
+                calibrationRejected = true;
+            }
+            if (calibrationStatistics.sampleCount != statistics.received)
+            {
+                std::cerr << "Calibration rejected because the analyzed sample count does not match"
+                             " the decoded packet count.\n";
+                calibrationRejected = true;
+            }
+            const bool rotationalCalibration = options.calibrationName->ends_with("-rotation");
+            if (!rotationalCalibration && !stationary->accepted)
+            {
+                std::cerr << "Stationary calibration rejected because gyroscope movement exceeded the raw threshold.\n";
+                calibrationRejected = true;
+            }
+        }
+
         const std::wstring streamError = stream.errorMessage();
         if (!streamError.empty())
         {
@@ -384,7 +588,7 @@ int main(int argc, char* argv[])
             return 1;
         }
 
-        return 0;
+        return calibrationRejected ? 1 : 0;
     }
     catch (const std::exception& exception)
     {
