@@ -1,8 +1,10 @@
 #pragma once
 
 #include "sensors/GyroscopeBiasCalibration.hpp"
+#include "sensors/GyroscopeRecordingAnalysis.hpp"
 #include "sensors/GyroscopeScaleCalibration.hpp"
 
+#include <chrono>
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -20,6 +22,14 @@ struct GyroScaleCalibrationOptions
     std::uint64_t countdownSeconds{3};
     std::string outputPath;
     std::optional<std::string> csvPrefix;
+    bool recordOnly{};
+    std::chrono::nanoseconds recordDuration{std::chrono::seconds(15)};
+    sensors::GyroscopeRecordingAnalysisConfig recordingAnalysisConfiguration;
+    std::string csvOutputPath;
+    std::string analysisOutputPath;
+    std::uint32_t printRateHz{5};
+    bool includeAccelerometer{true};
+    bool includeHostTimestamps{true};
 };
 
 struct GyroScaleCalibrationOptionResult

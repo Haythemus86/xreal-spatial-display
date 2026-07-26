@@ -137,6 +137,95 @@ void testRelationalValidation()
            "minimum accepted count above requested trials is rejected");
 }
 
+void testRecordOnlyOptions()
+{
+    constexpr std::array arguments{
+        std::string_view("--record-only"),
+        std::string_view("--record-seconds"), std::string_view("15"),
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--gyro-warmup-seconds"), std::string_view("1"),
+        std::string_view("--countdown-seconds"), std::string_view("3"),
+        std::string_view("--axis"), std::string_view("auto"),
+        std::string_view("--expected-degrees"), std::string_view("360"),
+        std::string_view("--direction"), std::string_view("auto"),
+        std::string_view("--csv-output"), std::string_view("recording.csv"),
+        std::string_view("--analysis-output"), std::string_view("analysis.json"),
+        std::string_view("--print-rate"), std::string_view("5"),
+        std::string_view("--analysis-start-threshold"), std::string_view("6000"),
+        std::string_view("--analysis-stop-threshold"), std::string_view("1200"),
+        std::string_view("--analysis-stillness-seconds"), std::string_view("1.5"),
+        std::string_view("--max-device-delta-ms"), std::string_view("25"),
+        std::string_view("--include-accelerometer"),
+        std::string_view("--include-host-timestamps"),
+    };
+    const auto result = parse(arguments);
+    expect(result.options.has_value() && result.options->recordOnly,
+           "valid record-only options are accepted");
+    if (!result.options.has_value())
+    {
+        return;
+    }
+    expect(result.options->recordDuration == std::chrono::seconds(15),
+           "recording duration is parsed");
+    expect(result.options->recordingAnalysisConfiguration.axisSelection
+               == xreal::sensors::GyroscopeAxisSelection::automatic,
+           "axis auto is accepted in record-only mode");
+    expect(result.options->recordingAnalysisConfiguration.expectedAngleDegrees == 360.0,
+           "optional expected angle enables offline scale estimation");
+    expect(result.options->csvOutputPath == "recording.csv"
+               && result.options->analysisOutputPath == "analysis.json",
+           "record-only output paths are parsed");
+
+    constexpr std::array withoutAngle{
+        std::string_view("--record-only"),
+        std::string_view("--record-seconds"), std::string_view("5"),
+        std::string_view("--axis"), std::string_view("z"),
+        std::string_view("--csv-output"), std::string_view("recording.csv"),
+        std::string_view("--analysis-output"), std::string_view("analysis.json")};
+    const auto optionalAngle = parse(withoutAngle);
+    expect(optionalAngle.options.has_value()
+               && !optionalAngle.options->recordingAnalysisConfiguration.expectedAngleDegrees
+                       .has_value(),
+           "record-only analysis does not require expected degrees");
+}
+
+void testInvalidRecordOnlyOptions()
+{
+    constexpr std::array zeroDuration{
+        std::string_view("--record-only"),
+        std::string_view("--record-seconds"), std::string_view("0"),
+        std::string_view("--axis"), std::string_view("auto"),
+        std::string_view("--csv-output"), std::string_view("recording.csv"),
+        std::string_view("--analysis-output"), std::string_view("analysis.json")};
+    expect(!parse(zeroDuration).options.has_value(), "zero recording duration is rejected");
+
+    constexpr std::array negativeDuration{
+        std::string_view("--record-only"),
+        std::string_view("--record-seconds"), std::string_view("-1"),
+        std::string_view("--axis"), std::string_view("auto"),
+        std::string_view("--csv-output"), std::string_view("recording.csv"),
+        std::string_view("--analysis-output"), std::string_view("analysis.json")};
+    expect(!parse(negativeDuration).options.has_value(),
+           "negative recording duration is rejected");
+
+    constexpr std::array invalidAxis{
+        std::string_view("--record-only"),
+        std::string_view("--record-seconds"), std::string_view("5"),
+        std::string_view("--axis"), std::string_view("yaw"),
+        std::string_view("--csv-output"), std::string_view("recording.csv"),
+        std::string_view("--analysis-output"), std::string_view("analysis.json")};
+    expect(!parse(invalidAxis).options.has_value(), "invalid record-only axis is rejected");
+
+    constexpr std::array invalidAngle{
+        std::string_view("--record-only"),
+        std::string_view("--record-seconds"), std::string_view("5"),
+        std::string_view("--axis"), std::string_view("auto"),
+        std::string_view("--expected-degrees"), std::string_view("0"),
+        std::string_view("--csv-output"), std::string_view("recording.csv"),
+        std::string_view("--analysis-output"), std::string_view("analysis.json")};
+    expect(!parse(invalidAngle).options.has_value(), "invalid optional expected angle is rejected");
+}
+
 } // namespace
 
 int main()
@@ -144,6 +233,8 @@ int main()
     testValidOptions();
     testRequiredAndScalarValidation();
     testRelationalValidation();
+    testRecordOnlyOptions();
+    testInvalidRecordOnlyOptions();
     if (failureCount != 0)
     {
         std::cerr << failureCount << " gyroscope scale option test(s) failed.\n";

@@ -24,6 +24,7 @@ add_library(
     xreal-sensors
     src/sensors/AccelerometerCalibration.cpp
     src/sensors/GyroscopeBiasCalibration.cpp
+    src/sensors/GyroscopeRecordingAnalysis.cpp
     src/sensors/GyroscopeScaleCalibration.cpp
     src/sensors/ImuCalibration.cpp
     src/sensors/XrealDevice.cpp
@@ -130,6 +131,7 @@ add_executable(
 
 add_executable(
     xreal-gyro-scale-calibration
+    src/diagnostics/GyroRecordOnlyMode.cpp
     src/diagnostics/GyroScaleCalibrationMain.cpp
 )
 
@@ -375,5 +377,28 @@ if(BUILD_TESTING)
     add_test(
         NAME xreal-gyro-scale-calibration-options-tests
         COMMAND xreal-gyro-scale-calibration-options-tests
+    )
+
+    add_executable(
+        xreal-gyroscope-recording-analysis-tests
+        tests/GyroscopeRecordingAnalysisTests.cpp
+    )
+
+    target_link_libraries(
+        xreal-gyroscope-recording-analysis-tests
+        PRIVATE
+            xreal-sensors
+    )
+
+    target_compile_options(
+        xreal-gyroscope-recording-analysis-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+
+    add_test(
+        NAME xreal-gyroscope-recording-analysis-tests
+        COMMAND xreal-gyroscope-recording-analysis-tests
     )
 endif()

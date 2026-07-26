@@ -1,4 +1,5 @@
 #include "diagnostics/GyroScaleCalibrationOptions.hpp"
+#include "diagnostics/GyroRecordOnlyMode.hpp"
 #include "sensors/GyroscopeBiasCalibration.hpp"
 #include "sensors/GyroscopeScaleCalibration.hpp"
 #include "sensors/XrealDevice.hpp"
@@ -333,6 +334,11 @@ int main(int argc, char* argv[])
         {
             std::cerr << "No exact XREAL Air 2 Ultra VID 0x3318/PID 0x0426/interface 2 was found.\n";
             return 1;
+        }
+
+        if (options.recordOnly)
+        {
+            return xreal::diagnostics::runGyroscopeRecordOnlyMode(*device, options);
         }
 
         std::cout << "Experimental gyroscope scale calibration\n"
