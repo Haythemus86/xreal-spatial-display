@@ -24,6 +24,7 @@ add_library(
     xreal-sensors
     src/sensors/AccelerometerCalibration.cpp
     src/sensors/GyroscopeBiasCalibration.cpp
+    src/sensors/GyroscopeScaleCalibration.cpp
     src/sensors/ImuCalibration.cpp
     src/sensors/XrealDevice.cpp
     src/sensors/XrealHidConnection.cpp
@@ -58,6 +59,11 @@ add_library(
     src/diagnostics/ImuDiagnosticOptions.cpp
 )
 
+add_library(
+    xreal-gyro-scale-calibration-support
+    src/diagnostics/GyroScaleCalibrationOptions.cpp
+)
+
 target_include_directories(
     xreal-imu-diagnostic-support
     PUBLIC
@@ -66,6 +72,18 @@ target_include_directories(
 
 target_link_libraries(
     xreal-imu-diagnostic-support
+    PUBLIC
+        xreal-sensors
+)
+
+target_include_directories(
+    xreal-gyro-scale-calibration-support
+    PUBLIC
+        src
+)
+
+target_link_libraries(
+    xreal-gyro-scale-calibration-support
     PUBLIC
         xreal-sensors
 )
@@ -110,6 +128,11 @@ add_executable(
     src/diagnostics/CalibrationAnalyzerMain.cpp
 )
 
+add_executable(
+    xreal-gyro-scale-calibration
+    src/diagnostics/GyroScaleCalibrationMain.cpp
+)
+
 target_link_libraries(
     xreal-sensor-diagnostic
     PRIVATE
@@ -137,7 +160,14 @@ target_link_libraries(
         xreal-sensors
 )
 
-foreach(target xreal-sensor-diagnostic xreal-interface-probe xreal-imu-diagnostic)
+target_link_libraries(
+    xreal-gyro-scale-calibration
+    PRIVATE
+        xreal-gyro-scale-calibration-support
+        xreal-sensors
+)
+
+foreach(target xreal-sensor-diagnostic xreal-interface-probe xreal-imu-diagnostic xreal-gyro-scale-calibration)
     add_custom_command(
         TARGET ${target}
         POST_BUILD
@@ -151,11 +181,13 @@ set(xreal_project_targets
     xreal-sensors
     xreal-interface-probe-support
     xreal-imu-diagnostic-support
+    xreal-gyro-scale-calibration-support
     xreal-platform-windows
     xreal-sensor-diagnostic
     xreal-interface-probe
     xreal-imu-diagnostic
     xreal-calibration-analyzer
+    xreal-gyro-scale-calibration
 )
 
 foreach(target IN LISTS xreal_project_targets)
@@ -297,5 +329,51 @@ if(BUILD_TESTING)
     add_test(
         NAME xreal-imu-diagnostic-options-tests
         COMMAND xreal-imu-diagnostic-options-tests
+    )
+
+    add_executable(
+        xreal-gyroscope-scale-calibration-tests
+        tests/GyroscopeScaleCalibrationTests.cpp
+    )
+
+    target_link_libraries(
+        xreal-gyroscope-scale-calibration-tests
+        PRIVATE
+            xreal-sensors
+    )
+
+    target_compile_options(
+        xreal-gyroscope-scale-calibration-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+
+    add_test(
+        NAME xreal-gyroscope-scale-calibration-tests
+        COMMAND xreal-gyroscope-scale-calibration-tests
+    )
+
+    add_executable(
+        xreal-gyro-scale-calibration-options-tests
+        tests/GyroScaleCalibrationOptionsTests.cpp
+    )
+
+    target_link_libraries(
+        xreal-gyro-scale-calibration-options-tests
+        PRIVATE
+            xreal-gyro-scale-calibration-support
+    )
+
+    target_compile_options(
+        xreal-gyro-scale-calibration-options-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+
+    add_test(
+        NAME xreal-gyro-scale-calibration-options-tests
+        COMMAND xreal-gyro-scale-calibration-options-tests
     )
 endif()

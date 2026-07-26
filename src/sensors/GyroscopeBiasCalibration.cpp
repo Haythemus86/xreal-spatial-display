@@ -1,4 +1,5 @@
 #include "sensors/GyroscopeBiasCalibration.hpp"
+#include "sensors/DeviceTimestampDelta.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -47,28 +48,6 @@ void validateConfiguration(const GyroscopeBiasCalibrationConfig& configuration)
             throw std::invalid_argument("Gyroscope calibration packet-rate range is invalid.");
         }
     }
-}
-
-[[nodiscard]] std::optional<std::uint64_t> forwardTimestampDelta(
-    std::uint64_t current,
-    std::uint64_t previous) noexcept
-{
-    if (current > previous)
-    {
-        return current - previous;
-    }
-    if (current == previous)
-    {
-        return std::nullopt;
-    }
-
-    constexpr std::uint64_t lowerWrapBoundary = std::numeric_limits<std::uint64_t>::max() / 4U;
-    constexpr std::uint64_t upperWrapBoundary = lowerWrapBoundary * 3U;
-    if (previous >= upperWrapBoundary && current <= lowerWrapBoundary)
-    {
-        return (std::numeric_limits<std::uint64_t>::max() - previous) + 1U + current;
-    }
-    return std::nullopt;
 }
 
 [[nodiscard]] RawVector3d means(const VectorStatistics& statistics) noexcept
@@ -144,7 +123,7 @@ void GyroscopeBiasCalibrator::consume(const ImuSample& sample) noexcept
     std::optional<std::uint64_t> delta;
     if (previousDeviceTimestamp_.has_value())
     {
-        delta = forwardTimestampDelta(sample.deviceTimestamp.nanoseconds, *previousDeviceTimestamp_);
+        delta = forwardDeviceTimestampDelta(sample.deviceTimestamp.nanoseconds, *previousDeviceTimestamp_);
         if (!delta.has_value())
         {
             reject(GyroscopeBiasCalibrationRejectionReason::invalidDeviceTimestamp);
