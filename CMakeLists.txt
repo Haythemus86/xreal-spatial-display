@@ -23,6 +23,7 @@ add_subdirectory(third_party/hidapi)
 add_library(
     xreal-sensors
     src/sensors/AccelerometerCalibration.cpp
+    src/sensors/GyroscopeBiasCalibration.cpp
     src/sensors/ImuCalibration.cpp
     src/sensors/XrealDevice.cpp
     src/sensors/XrealHidConnection.cpp
@@ -50,6 +51,23 @@ add_executable(
 add_library(
     xreal-interface-probe-support
     src/diagnostics/InterfaceProbeSupport.cpp
+)
+
+add_library(
+    xreal-imu-diagnostic-support
+    src/diagnostics/ImuDiagnosticOptions.cpp
+)
+
+target_include_directories(
+    xreal-imu-diagnostic-support
+    PUBLIC
+        src
+)
+
+target_link_libraries(
+    xreal-imu-diagnostic-support
+    PUBLIC
+        xreal-sensors
 )
 
 add_library(
@@ -109,6 +127,7 @@ target_link_libraries(
 target_link_libraries(
     xreal-imu-diagnostic
     PRIVATE
+        xreal-imu-diagnostic-support
         xreal-sensors
 )
 
@@ -131,6 +150,7 @@ endforeach()
 set(xreal_project_targets
     xreal-sensors
     xreal-interface-probe-support
+    xreal-imu-diagnostic-support
     xreal-platform-windows
     xreal-sensor-diagnostic
     xreal-interface-probe
@@ -231,5 +251,51 @@ if(BUILD_TESTING)
     add_test(
         NAME xreal-accelerometer-calibration-tests
         COMMAND xreal-accelerometer-calibration-tests
+    )
+
+    add_executable(
+        xreal-gyroscope-bias-calibration-tests
+        tests/GyroscopeBiasCalibrationTests.cpp
+    )
+
+    target_link_libraries(
+        xreal-gyroscope-bias-calibration-tests
+        PRIVATE
+            xreal-sensors
+    )
+
+    target_compile_options(
+        xreal-gyroscope-bias-calibration-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+
+    add_test(
+        NAME xreal-gyroscope-bias-calibration-tests
+        COMMAND xreal-gyroscope-bias-calibration-tests
+    )
+
+    add_executable(
+        xreal-imu-diagnostic-options-tests
+        tests/ImuDiagnosticOptionsTests.cpp
+    )
+
+    target_link_libraries(
+        xreal-imu-diagnostic-options-tests
+        PRIVATE
+            xreal-imu-diagnostic-support
+    )
+
+    target_compile_options(
+        xreal-imu-diagnostic-options-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+
+    add_test(
+        NAME xreal-imu-diagnostic-options-tests
+        COMMAND xreal-imu-diagnostic-options-tests
     )
 endif()

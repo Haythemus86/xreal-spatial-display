@@ -1,0 +1,109 @@
+#include "diagnostics/ImuDiagnosticOptions.hpp"
+
+#include <array>
+#include <chrono>
+#include <iostream>
+#include <string_view>
+
+namespace
+{
+
+int failureCount{};
+
+void expect(bool condition, std::string_view description)
+{
+    if (!condition)
+    {
+        ++failureCount;
+        std::cerr << "FAILED: " << description << '\n';
+    }
+}
+
+template <std::size_t Size>
+[[nodiscard]] auto parse(const std::array<std::string_view, Size>& arguments)
+{
+    return xreal::diagnostics::parseImuDiagnosticOptions(arguments);
+}
+
+void testValidGyroscopeOptions()
+{
+    constexpr std::array arguments{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--apply-gyro-bias"),
+        std::string_view("--duration"), std::string_view("10"),
+        std::string_view("--print-rate"), std::string_view("10"),
+        std::string_view("--gyro-calibration-output"), std::string_view("gyro.json"),
+        std::string_view("--gyro-max-stddev"), std::string_view("650.5"),
+        std::string_view("--gyro-max-range"), std::string_view("4500"),
+        std::string_view("--gyro-min-samples"), std::string_view("1600"),
+    };
+    const auto result = parse(arguments);
+    expect(result.options.has_value(), "valid gyroscope calibration options are accepted");
+    expect(result.options->gyroscopeCalibration.has_value(), "gyroscope configuration is created");
+    expect(result.options->gyroscopeCalibration->calibrationDuration == std::chrono::seconds(2),
+           "gyroscope duration is parsed");
+    expect(result.options->gyroscopeCalibration->minimumSampleCount == 1600,
+           "minimum sample count is parsed");
+    expect(result.options->gyroscopeCalibration->maximumStandardDeviationRaw == 650.5,
+           "standard-deviation threshold is parsed");
+    expect(result.options->gyroscopeCalibration->maximumRangeRaw == 4500.0,
+           "range threshold is parsed");
+    expect(result.options->applyGyroscopeBias, "bias application is enabled");
+}
+
+void testInvalidGyroscopeOptions()
+{
+    constexpr std::array zeroDuration{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("0")};
+    expect(!parse(zeroDuration).options.has_value(), "zero calibration duration is rejected");
+
+    constexpr std::array negativeThreshold{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--gyro-max-stddev"), std::string_view("-1")};
+    expect(!parse(negativeThreshold).options.has_value(), "negative threshold is rejected");
+
+    constexpr std::array thresholdWithoutCalibration{
+        std::string_view("--gyro-max-range"), std::string_view("5000")};
+    expect(!parse(thresholdWithoutCalibration).options.has_value(),
+           "threshold without calibration mode is rejected");
+
+    constexpr std::array applyWithoutCalibration{std::string_view("--apply-gyro-bias")};
+    expect(!parse(applyWithoutCalibration).options.has_value(),
+           "bias application without same-run calibration is rejected");
+
+    constexpr std::array outputWithoutCalibration{
+        std::string_view("--gyro-calibration-output"), std::string_view("gyro.json")};
+    expect(!parse(outputWithoutCalibration).options.has_value(),
+           "gyro JSON output without calibration is rejected");
+}
+
+void testExistingAccelerometerOptionsRemainValid()
+{
+    constexpr std::array arguments{
+        std::string_view("--calibration"), std::string_view("stationary-flat"),
+        std::string_view("--stationary-seconds"), std::string_view("5"),
+        std::string_view("--calibration-output"), std::string_view("stationary-flat.json")};
+    const auto result = parse(arguments);
+    expect(result.options.has_value(), "existing accelerometer calibration options remain valid");
+    expect(result.options->duration == std::chrono::seconds(5),
+           "stationary capture duration behavior is preserved");
+    expect(result.options->csvPath == "calibration-stationary-flat.csv",
+           "stationary capture default CSV behavior is preserved");
+}
+
+} // namespace
+
+int main()
+{
+    testValidGyroscopeOptions();
+    testInvalidGyroscopeOptions();
+    testExistingAccelerometerOptionsRemainValid();
+
+    if (failureCount != 0)
+    {
+        std::cerr << failureCount << " IMU diagnostic option test(s) failed.\n";
+        return 1;
+    }
+    std::cout << "All IMU diagnostic option tests passed.\n";
+    return 0;
+}
