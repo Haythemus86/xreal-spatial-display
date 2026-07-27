@@ -25,6 +25,7 @@ add_library(
     src/sensors/AccelerometerCalibration.cpp
     src/sensors/GyroscopeBiasCalibration.cpp
     src/sensors/GyroscopeOfflineAnalysis.cpp
+    src/sensors/GyroscopePhysicalUnits.cpp
     src/sensors/GyroscopeRecordingAnalysis.cpp
     src/sensors/GyroscopeRecordingCsv.cpp
     src/sensors/GyroscopeScaleCalibration.cpp
@@ -159,6 +160,11 @@ add_executable(
     src/diagnostics/GyroRecordingAnalyzerMain.cpp
 )
 
+add_executable(
+    xreal-gyro-scale-profile
+    src/diagnostics/GyroScaleProfileMain.cpp
+)
+
 target_link_libraries(
     xreal-sensor-diagnostic
     PRIVATE
@@ -200,7 +206,13 @@ target_link_libraries(
         xreal-sensors
 )
 
-foreach(target xreal-sensor-diagnostic xreal-interface-probe xreal-imu-diagnostic xreal-gyro-scale-calibration xreal-gyro-recording-analyzer)
+target_link_libraries(
+    xreal-gyro-scale-profile
+    PRIVATE
+        xreal-sensors
+)
+
+foreach(target xreal-sensor-diagnostic xreal-interface-probe xreal-imu-diagnostic xreal-gyro-scale-calibration xreal-gyro-recording-analyzer xreal-gyro-scale-profile)
     add_custom_command(
         TARGET ${target}
         POST_BUILD
@@ -223,6 +235,7 @@ set(xreal_project_targets
     xreal-calibration-analyzer
     xreal-gyro-scale-calibration
     xreal-gyro-recording-analyzer
+    xreal-gyro-scale-profile
 )
 
 foreach(target IN LISTS xreal_project_targets)
@@ -479,5 +492,28 @@ if(BUILD_TESTING)
     add_test(
         NAME xreal-gyro-recording-analyzer-options-tests
         COMMAND xreal-gyro-recording-analyzer-options-tests
+    )
+
+    add_executable(
+        xreal-gyroscope-physical-units-tests
+        tests/GyroscopePhysicalUnitsTests.cpp
+    )
+
+    target_link_libraries(
+        xreal-gyroscope-physical-units-tests
+        PRIVATE
+            xreal-sensors
+    )
+
+    target_compile_options(
+        xreal-gyroscope-physical-units-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+
+    add_test(
+        NAME xreal-gyroscope-physical-units-tests
+        COMMAND xreal-gyroscope-physical-units-tests
     )
 endif()

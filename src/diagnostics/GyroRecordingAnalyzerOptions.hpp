@@ -20,6 +20,8 @@ struct GyroRecordingAnalyzerOptions
     std::optional<double> biasX;
     std::optional<double> biasY;
     std::optional<double> biasZ;
+    std::optional<double> fixedScaleRawPerDegreePerSecond;
+    std::optional<double> comparisonScaleRawPerDegreePerSecond;
 };
 
 struct GyroRecordingAnalyzerOptionResult

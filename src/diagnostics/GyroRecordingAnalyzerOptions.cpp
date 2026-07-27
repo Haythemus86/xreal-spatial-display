@@ -288,6 +288,14 @@ GyroRecordingAnalyzerOptionResult parseGyroRecordingAnalyzerOptions(
             {
                 options.batch.minimumConfidence = numeric;
             }
+            else if (argument == "--fixed-scale-raw-per-dps")
+            {
+                options.fixedScaleRawPerDegreePerSecond = numeric;
+            }
+            else if (argument == "--compare-scale-raw-per-dps")
+            {
+                options.comparisonScaleRawPerDegreePerSecond = numeric;
+            }
             else
             {
                 return error("Unknown option: " + std::string(argument));
@@ -341,7 +349,8 @@ std::string gyroRecordingAnalyzerUsage()
            " [--trim-envelope-fraction <0..1>] [--no-trim]"
            " [--bias-x <raw> --bias-y <raw> --bias-z <raw>]"
            " [--batch-outlier-percent <percent>] [--batch-min-recordings <count>]"
-           " [--batch-max-cv-percent <percent>] [--batch-min-confidence <0..1>]\n";
+           " [--batch-max-cv-percent <percent>] [--batch-min-confidence <0..1>]"
+           " [--fixed-scale-raw-per-dps <value>] [--compare-scale-raw-per-dps <value>]\n";
 }
 
 } // namespace xreal::diagnostics

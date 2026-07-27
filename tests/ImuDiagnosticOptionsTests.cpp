@@ -104,6 +104,39 @@ void testExistingAccelerometerOptionsRemainValid()
            "stationary capture default CSV behavior is preserved");
 }
 
+void testPhysicalUnitOptions()
+{
+    constexpr std::array valid{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--apply-gyro-bias"),
+        std::string_view("--gyro-scale-raw-per-dps"), std::string_view("4090"),
+        std::string_view("--print-gyro-degrees"),
+        std::string_view("--print-gyro-radians"),
+        std::string_view("--compare-q12-scale")};
+    const auto result = parse(valid);
+    expect(result.options.has_value()
+               && result.options->gyroscopeScaleRawPerDegreePerSecond == 4090.0
+               && result.options->printGyroscopeDegrees
+               && result.options->printGyroscopeRadians,
+           "explicit 4090 physical-unit options are accepted");
+
+    constexpr std::array invalidScale{
+        std::string_view("--gyro-scale-raw-per-dps"), std::string_view("0")};
+    expect(!parse(invalidScale).options.has_value(), "zero scale is rejected by CLI");
+
+    constexpr std::array conflicting{
+        std::string_view("--gyro-scale-profile"), std::string_view("profile.json"),
+        std::string_view("--gyro-scale-raw-per-dps"), std::string_view("4090")};
+    expect(!parse(conflicting).options.has_value(), "conflicting scale inputs are rejected");
+
+    constexpr std::array missingScale{std::string_view("--print-gyro-degrees")};
+    expect(!parse(missingScale).options.has_value(),
+           "physical-unit printing requires an explicit scale");
+    expect(xreal::diagnostics::imuDiagnosticUsage().find("--print-gyro-degrees")
+               != std::string::npos,
+           "diagnostic usage exposes explicit physical-unit labels");
+}
+
 } // namespace
 
 int main()
@@ -111,6 +144,7 @@ int main()
     testValidGyroscopeOptions();
     testInvalidGyroscopeOptions();
     testExistingAccelerometerOptionsRemainValid();
+    testPhysicalUnitOptions();
 
     if (failureCount != 0)
     {

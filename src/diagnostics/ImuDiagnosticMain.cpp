@@ -1,6 +1,7 @@
 #include "diagnostics/ImuDiagnosticOptions.hpp"
 #include "sensors/XrealDevice.hpp"
 #include "sensors/GyroscopeBiasCalibration.hpp"
+#include "sensors/GyroscopePhysicalUnits.hpp"
 #include "sensors/ImuCalibration.hpp"
 #include "sensors/XrealImuStream.hpp"
 
@@ -17,6 +18,7 @@
 #include <mutex>
 #include <optional>
 #include <span>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -123,7 +125,10 @@ void printSample(
     const xreal::sensors::ImuSample& sample,
     std::optional<std::uint64_t> deviceTimestampDelta,
     std::optional<std::int64_t> hostTimestampDelta,
-    const std::optional<xreal::sensors::GyroscopeBias>& gyroscopeBias)
+    const std::optional<xreal::sensors::GyroscopeBias>& gyroscopeBias,
+    const std::optional<xreal::sensors::GyroscopeScaleProfile>& gyroscopeScale,
+    bool printDegrees,
+    bool printRadians)
 {
     std::cout << "seq=" << static_cast<unsigned int>(sample.packetSequence)
               << " device_ns=" << sample.deviceTimestamp.nanoseconds
@@ -139,6 +144,23 @@ void printSample(
             *gyroscopeBias);
         std::cout << " gyro_corrected_raw_units=[" << corrected.x << ", "
                   << corrected.y << ", " << corrected.z << ']';
+        if (gyroscopeScale.has_value() && (printDegrees || printRadians))
+        {
+            const auto physical = xreal::sensors::convertGyroscopeToPhysicalUnits(
+                sample.gyroscopeRaw, *gyroscopeBias, *gyroscopeScale);
+            if (printDegrees && physical.x.valid && physical.y.valid && physical.z.valid)
+            {
+                std::cout << " gyro_degrees_per_second=[" << physical.x.degreesPerSecond
+                          << ", " << physical.y.degreesPerSecond << ", "
+                          << physical.z.degreesPerSecond << ']';
+            }
+            if (printRadians && physical.x.valid && physical.y.valid && physical.z.valid)
+            {
+                std::cout << " gyro_radians_per_second=[" << physical.x.radiansPerSecond
+                          << ", " << physical.y.radiansPerSecond << ", "
+                          << physical.z.radiansPerSecond << ']';
+            }
+        }
     }
 
     if (deviceTimestampDelta.has_value() && hostTimestampDelta.has_value())
@@ -221,6 +243,32 @@ int main(int argc, char* argv[])
 
     try
     {
+        std::optional<xreal::sensors::GyroscopeScaleProfile> gyroscopeScale;
+        if (options.gyroscopeScaleProfilePath.has_value())
+        {
+            std::ifstream profileInput(*options.gyroscopeScaleProfilePath);
+            if (!profileInput)
+            {
+                std::cerr << "Failed to open gyroscope scale profile: "
+                          << *options.gyroscopeScaleProfilePath << '\n';
+                return 1;
+            }
+            std::ostringstream profileJson;
+            profileJson << profileInput.rdbuf();
+            const auto loaded = xreal::sensors::loadGyroscopeScaleProfileJson(profileJson.str());
+            if (!loaded.profile.has_value())
+            {
+                std::cerr << "Invalid gyroscope scale profile: " << loaded.error << '\n';
+                return 1;
+            }
+            gyroscopeScale = *loaded.profile;
+        }
+        else if (options.gyroscopeScaleRawPerDegreePerSecond.has_value())
+        {
+            gyroscopeScale = xreal::sensors::makeExperimentalGyroscopeScaleProfile(
+                *options.gyroscopeScaleRawPerDegreePerSecond);
+        }
+
         const xreal::sensors::XrealDevice deviceEnumerator;
         const auto device = xreal::sensors::XrealImuStream::findInterface(deviceEnumerator.enumerate());
         if (!device.has_value())
@@ -237,7 +285,34 @@ int main(int argc, char* argv[])
         {
             std::cout << "  HID path: " << device->path << '\n';
         }
-        std::cout << "  SI conversion: unavailable (upstream scale factors are explicitly unverified)\n";
+        if (gyroscopeScale.has_value())
+        {
+            std::cout << "  Gyroscope scale source: " << gyroscopeScale->source << '\n'
+                      << "  Experimental: " << (gyroscopeScale->experimental ? "yes" : "no") << '\n'
+                      << "  Verified: " << (gyroscopeScale->verified ? "yes" : "no") << '\n';
+            const auto warning = xreal::sensors::gyroscopeScaleProvenanceWarning(
+                *gyroscopeScale);
+            if (warning.has_value())
+            {
+                std::cout << "  WARNING: " << *warning << '\n';
+            }
+            if (options.compareQ12Scale)
+            {
+                constexpr double q12CandidateRawPerDegreePerSecond = 4096.0;
+                const auto comparison = xreal::sensors::compareGyroscopeScales(
+                    gyroscopeScale->x.rawUnitsPerDegreePerSecond,
+                    q12CandidateRawPerDegreePerSecond);
+                std::cout << "  Q12 comparison absolute scale difference: "
+                          << comparison.absoluteScaleDifference << " raw/(degree/s)\n"
+                          << "  Q12 comparison relative difference: "
+                          << comparison.relativeScaleDifferencePercent << "%\n"
+                          << "  Closeness to Q12 is diagnostic evidence only, not documentary proof.\n";
+            }
+        }
+        else
+        {
+            std::cout << "  Gyroscope physical-unit conversion: disabled (no explicit scale).\n";
+        }
         if (options.calibrationName.has_value())
         {
             std::cout << "  Calibration: " << *options.calibrationName << '\n'
@@ -368,7 +443,10 @@ int main(int argc, char* argv[])
                         *latestSample,
                         deviceDelta,
                         hostDelta,
-                        options.applyGyroscopeBias ? acceptedGyroscopeBias : std::nullopt);
+                        options.applyGyroscopeBias ? acceptedGyroscopeBias : std::nullopt,
+                        gyroscopeScale,
+                        options.printGyroscopeDegrees,
+                        options.printGyroscopeRadians);
                 }
                 nextPrint = now + printInterval;
             }

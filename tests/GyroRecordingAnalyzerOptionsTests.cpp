@@ -36,6 +36,8 @@ void testValidSingleAndBatch()
         std::string_view("--pre-stillness-seconds"), std::string_view("1"),
         std::string_view("--post-stillness-seconds"), std::string_view("1"),
         std::string_view("--envelope-window-ms"), std::string_view("50"),
+        std::string_view("--fixed-scale-raw-per-dps"), std::string_view("4090"),
+        std::string_view("--compare-scale-raw-per-dps"), std::string_view("4096"),
         std::string_view("--output"), std::string_view("analysis.json")};
     const auto result = parse(single);
     expect(result.options.has_value(), "valid single-file analyzer options are accepted");
@@ -46,6 +48,9 @@ void testValidSingleAndBatch()
                && result.options->analysis.residualBiasMode
                    == xreal::sensors::GyroscopeResidualBiasMode::linear,
            "analysis refinement modes are parsed");
+    expect(result.options->fixedScaleRawPerDegreePerSecond == 4090.0
+               && result.options->comparisonScaleRawPerDegreePerSecond == 4096.0,
+           "fixed and comparison scales are parsed");
 
     constexpr std::array batch{
         std::string_view("--input"), std::string_view("a.csv"),

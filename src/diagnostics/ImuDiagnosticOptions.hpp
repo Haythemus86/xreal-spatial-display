@@ -24,6 +24,11 @@ struct ImuDiagnosticOptions
     std::optional<sensors::GyroscopeBiasCalibrationConfig> gyroscopeCalibration;
     bool applyGyroscopeBias{};
     std::optional<std::string> gyroscopeCalibrationOutputPath;
+    std::optional<std::string> gyroscopeScaleProfilePath;
+    std::optional<double> gyroscopeScaleRawPerDegreePerSecond;
+    bool printGyroscopeDegrees{};
+    bool printGyroscopeRadians{};
+    bool compareQ12Scale{};
     bool verbose{};
 };
 

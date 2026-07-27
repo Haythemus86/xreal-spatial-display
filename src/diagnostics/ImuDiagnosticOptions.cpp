@@ -44,6 +44,8 @@ namespace
         || argument == "--gyro-calibrate-seconds"
         || argument == "--gyro-warmup-seconds"
         || argument == "--gyro-calibration-output"
+        || argument == "--gyro-scale-profile"
+        || argument == "--gyro-scale-raw-per-dps"
         || argument == "--gyro-max-stddev"
         || argument == "--gyro-max-range"
         || argument == "--gyro-min-samples";
@@ -75,6 +77,21 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
             options.applyGyroscopeBias = true;
             continue;
         }
+        if (argument == "--print-gyro-degrees")
+        {
+            options.printGyroscopeDegrees = true;
+            continue;
+        }
+        if (argument == "--print-gyro-radians")
+        {
+            options.printGyroscopeRadians = true;
+            continue;
+        }
+        if (argument == "--compare-q12-scale")
+        {
+            options.compareQ12Scale = true;
+            continue;
+        }
         if (!isValueOption(argument))
         {
             return {std::nullopt, "Unknown option: " + std::string(argument), false};
@@ -87,7 +104,8 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
         const std::string_view value = arguments[index];
         if (argument == "--csv"
             || argument == "--calibration-output"
-            || argument == "--gyro-calibration-output")
+            || argument == "--gyro-calibration-output"
+            || argument == "--gyro-scale-profile")
         {
             if (value.empty())
             {
@@ -103,8 +121,26 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
             }
             else
             {
-                options.gyroscopeCalibrationOutputPath = value;
+                if (argument == "--gyro-calibration-output")
+                {
+                    options.gyroscopeCalibrationOutputPath = value;
+                }
+                else
+                {
+                    options.gyroscopeScaleProfilePath = value;
+                }
             }
+            continue;
+        }
+
+        if (argument == "--gyro-scale-raw-per-dps")
+        {
+            const auto parsed = parsePositiveDouble(value);
+            if (!parsed.has_value())
+            {
+                return {std::nullopt, "--gyro-scale-raw-per-dps requires a finite positive value.", false};
+            }
+            options.gyroscopeScaleRawPerDegreePerSecond = *parsed;
             continue;
         }
 
@@ -234,6 +270,27 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
     {
         return {std::nullopt, "--gyro-calibration-output requires --gyro-calibrate-seconds.", false};
     }
+    if (options.gyroscopeScaleProfilePath.has_value()
+        && options.gyroscopeScaleRawPerDegreePerSecond.has_value())
+    {
+        return {std::nullopt, "Use either --gyro-scale-profile or --gyro-scale-raw-per-dps, not both.", false};
+    }
+    const bool physicalOutput = options.printGyroscopeDegrees || options.printGyroscopeRadians;
+    const bool hasScale = options.gyroscopeScaleProfilePath.has_value()
+        || options.gyroscopeScaleRawPerDegreePerSecond.has_value();
+    if (physicalOutput && !hasScale)
+    {
+        return {std::nullopt, "Physical gyroscope output requires an explicit scale profile or scalar.", false};
+    }
+    if (physicalOutput && (!options.applyGyroscopeBias
+        || !options.gyroscopeCalibration.has_value()))
+    {
+        return {std::nullopt, "Physical gyroscope output requires runtime bias calibration and --apply-gyro-bias.", false};
+    }
+    if (options.compareQ12Scale && !hasScale)
+    {
+        return {std::nullopt, "--compare-q12-scale requires an explicit gyroscope scale.", false};
+    }
 
     return {options, {}, false};
 }
@@ -246,7 +303,9 @@ std::string imuDiagnosticUsage()
            " [--gyro-warmup-seconds <seconds>]"
            " [--apply-gyro-bias] [--gyro-calibration-output <file.json>]"
            " [--gyro-max-stddev <raw-units>] [--gyro-max-range <raw-units>]"
-           " [--gyro-min-samples <count>] [--verbose]\n";
+           " [--gyro-min-samples <count>]"
+           " [--gyro-scale-profile <file.json> | --gyro-scale-raw-per-dps <value>]"
+           " [--print-gyro-degrees] [--print-gyro-radians] [--compare-q12-scale] [--verbose]\n";
 }
 
 } // namespace xreal::diagnostics
