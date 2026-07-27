@@ -52,6 +52,7 @@ struct GyroscopeAxisMapping
     GyroscopeAxisMappingEntry sensorZ{GyroscopeLogicalAxis::sensorZ, 1};
     bool experimental{true};
     bool verified{};
+    std::string source{"provisional-flat-chair-observation"};
     std::string notes{"Sensor Z was dominant during a flat chair rotation; yaw correspondence remains provisional."};
 };
 
@@ -170,6 +171,8 @@ struct GyroscopeScaleProfileLoadResult
     const GyroscopeScaleProfile& profile) noexcept;
 [[nodiscard]] CorrectedGyroscopeRaw applyGyroscopeAxisMapping(
     const CorrectedGyroscopeRaw& sensorValues,
+    const GyroscopeAxisMapping& mapping) noexcept;
+[[nodiscard]] bool validateGyroscopeAxisMapping(
     const GyroscopeAxisMapping& mapping) noexcept;
 [[nodiscard]] GyroscopeScaleComparisonReport compareGyroscopeScales(
     double selectedRawUnitsPerDegreePerSecond,

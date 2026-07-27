@@ -71,7 +71,12 @@ void testProfileValidationAndConversion()
 
 void testJsonAndProvenance()
 {
-    const auto profile = xreal::sensors::makeExperimentalGyroscopeScaleProfile(4090.0);
+    auto profile = xreal::sensors::makeExperimentalGyroscopeScaleProfile(4090.0);
+    profile.axisMapping.sensorX.logicalAxis = xreal::sensors::GyroscopeLogicalAxis::sensorZ;
+    profile.axisMapping.sensorY.logicalAxis = xreal::sensors::GyroscopeLogicalAxis::sensorX;
+    profile.axisMapping.sensorZ.logicalAxis = xreal::sensors::GyroscopeLogicalAxis::sensorY;
+    profile.axisMapping.sensorZ.sign = -1;
+    profile.axisMapping.source = "synthetic-permutation";
     const std::string json = xreal::sensors::serializeGyroscopeScaleProfileJson(profile);
     expect(json.find("4090") != std::string::npos
                && json.find("234339") != std::string::npos,
@@ -79,8 +84,12 @@ void testJsonAndProvenance()
     const auto loaded = xreal::sensors::loadGyroscopeScaleProfileJson(json);
     expect(loaded.profile.has_value()
                && loaded.profile->source == "experimental-manual-calibration"
-               && loaded.profile->experimental && !loaded.profile->verified,
-           "JSON loading preserves provenance and validity flags");
+               && loaded.profile->experimental && !loaded.profile->verified
+               && loaded.profile->axisMapping.sensorX.logicalAxis
+                    == xreal::sensors::GyroscopeLogicalAxis::sensorZ
+               && loaded.profile->axisMapping.sensorZ.sign == -1
+               && loaded.profile->axisMapping.source == "synthetic-permutation",
+           "JSON loading preserves scale provenance and complete axis mapping");
     expect(!xreal::sensors::loadGyroscopeScaleProfileJson("not-json").profile.has_value(),
            "invalid JSON is rejected");
     expect(!xreal::sensors::loadGyroscopeScaleProfileJson(

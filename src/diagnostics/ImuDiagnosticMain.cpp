@@ -2,6 +2,7 @@
 #include "sensors/XrealDevice.hpp"
 #include "sensors/GyroscopeBiasCalibration.hpp"
 #include "sensors/GyroscopePhysicalUnits.hpp"
+#include "sensors/GyroscopeOrientation.hpp"
 #include "sensors/ImuCalibration.hpp"
 #include "sensors/XrealImuStream.hpp"
 
@@ -216,6 +217,33 @@ constexpr double stationaryGyroMovementThresholdRaw = 5000.0;
     return result;
 }
 
+void printOrientation(
+    const xreal::sensors::GyroscopeOrientationIntegrator& integrator,
+    xreal::diagnostics::OrientationOutputMode outputMode)
+{
+    const auto orientation = integrator.relativeOrientation();
+    std::cout << "orientation";
+    if (outputMode != xreal::diagnostics::OrientationOutputMode::euler)
+    {
+        std::cout << " quaternion_wxyz=[" << orientation.w << ", " << orientation.x
+                  << ", " << orientation.y << ", " << orientation.z << ']';
+    }
+    if (outputMode != xreal::diagnostics::OrientationOutputMode::quaternion)
+    {
+        const auto euler = xreal::sensors::quaternionToEulerDiagnostic(orientation);
+        std::cout << " euler_zyx_degrees=[yaw=" << euler.yawDegrees
+                  << ", pitch=" << euler.pitchDegrees
+                  << ", roll=" << euler.rollDegrees << ']';
+    }
+    const auto& state = integrator.state();
+    std::cout << " valid=" << (state.valid ? "yes" : "no")
+              << " delta_ms="
+              << std::chrono::duration<double, std::milli>(state.lastDeltaTime).count()
+              << " applied=" << state.appliedSampleCount
+              << " skipped=" << state.skippedSampleCount
+              << " rejected=" << state.rejectedSampleCount << '\n';
+}
+
 } // namespace
 
 int main(int argc, char* argv[])
@@ -268,6 +296,22 @@ int main(int argc, char* argv[])
             gyroscopeScale = xreal::sensors::makeExperimentalGyroscopeScaleProfile(
                 *options.gyroscopeScaleRawPerDegreePerSecond);
         }
+        if (options.integrateGyroscopeOrientation)
+        {
+            const auto& profile = *gyroscopeScale;
+            const bool allAxesUsable = profile.x.enabled && profile.x.valid
+                && profile.y.enabled && profile.y.valid
+                && profile.z.enabled && profile.z.valid;
+            const auto validation = xreal::sensors::validateGyroscopeScaleProfile(profile);
+            if (!validation.valid || !allAxesUsable)
+            {
+                std::cerr << "Gyroscope orientation requires valid, enabled X/Y/Z scale axes: "
+                          << (validation.valid ? "one or more axes are disabled or invalid"
+                                               : validation.explanation)
+                          << '\n';
+                return 1;
+            }
+        }
 
         const xreal::sensors::XrealDevice deviceEnumerator;
         const auto device = xreal::sensors::XrealImuStream::findInterface(deviceEnumerator.enumerate());
@@ -312,6 +356,23 @@ int main(int argc, char* argv[])
         else
         {
             std::cout << "  Gyroscope physical-unit conversion: disabled (no explicit scale).\n";
+        }
+        if (options.integrateGyroscopeOrientation)
+        {
+            std::cout << "\nWARNING: gyro-only orientation is experimental and will drift.\n"
+                      << "  It uses calibrated angular velocity and device timestamps only.\n"
+                      << "  Axis mapping source: " << gyroscopeScale->axisMapping.source << '\n'
+                      << "  Axis mapping verified: "
+                      << (gyroscopeScale->axisMapping.verified ? "yes" : "no") << '\n'
+                      << "  Maximum accepted device timestamp delta: "
+                      << std::chrono::duration<double, std::milli>(
+                             options.orientationMaximumDelta).count()
+                      << " ms\n";
+            if (gyroscopeScale->axisMapping.experimental
+                || !gyroscopeScale->axisMapping.verified)
+            {
+                std::cout << "  WARNING: orientation axis mapping is experimental or unverified.\n";
+            }
         }
         if (options.calibrationName.has_value())
         {
@@ -370,6 +431,16 @@ int main(int argc, char* argv[])
             gyroscopeCalibrator.emplace(*options.gyroscopeCalibration);
         }
         std::optional<xreal::sensors::GyroscopeBias> acceptedGyroscopeBias;
+        std::optional<xreal::sensors::GyroscopeOrientationIntegrator> orientationIntegrator;
+        if (options.integrateGyroscopeOrientation)
+        {
+            xreal::sensors::OrientationIntegratorConfig configuration;
+            configuration.maximumDeviceTimestampDelta = options.orientationMaximumDelta;
+            configuration.axisMapping = gyroscopeScale->axisMapping;
+            orientationIntegrator.emplace(configuration);
+        }
+        std::optional<std::chrono::steady_clock::time_point> orientationStartTime;
+        bool orientationRecentered{};
 
         const auto consumeGyroscopeCalibration = [&](const xreal::sensors::ImuSample& sample) {
             if (!gyroscopeCalibrator.has_value() || gyroscopeCalibrator->isComplete())
@@ -381,6 +452,31 @@ int main(int argc, char* argv[])
             if (currentResult.has_value() && currentResult->accepted)
             {
                 acceptedGyroscopeBias = currentResult->biasRaw;
+            }
+        };
+        const auto consumeOrientation = [&](const xreal::sensors::ImuSample& sample) {
+            if (!orientationIntegrator.has_value()
+                || !acceptedGyroscopeBias.has_value()
+                || !gyroscopeScale.has_value())
+            {
+                return;
+            }
+            const auto physical = xreal::sensors::convertGyroscopeToPhysicalUnits(
+                sample.gyroscopeRaw,
+                *acceptedGyroscopeBias,
+                *gyroscopeScale);
+            const xreal::sensors::AngularVelocityRadians angularVelocity{
+                physical.x.radiansPerSecond,
+                physical.y.radiansPerSecond,
+                physical.z.radiansPerSecond,
+            };
+            const auto result = orientationIntegrator->update(
+                angularVelocity,
+                sample.deviceTimestamp.nanoseconds);
+            if (!orientationStartTime.has_value()
+                && result.reason == xreal::sensors::OrientationRejectionReason::firstTimestamp)
+            {
+                orientationStartTime = sample.hostReceiveTimestamp;
             }
         };
         xreal::sensors::XrealImuStream stream(*device);
@@ -398,8 +494,11 @@ int main(int argc, char* argv[])
         const auto start = std::chrono::steady_clock::now();
         const auto deadline = start + options.duration;
         const auto printInterval = std::chrono::milliseconds(1000U / options.printRateHz);
+        const auto orientationPrintInterval = std::chrono::milliseconds(
+            1000U / options.orientationPrintRateHz);
         constexpr std::chrono::milliseconds processingInterval{20};
         auto nextPrint = start + printInterval;
+        auto nextOrientationPrint = start + orientationPrintInterval;
         auto nextProcessing = start + processingInterval;
         std::optional<xreal::sensors::ImuSample> latestSample;
         std::optional<xreal::sensors::ImuSample> previousSample;
@@ -422,6 +521,7 @@ int main(int argc, char* argv[])
                     calibrationAccumulator->consume(sample);
                 }
                 consumeGyroscopeCalibration(sample);
+                consumeOrientation(sample);
 
                 if (previousSample.has_value())
                 {
@@ -435,6 +535,20 @@ int main(int argc, char* argv[])
             }
 
             const auto now = std::chrono::steady_clock::now();
+            if (orientationIntegrator.has_value()
+                && orientationStartTime.has_value()
+                && options.recenterAfterSeconds.has_value()
+                && !orientationRecentered
+                && std::chrono::duration<double>(now - *orientationStartTime).count()
+                    >= *options.recenterAfterSeconds)
+            {
+                orientationRecentered = orientationIntegrator->recenter();
+                if (orientationRecentered)
+                {
+                    std::cout << "Orientation recentered after " << *options.recenterAfterSeconds
+                              << " seconds.\n";
+                }
+            }
             if (now >= nextPrint)
             {
                 if (latestSample.has_value())
@@ -450,10 +564,22 @@ int main(int argc, char* argv[])
                 }
                 nextPrint = now + printInterval;
             }
+            if (orientationIntegrator.has_value()
+                && orientationStartTime.has_value()
+                && now >= nextOrientationPrint)
+            {
+                printOrientation(*orientationIntegrator, options.orientationOutput);
+                nextOrientationPrint = now + orientationPrintInterval;
+            }
             nextProcessing = now + processingInterval;
 
             std::unique_lock lock(timerMutex);
-            timer.wait_until(lock, std::min({nextPrint, nextProcessing, deadline}));
+            timer.wait_until(lock, std::min({
+                nextPrint,
+                nextOrientationPrint,
+                nextProcessing,
+                deadline,
+            }));
         }
 
         stream.stop();
@@ -469,6 +595,7 @@ int main(int argc, char* argv[])
                 calibrationAccumulator->consume(remainingSample);
             }
             consumeGyroscopeCalibration(remainingSample);
+            consumeOrientation(remainingSample);
         }
         if (csv)
         {
@@ -492,6 +619,24 @@ int main(int argc, char* argv[])
                   << "  Out-of-sequence events: " << statistics.outOfSequence << '\n'
                   << "  Malformed packets: " << statistics.invalid << '\n'
                   << "  Diagnostic queue drops: " << diagnosticQueueDrops.load() << '\n';
+
+        if (orientationIntegrator.has_value())
+        {
+            const auto& orientationState = orientationIntegrator->state();
+            std::cout << "\nGyroscope orientation summary\n"
+                      << "  Applied samples: " << orientationState.appliedSampleCount << '\n'
+                      << "  Skipped samples: " << orientationState.skippedSampleCount << '\n'
+                      << "  Rejected samples: " << orientationState.rejectedSampleCount << '\n'
+                      << "  Integrated device duration: "
+                      << std::chrono::duration<double>(
+                             orientationState.accumulatedIntegrationDuration).count()
+                      << " seconds\n"
+                      << "  Last rejection: "
+                      << xreal::sensors::orientationRejectionReasonText(
+                             orientationState.lastRejectionReason)
+                      << '\n';
+            printOrientation(*orientationIntegrator, options.orientationOutput);
+        }
 
         bool calibrationRejected{};
         if (gyroscopeCalibrator.has_value())
@@ -634,6 +779,33 @@ int main(int argc, char* argv[])
                 std::cerr << "Stationary calibration rejected because gyroscope movement exceeded the raw threshold.\n";
                 calibrationRejected = true;
             }
+        }
+
+        if (orientationIntegrator.has_value()
+            && options.orientationProfileOutputPath.has_value())
+        {
+            std::ofstream json(
+                *options.orientationProfileOutputPath,
+                std::ios::out | std::ios::trunc);
+            if (!json)
+            {
+                std::cerr << "Failed to open orientation JSON output file: "
+                          << *options.orientationProfileOutputPath << '\n';
+                return 1;
+            }
+            const bool includeEuler = options.orientationOutput
+                != xreal::diagnostics::OrientationOutputMode::quaternion;
+            json << xreal::sensors::serializeGyroscopeOrientationJson(
+                *orientationIntegrator,
+                *gyroscopeScale,
+                includeEuler);
+            if (!json)
+            {
+                std::cerr << "Failed while writing orientation JSON output file: "
+                          << *options.orientationProfileOutputPath << '\n';
+                return 1;
+            }
+            std::cout << "  Orientation JSON: " << *options.orientationProfileOutputPath << '\n';
         }
 
         const std::wstring streamError = stream.errorMessage();

@@ -46,6 +46,11 @@ namespace
         || argument == "--gyro-calibration-output"
         || argument == "--gyro-scale-profile"
         || argument == "--gyro-scale-raw-per-dps"
+        || argument == "--orientation-output"
+        || argument == "--recenter-after-seconds"
+        || argument == "--orientation-max-delta-ms"
+        || argument == "--orientation-profile-output"
+        || argument == "--orientation-print-rate"
         || argument == "--gyro-max-stddev"
         || argument == "--gyro-max-range"
         || argument == "--gyro-min-samples";
@@ -92,6 +97,11 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
             options.compareQ12Scale = true;
             continue;
         }
+        if (argument == "--integrate-gyro-orientation")
+        {
+            options.integrateGyroscopeOrientation = true;
+            continue;
+        }
         if (!isValueOption(argument))
         {
             return {std::nullopt, "Unknown option: " + std::string(argument), false};
@@ -105,7 +115,8 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
         if (argument == "--csv"
             || argument == "--calibration-output"
             || argument == "--gyro-calibration-output"
-            || argument == "--gyro-scale-profile")
+            || argument == "--gyro-scale-profile"
+            || argument == "--orientation-profile-output")
         {
             if (value.empty())
             {
@@ -127,7 +138,14 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
                 }
                 else
                 {
-                    options.gyroscopeScaleProfilePath = value;
+                    if (argument == "--gyro-scale-profile")
+                    {
+                        options.gyroscopeScaleProfilePath = value;
+                    }
+                    else
+                    {
+                        options.orientationProfileOutputPath = value;
+                    }
                 }
             }
             continue;
@@ -141,6 +159,55 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
                 return {std::nullopt, "--gyro-scale-raw-per-dps requires a finite positive value.", false};
             }
             options.gyroscopeScaleRawPerDegreePerSecond = *parsed;
+            continue;
+        }
+
+        if (argument == "--orientation-output")
+        {
+            if (value == "quaternion")
+            {
+                options.orientationOutput = OrientationOutputMode::quaternion;
+            }
+            else if (value == "euler")
+            {
+                options.orientationOutput = OrientationOutputMode::euler;
+            }
+            else if (value == "both")
+            {
+                options.orientationOutput = OrientationOutputMode::both;
+            }
+            else
+            {
+                return {std::nullopt,
+                        "--orientation-output requires quaternion, euler or both.",
+                        false};
+            }
+            options.orientationOutputExplicit = true;
+            continue;
+        }
+
+        if (argument == "--recenter-after-seconds" || argument == "--orientation-max-delta-ms")
+        {
+            const auto parsed = parsePositiveDouble(value);
+            if (!parsed.has_value())
+            {
+                return {std::nullopt, std::string(argument) + " requires a finite positive value.", false};
+            }
+            if (argument == "--recenter-after-seconds")
+            {
+                options.recenterAfterSeconds = *parsed;
+            }
+            else
+            {
+                const double nanoseconds = *parsed * 1'000'000.0;
+                if (nanoseconds > static_cast<double>(std::numeric_limits<std::int64_t>::max()))
+                {
+                    return {std::nullopt, "--orientation-max-delta-ms is too large.", false};
+                }
+                options.orientationMaximumDelta = std::chrono::nanoseconds(
+                    static_cast<std::int64_t>(nanoseconds));
+                options.orientationMaximumDeltaExplicit = true;
+            }
             continue;
         }
 
@@ -222,6 +289,15 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
             gyroscopeConfiguration.minimumSampleCount = *parsed;
             gyroscopeConfigurationCustomized = true;
         }
+        else if (argument == "--orientation-print-rate")
+        {
+            if (*parsed > 100U)
+            {
+                return {std::nullopt, "--orientation-print-rate must be between 1 and 100 Hz.", false};
+            }
+            options.orientationPrintRateHz = *parsed;
+            options.orientationPrintRateExplicit = true;
+        }
         else if (*parsed > 10U)
         {
             return {std::nullopt, "--print-rate must be between 1 and 10 Hz.", false};
@@ -291,6 +367,30 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
     {
         return {std::nullopt, "--compare-q12-scale requires an explicit gyroscope scale.", false};
     }
+    const bool hasOrientationOption = options.orientationOutputExplicit
+        || options.recenterAfterSeconds.has_value()
+        || options.orientationMaximumDeltaExplicit
+        || options.orientationProfileOutputPath.has_value()
+        || options.orientationPrintRateExplicit;
+    if (hasOrientationOption && !options.integrateGyroscopeOrientation)
+    {
+        return {std::nullopt,
+                "Orientation-specific options require --integrate-gyro-orientation.",
+                false};
+    }
+    if (options.integrateGyroscopeOrientation && !hasScale)
+    {
+        return {std::nullopt,
+                "Gyroscope orientation integration requires an explicit scale profile or scalar.",
+                false};
+    }
+    if (options.integrateGyroscopeOrientation
+        && (!options.applyGyroscopeBias || !options.gyroscopeCalibration.has_value()))
+    {
+        return {std::nullopt,
+                "Gyroscope orientation integration requires same-run bias calibration and --apply-gyro-bias.",
+                false};
+    }
 
     return {options, {}, false};
 }
@@ -305,7 +405,12 @@ std::string imuDiagnosticUsage()
            " [--gyro-max-stddev <raw-units>] [--gyro-max-range <raw-units>]"
            " [--gyro-min-samples <count>]"
            " [--gyro-scale-profile <file.json> | --gyro-scale-raw-per-dps <value>]"
-           " [--print-gyro-degrees] [--print-gyro-radians] [--compare-q12-scale] [--verbose]\n";
+           " [--print-gyro-degrees] [--print-gyro-radians] [--compare-q12-scale]"
+           " [--integrate-gyro-orientation]"
+           " [--orientation-output <quaternion|euler|both>]"
+           " [--recenter-after-seconds <seconds>] [--orientation-max-delta-ms <value>]"
+           " [--orientation-profile-output <file.json>] [--orientation-print-rate <hz>]"
+           " [--verbose]\n";
 }
 
 } // namespace xreal::diagnostics

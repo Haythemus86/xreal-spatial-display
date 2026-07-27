@@ -11,6 +11,13 @@
 namespace xreal::diagnostics
 {
 
+enum class OrientationOutputMode
+{
+    quaternion,
+    euler,
+    both,
+};
+
 struct ImuDiagnosticOptions
 {
     std::chrono::seconds duration{10};
@@ -29,6 +36,15 @@ struct ImuDiagnosticOptions
     bool printGyroscopeDegrees{};
     bool printGyroscopeRadians{};
     bool compareQ12Scale{};
+    bool integrateGyroscopeOrientation{};
+    OrientationOutputMode orientationOutput{OrientationOutputMode::both};
+    bool orientationOutputExplicit{};
+    std::optional<double> recenterAfterSeconds;
+    std::chrono::nanoseconds orientationMaximumDelta{std::chrono::milliseconds(20)};
+    bool orientationMaximumDeltaExplicit{};
+    std::optional<std::string> orientationProfileOutputPath;
+    unsigned int orientationPrintRateHz{10};
+    bool orientationPrintRateExplicit{};
     bool verbose{};
 };
 

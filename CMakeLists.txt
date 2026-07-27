@@ -25,6 +25,7 @@ add_library(
     src/sensors/AccelerometerCalibration.cpp
     src/sensors/GyroscopeBiasCalibration.cpp
     src/sensors/GyroscopeOfflineAnalysis.cpp
+    src/sensors/GyroscopeOrientation.cpp
     src/sensors/GyroscopePhysicalUnits.cpp
     src/sensors/GyroscopeRecordingAnalysis.cpp
     src/sensors/GyroscopeRecordingCsv.cpp
@@ -515,5 +516,28 @@ if(BUILD_TESTING)
     add_test(
         NAME xreal-gyroscope-physical-units-tests
         COMMAND xreal-gyroscope-physical-units-tests
+    )
+
+    add_executable(
+        xreal-gyroscope-orientation-tests
+        tests/GyroscopeOrientationTests.cpp
+    )
+
+    target_link_libraries(
+        xreal-gyroscope-orientation-tests
+        PRIVATE
+            xreal-sensors
+    )
+
+    target_compile_options(
+        xreal-gyroscope-orientation-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+
+    add_test(
+        NAME xreal-gyroscope-orientation-tests
+        COMMAND xreal-gyroscope-orientation-tests
     )
 endif()

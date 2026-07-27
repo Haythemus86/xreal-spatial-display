@@ -137,6 +137,71 @@ void testPhysicalUnitOptions()
            "diagnostic usage exposes explicit physical-unit labels");
 }
 
+void testOrientationOptions()
+{
+    constexpr std::array valid{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--apply-gyro-bias"),
+        std::string_view("--gyro-scale-profile"), std::string_view("scale.json"),
+        std::string_view("--integrate-gyro-orientation"),
+        std::string_view("--orientation-output"), std::string_view("both"),
+        std::string_view("--recenter-after-seconds"), std::string_view("3.5"),
+        std::string_view("--orientation-max-delta-ms"), std::string_view("12.5"),
+        std::string_view("--orientation-profile-output"), std::string_view("orientation.json"),
+        std::string_view("--orientation-print-rate"), std::string_view("20"),
+    };
+    const auto result = parse(valid);
+    expect(result.options.has_value(), "complete orientation options are accepted");
+    expect(result.options->integrateGyroscopeOrientation
+               && result.options->orientationOutput
+                    == xreal::diagnostics::OrientationOutputMode::both
+               && result.options->orientationMaximumDelta == std::chrono::microseconds(12'500)
+               && result.options->orientationPrintRateHz == 20U,
+           "orientation values are parsed exactly");
+
+    constexpr std::array noScale{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--apply-gyro-bias"),
+        std::string_view("--integrate-gyro-orientation")};
+    expect(!parse(noScale).options.has_value(), "orientation without a scale is rejected");
+
+    constexpr std::array noBias{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--gyro-scale-raw-per-dps"), std::string_view("4090"),
+        std::string_view("--integrate-gyro-orientation")};
+    expect(!parse(noBias).options.has_value(), "orientation without applied bias is rejected");
+
+    constexpr std::array invalidOutput{
+        std::string_view("--integrate-gyro-orientation"),
+        std::string_view("--orientation-output"), std::string_view("matrix")};
+    expect(!parse(invalidOutput).options.has_value(), "unknown orientation output mode is rejected");
+
+    constexpr std::array zeroDelta{
+        std::string_view("--integrate-gyro-orientation"),
+        std::string_view("--orientation-max-delta-ms"), std::string_view("0")};
+    expect(!parse(zeroDelta).options.has_value(), "non-positive maximum delta is rejected");
+
+    constexpr std::array optionWithoutMode{
+        std::string_view("--orientation-print-rate"), std::string_view("10")};
+    expect(!parse(optionWithoutMode).options.has_value(),
+           "orientation-specific option without integration mode is rejected");
+
+    constexpr std::array zeroPrintRate{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--apply-gyro-bias"),
+        std::string_view("--gyro-scale-raw-per-dps"), std::string_view("4090"),
+        std::string_view("--integrate-gyro-orientation"),
+        std::string_view("--orientation-print-rate"), std::string_view("0")};
+    expect(!parse(zeroPrintRate).options.has_value(),
+           "non-positive orientation print rate is rejected");
+
+    constexpr std::array existingBehavior{std::string_view("--duration"), std::string_view("5")};
+    const auto existingResult = parse(existingBehavior);
+    expect(existingResult.options.has_value()
+               && !existingResult.options->integrateGyroscopeOrientation,
+           "orientation remains disabled for existing diagnostics");
+}
+
 } // namespace
 
 int main()
@@ -145,6 +210,7 @@ int main()
     testInvalidGyroscopeOptions();
     testExistingAccelerometerOptionsRemainValid();
     testPhysicalUnitOptions();
+    testOrientationOptions();
 
     if (failureCount != 0)
     {

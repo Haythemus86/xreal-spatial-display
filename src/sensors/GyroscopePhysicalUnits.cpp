@@ -196,14 +196,10 @@ GyroscopeScaleValidationResult validateGyroscopeScaleProfile(
             return validation;
         }
     }
-    for (const auto sign : {profile.axisMapping.sensorX.sign, profile.axisMapping.sensorY.sign,
-                            profile.axisMapping.sensorZ.sign})
+    if (!validateGyroscopeAxisMapping(profile.axisMapping))
     {
-        if (sign != -1 && sign != 1)
-        {
-            return {false, GyroscopeScaleValidationReason::invalidAxisMapping,
-                    "Axis mapping signs must be +1 or -1."};
-        }
+        return {false, GyroscopeScaleValidationReason::invalidAxisMapping,
+                "Axis mapping must be a permutation with signs +1 or -1."};
     }
     return {true, {}, {}};
 }
@@ -247,6 +243,54 @@ CorrectedGyroscopeRaw applyGyroscopeAxisMapping(
     assign(mapping.sensorY, sensorValues.y);
     assign(mapping.sensorZ, sensorValues.z);
     return result;
+}
+
+[[nodiscard]] std::string_view logicalAxisName(GyroscopeLogicalAxis axis) noexcept
+{
+    switch (axis)
+    {
+    case GyroscopeLogicalAxis::sensorX: return "x";
+    case GyroscopeLogicalAxis::sensorY: return "y";
+    case GyroscopeLogicalAxis::sensorZ: return "z";
+    }
+    return "invalid";
+}
+
+[[nodiscard]] std::optional<GyroscopeLogicalAxis> parseLogicalAxis(std::string_view value) noexcept
+{
+    if (value == "x")
+    {
+        return GyroscopeLogicalAxis::sensorX;
+    }
+    if (value == "y")
+    {
+        return GyroscopeLogicalAxis::sensorY;
+    }
+    if (value == "z")
+    {
+        return GyroscopeLogicalAxis::sensorZ;
+    }
+    return std::nullopt;
+}
+
+bool validateGyroscopeAxisMapping(const GyroscopeAxisMapping& mapping) noexcept
+{
+    const std::array entries{mapping.sensorX, mapping.sensorY, mapping.sensorZ};
+    std::array<bool, 3> targets{};
+    for (const auto& entry : entries)
+    {
+        if (entry.sign != -1 && entry.sign != 1)
+        {
+            return false;
+        }
+        const std::size_t index = static_cast<std::size_t>(entry.logicalAxis);
+        if (index >= targets.size() || targets[index])
+        {
+            return false;
+        }
+        targets[index] = true;
+    }
+    return true;
 }
 
 GyroscopeScaleComparisonReport compareGyroscopeScales(
@@ -380,11 +424,18 @@ std::string serializeGyroscopeScaleProfileJson(const GyroscopeScaleProfile& prof
            << profile.x.rawUnitsPerRadianPerSecond << ",\"y\":"
            << profile.y.rawUnitsPerRadianPerSecond << ",\"z\":"
            << profile.z.rawUnitsPerRadianPerSecond
-           << "}},\"axis_mapping\":{\"experimental\":"
+           << "}},\"axis_mapping\":{\"source\":\"" << profile.axisMapping.source
+           << "\",\"notes\":\"" << profile.axisMapping.notes << "\",\"experimental\":"
            << (profile.axisMapping.experimental ? "true" : "false")
            << ",\"verified\":" << (profile.axisMapping.verified ? "true" : "false")
+           << ",\"sensor_x_target\":\""
+           << logicalAxisName(profile.axisMapping.sensorX.logicalAxis) << '"'
            << ",\"sensor_x_sign\":" << profile.axisMapping.sensorX.sign
+           << ",\"sensor_y_target\":\""
+           << logicalAxisName(profile.axisMapping.sensorY.logicalAxis) << '"'
            << ",\"sensor_y_sign\":" << profile.axisMapping.sensorY.sign
+           << ",\"sensor_z_target\":\""
+           << logicalAxisName(profile.axisMapping.sensorZ.logicalAxis) << '"'
            << ",\"sensor_z_sign\":" << profile.axisMapping.sensorZ.sign
            << "},\"notes\":\"" << profile.notes << "\"}\n}\n";
     return output.str();
@@ -428,6 +479,49 @@ GyroscopeScaleProfileLoadResult loadGyroscopeScaleProfileJson(std::string_view j
         profile.x.valid = boolean(validityJson, "\"x\"").value_or(false);
         profile.y.valid = boolean(validityJson, "\"y\"").value_or(false);
         profile.z.valid = boolean(validityJson, "\"z\"").value_or(false);
+    }
+    const std::size_t mappingPosition = json.find("\"axis_mapping\"");
+    if (mappingPosition != std::string_view::npos)
+    {
+        const std::string_view mappingJson = json.substr(mappingPosition);
+        profile.axisMapping.source = stringValue(mappingJson, "\"source\"")
+            .value_or(profile.axisMapping.source);
+        profile.axisMapping.notes = stringValue(mappingJson, "\"notes\"")
+            .value_or(profile.axisMapping.notes);
+        profile.axisMapping.experimental = boolean(mappingJson, "\"experimental\"")
+            .value_or(profile.axisMapping.experimental);
+        profile.axisMapping.verified = boolean(mappingJson, "\"verified\"")
+            .value_or(profile.axisMapping.verified);
+        const auto loadMappingEntry = [&](std::string_view targetKey,
+                                          std::string_view signKey,
+                                          GyroscopeAxisMappingEntry& entry) -> bool {
+            const auto targetName = stringValue(mappingJson, targetKey);
+            if (targetName.has_value())
+            {
+                const auto target = parseLogicalAxis(*targetName);
+                if (!target.has_value())
+                {
+                    return false;
+                }
+                entry.logicalAxis = *target;
+            }
+            const auto sign = number(mappingJson, signKey);
+            if (sign.has_value())
+            {
+                if (*sign != -1.0 && *sign != 1.0)
+                {
+                    return false;
+                }
+                entry.sign = static_cast<int>(*sign);
+            }
+            return true;
+        };
+        if (!loadMappingEntry("\"sensor_x_target\"", "\"sensor_x_sign\"", profile.axisMapping.sensorX)
+            || !loadMappingEntry("\"sensor_y_target\"", "\"sensor_y_sign\"", profile.axisMapping.sensorY)
+            || !loadMappingEntry("\"sensor_z_target\"", "\"sensor_z_sign\"", profile.axisMapping.sensorZ))
+        {
+            return {std::nullopt, "Invalid gyroscope axis mapping target."};
+        }
     }
     const auto validation = validateGyroscopeScaleProfile(profile);
     if (!validation.valid)
