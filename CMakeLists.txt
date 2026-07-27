@@ -24,7 +24,9 @@ add_library(
     xreal-sensors
     src/sensors/AccelerometerCalibration.cpp
     src/sensors/GyroscopeBiasCalibration.cpp
+    src/sensors/GyroscopeOfflineAnalysis.cpp
     src/sensors/GyroscopeRecordingAnalysis.cpp
+    src/sensors/GyroscopeRecordingCsv.cpp
     src/sensors/GyroscopeScaleCalibration.cpp
     src/sensors/ImuCalibration.cpp
     src/sensors/XrealDevice.cpp
@@ -65,6 +67,11 @@ add_library(
     src/diagnostics/GyroScaleCalibrationOptions.cpp
 )
 
+add_library(
+    xreal-gyro-recording-analyzer-support
+    src/diagnostics/GyroRecordingAnalyzerOptions.cpp
+)
+
 target_include_directories(
     xreal-imu-diagnostic-support
     PUBLIC
@@ -85,6 +92,18 @@ target_include_directories(
 
 target_link_libraries(
     xreal-gyro-scale-calibration-support
+    PUBLIC
+        xreal-sensors
+)
+
+target_include_directories(
+    xreal-gyro-recording-analyzer-support
+    PUBLIC
+        src
+)
+
+target_link_libraries(
+    xreal-gyro-recording-analyzer-support
     PUBLIC
         xreal-sensors
 )
@@ -135,6 +154,11 @@ add_executable(
     src/diagnostics/GyroScaleCalibrationMain.cpp
 )
 
+add_executable(
+    xreal-gyro-recording-analyzer
+    src/diagnostics/GyroRecordingAnalyzerMain.cpp
+)
+
 target_link_libraries(
     xreal-sensor-diagnostic
     PRIVATE
@@ -169,7 +193,14 @@ target_link_libraries(
         xreal-sensors
 )
 
-foreach(target xreal-sensor-diagnostic xreal-interface-probe xreal-imu-diagnostic xreal-gyro-scale-calibration)
+target_link_libraries(
+    xreal-gyro-recording-analyzer
+    PRIVATE
+        xreal-gyro-recording-analyzer-support
+        xreal-sensors
+)
+
+foreach(target xreal-sensor-diagnostic xreal-interface-probe xreal-imu-diagnostic xreal-gyro-scale-calibration xreal-gyro-recording-analyzer)
     add_custom_command(
         TARGET ${target}
         POST_BUILD
@@ -184,12 +215,14 @@ set(xreal_project_targets
     xreal-interface-probe-support
     xreal-imu-diagnostic-support
     xreal-gyro-scale-calibration-support
+    xreal-gyro-recording-analyzer-support
     xreal-platform-windows
     xreal-sensor-diagnostic
     xreal-interface-probe
     xreal-imu-diagnostic
     xreal-calibration-analyzer
     xreal-gyro-scale-calibration
+    xreal-gyro-recording-analyzer
 )
 
 foreach(target IN LISTS xreal_project_targets)
@@ -400,5 +433,51 @@ if(BUILD_TESTING)
     add_test(
         NAME xreal-gyroscope-recording-analysis-tests
         COMMAND xreal-gyroscope-recording-analysis-tests
+    )
+
+    add_executable(
+        xreal-gyroscope-offline-analysis-tests
+        tests/GyroscopeOfflineAnalysisTests.cpp
+    )
+
+    target_link_libraries(
+        xreal-gyroscope-offline-analysis-tests
+        PRIVATE
+            xreal-sensors
+    )
+
+    target_compile_options(
+        xreal-gyroscope-offline-analysis-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+
+    add_test(
+        NAME xreal-gyroscope-offline-analysis-tests
+        COMMAND xreal-gyroscope-offline-analysis-tests
+    )
+
+    add_executable(
+        xreal-gyro-recording-analyzer-options-tests
+        tests/GyroRecordingAnalyzerOptionsTests.cpp
+    )
+
+    target_link_libraries(
+        xreal-gyro-recording-analyzer-options-tests
+        PRIVATE
+            xreal-gyro-recording-analyzer-support
+    )
+
+    target_compile_options(
+        xreal-gyro-recording-analyzer-options-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+
+    add_test(
+        NAME xreal-gyro-recording-analyzer-options-tests
+        COMMAND xreal-gyro-recording-analyzer-options-tests
     )
 endif()

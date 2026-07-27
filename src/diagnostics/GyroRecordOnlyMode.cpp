@@ -1,9 +1,10 @@
 #include "diagnostics/GyroRecordOnlyMode.hpp"
 
 #include "sensors/GyroscopeBiasCalibration.hpp"
-#include "sensors/GyroscopeRecordingAnalysis.hpp"
+#include "sensors/GyroscopeOfflineAnalysis.hpp"
 #include "sensors/XrealImuStream.hpp"
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <chrono>
@@ -20,6 +21,7 @@
 #include <string>
 #include <string_view>
 #include <thread>
+#include <utility>
 #include <vector>
 
 namespace xreal::diagnostics
@@ -104,8 +106,9 @@ void printBiasResult(const sensors::GyroscopeBiasCalibrationResult& result)
 void writeOutputs(
     const GyroScaleCalibrationOptions& options,
     const sensors::GyroscopeRecordingMetadata& metadata,
-    const sensors::GyroscopeRecordingAnalysisResult& analysis)
+    const sensors::GyroscopeOfflineAnalysisResult& offlineAnalysis)
 {
+    const auto& analysis = offlineAnalysis.backwardCompatible;
     std::ofstream csv(options.csvOutputPath, std::ios::out | std::ios::trunc);
     if (!csv)
     {
@@ -132,7 +135,7 @@ void writeOutputs(
     {
         throw std::runtime_error("Failed to open analysis output: " + options.analysisOutputPath);
     }
-    json << sensors::serializeGyroscopeRecordingAnalysisJson(metadata, analysis);
+    json << sensors::serializeGyroscopeOfflineAnalysisJson(metadata, offlineAnalysis);
     if (!json)
     {
         throw std::runtime_error("Failed while writing analysis output: " + options.analysisOutputPath);
@@ -142,8 +145,9 @@ void writeOutputs(
 void printSummary(
     const GyroScaleCalibrationOptions& options,
     const sensors::GyroscopeRecordingMetadata& metadata,
-    const sensors::GyroscopeRecordingAnalysisResult& analysis)
+    const sensors::GyroscopeOfflineAnalysisResult& offlineAnalysis)
 {
+    const auto& analysis = offlineAnalysis.backwardCompatible;
     std::cout << "\nRecord-only analysis summary\n"
               << "  Bias calibration: "
               << (metadata.biasCalibration.accepted ? "accepted" : "rejected") << '\n'
@@ -186,6 +190,14 @@ void printSummary(
     for (const auto& warning : analysis.warnings)
     {
         std::cout << "  Warning: " << warning << '\n';
+    }
+    for (const auto& warning : offlineAnalysis.warnings)
+    {
+        if (std::find(analysis.warnings.begin(), analysis.warnings.end(), warning)
+            == analysis.warnings.end())
+        {
+            std::cout << "  Refined analysis warning: " << warning << '\n';
+        }
     }
     std::cout << "  CSV: " << options.csvOutputPath << '\n'
               << "  Analysis JSON: " << options.analysisOutputPath << '\n';
@@ -302,31 +314,38 @@ int runGyroscopeRecordOnlyMode(
     std::signal(SIGINT, previousHandler);
 
     const auto statistics = stream.statistics();
-    auto analysis = sensors::analyzeGyroscopeRecording(
+    sensors::GyroscopeOfflineAnalysisConfig offlineConfiguration;
+    offlineConfiguration.base = options.recordingAnalysisConfiguration;
+    auto analysis = sensors::analyzeGyroscopeRecordingOffline(
         captured,
         *biasResult.biasRaw,
-        options.recordingAnalysisConfiguration);
+        offlineConfiguration);
+    auto addWarning = [&](std::string warning) {
+        analysis.backwardCompatible.warnings.push_back(warning);
+        analysis.warnings.push_back(std::move(warning));
+    };
     if (queueDrops.load() != 0U)
     {
-        analysis.warnings.emplace_back("The diagnostic queue dropped decoded samples during capture.");
+        addWarning("The diagnostic queue dropped decoded samples during capture.");
     }
     if (statistics.invalid != 0U)
     {
-        analysis.warnings.emplace_back("The IMU stream reported malformed packets during capture.");
+        addWarning("The IMU stream reported malformed packets during capture.");
     }
     if (interruptionRequested != 0)
     {
-        analysis.warnings.emplace_back("The user interrupted capture before the requested duration elapsed.");
+        addWarning("The user interrupted capture before the requested duration elapsed.");
     }
     const std::wstring streamError = stream.errorMessage();
     if (!streamError.empty())
     {
-        analysis.warnings.emplace_back("The HID acquisition stream ended with an I/O error.");
+        addWarning("The HID acquisition stream ended with an I/O error.");
     }
 
-    const double measuredSeconds = analysis.samples.empty()
+    const auto& backwardCompatible = analysis.backwardCompatible;
+    const double measuredSeconds = backwardCompatible.samples.empty()
         ? std::chrono::duration<double>(stop - start).count()
-        : std::chrono::duration<double>(analysis.x.captureDuration).count();
+        : std::chrono::duration<double>(backwardCompatible.x.captureDuration).count();
     const sensors::GyroscopeRecordingMetadata metadata{
         {sensors::XrealImuStream::vendorId,
          sensors::XrealImuStream::productId,
@@ -346,7 +365,7 @@ int runGyroscopeRecordOnlyMode(
         std::wcerr << L"IMU acquisition error: " << streamError << L'\n';
         return 1;
     }
-    if (!analysis.usable)
+    if (!backwardCompatible.usable || !analysis.bestSegmentIndex.has_value())
     {
         std::cerr << "Recording completed, but no usable motion segment was found.\n";
         return 1;
