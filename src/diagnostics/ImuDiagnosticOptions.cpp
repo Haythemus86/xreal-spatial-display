@@ -51,6 +51,17 @@ namespace
         || argument == "--orientation-max-delta-ms"
         || argument == "--orientation-profile-output"
         || argument == "--orientation-print-rate"
+        || argument == "--fusion-mode"
+        || argument == "--accelerometer-profile"
+        || argument == "--accelerometer-correction-time-constant"
+        || argument == "--accelerometer-max-correction-dps"
+        || argument == "--accelerometer-confidence-full-deviation-g"
+        || argument == "--accelerometer-confidence-zero-deviation-g"
+        || argument == "--accelerometer-confidence-smoothing-seconds"
+        || argument == "--fusion-startup"
+        || argument == "--fusion-output"
+        || argument == "--fusion-print-rate"
+        || argument == "--fusion-json-output"
         || argument == "--gyro-max-stddev"
         || argument == "--gyro-max-range"
         || argument == "--gyro-min-samples";
@@ -102,6 +113,23 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
             options.integrateGyroscopeOrientation = true;
             continue;
         }
+        if (argument == "--fuse-gyro-accelerometer")
+        {
+            options.fuseGyroscopeAccelerometer = true;
+            continue;
+        }
+        if (argument == "--print-accelerometer-physical")
+        {
+            options.printAccelerometerPhysical = true;
+            options.fusionOptionExplicit = true;
+            continue;
+        }
+        if (argument == "--print-fusion-diagnostics")
+        {
+            options.printFusionDiagnostics = true;
+            options.fusionOptionExplicit = true;
+            continue;
+        }
         if (!isValueOption(argument))
         {
             return {std::nullopt, "Unknown option: " + std::string(argument), false};
@@ -116,7 +144,9 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
             || argument == "--calibration-output"
             || argument == "--gyro-calibration-output"
             || argument == "--gyro-scale-profile"
-            || argument == "--orientation-profile-output")
+            || argument == "--orientation-profile-output"
+            || argument == "--accelerometer-profile"
+            || argument == "--fusion-json-output")
         {
             if (value.empty())
             {
@@ -142,9 +172,19 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
                     {
                         options.gyroscopeScaleProfilePath = value;
                     }
-                    else
+                    else if (argument == "--orientation-profile-output")
                     {
                         options.orientationProfileOutputPath = value;
+                    }
+                    else if (argument == "--accelerometer-profile")
+                    {
+                        options.accelerometerProfilePath = value;
+                        options.fusionOptionExplicit = true;
+                    }
+                    else
+                    {
+                        options.fusionJsonOutputPath = value;
+                        options.fusionOptionExplicit = true;
                     }
                 }
             }
@@ -183,6 +223,100 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
                         false};
             }
             options.orientationOutputExplicit = true;
+            continue;
+        }
+
+        if (argument == "--fusion-mode")
+        {
+            if (value == "gyro-only")
+            {
+                options.fusionMode = FusionMode::gyroOnly;
+            }
+            else if (value == "complementary")
+            {
+                options.fusionMode = FusionMode::complementary;
+            }
+            else
+            {
+                return {std::nullopt, "--fusion-mode requires gyro-only or complementary.", false};
+            }
+            options.fusionModeExplicit = true;
+            options.fusionOptionExplicit = true;
+            continue;
+        }
+
+        if (argument == "--fusion-startup")
+        {
+            if (value == "identity")
+            {
+                options.fusionStartup = FusionStartupMode::identity;
+            }
+            else if (value == "gravity")
+            {
+                options.fusionStartup = FusionStartupMode::gravity;
+            }
+            else
+            {
+                return {std::nullopt, "--fusion-startup requires identity or gravity.", false};
+            }
+            options.fusionOptionExplicit = true;
+            continue;
+        }
+
+        if (argument == "--fusion-output")
+        {
+            if (value == "quaternion")
+            {
+                options.fusionOutput = OrientationOutputMode::quaternion;
+            }
+            else if (value == "euler")
+            {
+                options.fusionOutput = OrientationOutputMode::euler;
+            }
+            else if (value == "both")
+            {
+                options.fusionOutput = OrientationOutputMode::both;
+            }
+            else
+            {
+                return {std::nullopt, "--fusion-output requires quaternion, euler or both.", false};
+            }
+            options.fusionOptionExplicit = true;
+            continue;
+        }
+
+        if (argument == "--accelerometer-correction-time-constant"
+            || argument == "--accelerometer-max-correction-dps"
+            || argument == "--accelerometer-confidence-full-deviation-g"
+            || argument == "--accelerometer-confidence-zero-deviation-g"
+            || argument == "--accelerometer-confidence-smoothing-seconds")
+        {
+            const auto parsed = parsePositiveDouble(value);
+            if (!parsed.has_value())
+            {
+                return {std::nullopt, std::string(argument) + " requires a finite positive value.", false};
+            }
+            if (argument == "--accelerometer-correction-time-constant")
+            {
+                options.accelerometerCorrectionTimeConstantSeconds = *parsed;
+            }
+            else if (argument == "--accelerometer-max-correction-dps")
+            {
+                options.accelerometerMaximumCorrectionDegreesPerSecond = *parsed;
+            }
+            else if (argument == "--accelerometer-confidence-full-deviation-g")
+            {
+                options.accelerometerFullConfidenceDeviationG = *parsed;
+            }
+            else if (argument == "--accelerometer-confidence-zero-deviation-g")
+            {
+                options.accelerometerZeroConfidenceDeviationG = *parsed;
+            }
+            else
+            {
+                options.accelerometerConfidenceSmoothingSeconds = *parsed;
+            }
+            options.fusionOptionExplicit = true;
             continue;
         }
 
@@ -298,6 +432,15 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
             options.orientationPrintRateHz = *parsed;
             options.orientationPrintRateExplicit = true;
         }
+        else if (argument == "--fusion-print-rate")
+        {
+            if (*parsed > 100U)
+            {
+                return {std::nullopt, "--fusion-print-rate must be between 1 and 100 Hz.", false};
+            }
+            options.fusionPrintRateHz = *parsed;
+            options.fusionOptionExplicit = true;
+        }
         else if (*parsed > 10U)
         {
             return {std::nullopt, "--print-rate must be between 1 and 10 Hz.", false};
@@ -368,7 +511,6 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
         return {std::nullopt, "--compare-q12-scale requires an explicit gyroscope scale.", false};
     }
     const bool hasOrientationOption = options.orientationOutputExplicit
-        || options.recenterAfterSeconds.has_value()
         || options.orientationMaximumDeltaExplicit
         || options.orientationProfileOutputPath.has_value()
         || options.orientationPrintRateExplicit;
@@ -391,6 +533,49 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
                 "Gyroscope orientation integration requires same-run bias calibration and --apply-gyro-bias.",
                 false};
     }
+    if (options.fusionOptionExplicit && !options.fuseGyroscopeAccelerometer)
+    {
+        return {std::nullopt, "Fusion-specific options require --fuse-gyro-accelerometer.", false};
+    }
+    if (options.integrateGyroscopeOrientation && options.fuseGyroscopeAccelerometer)
+    {
+        return {std::nullopt,
+                "Choose either --integrate-gyro-orientation or --fuse-gyro-accelerometer.",
+                false};
+    }
+    if (options.recenterAfterSeconds.has_value()
+        && !options.integrateGyroscopeOrientation && !options.fuseGyroscopeAccelerometer)
+    {
+        return {std::nullopt,
+                "--recenter-after-seconds requires an orientation or fusion mode.",
+                false};
+    }
+    if (options.fuseGyroscopeAccelerometer && !hasScale)
+    {
+        return {std::nullopt, "Fusion requires an explicit gyroscope scale.", false};
+    }
+    if (options.fuseGyroscopeAccelerometer
+        && (!options.applyGyroscopeBias || !options.gyroscopeCalibration.has_value()))
+    {
+        return {std::nullopt,
+                "Fusion requires same-run gyroscope bias calibration and --apply-gyro-bias.",
+                false};
+    }
+    if (options.fuseGyroscopeAccelerometer
+        && options.fusionMode == FusionMode::complementary
+        && !options.accelerometerProfilePath.has_value())
+    {
+        return {std::nullopt,
+                "Complementary fusion requires --accelerometer-profile; no fallback is used.",
+                false};
+    }
+    if (options.accelerometerFullConfidenceDeviationG
+        >= options.accelerometerZeroConfidenceDeviationG)
+    {
+        return {std::nullopt,
+                "Full-confidence acceleration deviation must be smaller than zero-confidence deviation.",
+                false};
+    }
 
     return {options, {}, false};
 }
@@ -410,6 +595,16 @@ std::string imuDiagnosticUsage()
            " [--orientation-output <quaternion|euler|both>]"
            " [--recenter-after-seconds <seconds>] [--orientation-max-delta-ms <value>]"
            " [--orientation-profile-output <file.json>] [--orientation-print-rate <hz>]"
+           " [--fuse-gyro-accelerometer] [--fusion-mode <gyro-only|complementary>]"
+           " [--accelerometer-profile <file.json>]"
+           " [--accelerometer-correction-time-constant <seconds>]"
+           " [--accelerometer-max-correction-dps <value>]"
+           " [--accelerometer-confidence-full-deviation-g <value>]"
+           " [--accelerometer-confidence-zero-deviation-g <value>]"
+           " [--accelerometer-confidence-smoothing-seconds <value>]"
+           " [--fusion-startup <identity|gravity>] [--print-accelerometer-physical]"
+           " [--print-fusion-diagnostics] [--fusion-output <quaternion|euler|both>]"
+           " [--fusion-print-rate <hz>] [--fusion-json-output <file.json>]"
            " [--verbose]\n";
 }
 

@@ -18,6 +18,18 @@ enum class OrientationOutputMode
     both,
 };
 
+enum class FusionMode
+{
+    gyroOnly,
+    complementary,
+};
+
+enum class FusionStartupMode
+{
+    identity,
+    gravity,
+};
+
 struct ImuDiagnosticOptions
 {
     std::chrono::seconds duration{10};
@@ -45,6 +57,22 @@ struct ImuDiagnosticOptions
     std::optional<std::string> orientationProfileOutputPath;
     unsigned int orientationPrintRateHz{10};
     bool orientationPrintRateExplicit{};
+    bool fuseGyroscopeAccelerometer{};
+    FusionMode fusionMode{FusionMode::complementary};
+    bool fusionModeExplicit{};
+    std::optional<std::string> accelerometerProfilePath;
+    double accelerometerCorrectionTimeConstantSeconds{2.0};
+    double accelerometerMaximumCorrectionDegreesPerSecond{10.0};
+    double accelerometerFullConfidenceDeviationG{0.05};
+    double accelerometerZeroConfidenceDeviationG{0.20};
+    double accelerometerConfidenceSmoothingSeconds{0.25};
+    FusionStartupMode fusionStartup{FusionStartupMode::identity};
+    bool printAccelerometerPhysical{};
+    bool printFusionDiagnostics{};
+    OrientationOutputMode fusionOutput{OrientationOutputMode::both};
+    unsigned int fusionPrintRateHz{10};
+    std::optional<std::string> fusionJsonOutputPath;
+    bool fusionOptionExplicit{};
     bool verbose{};
 };
 

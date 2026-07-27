@@ -23,6 +23,7 @@ add_subdirectory(third_party/hidapi)
 add_library(
     xreal-sensors
     src/sensors/AccelerometerCalibration.cpp
+    src/sensors/AccelerometerPhysicalUnits.cpp
     src/sensors/GyroscopeBiasCalibration.cpp
     src/sensors/GyroscopeOfflineAnalysis.cpp
     src/sensors/GyroscopeOrientation.cpp
@@ -31,6 +32,7 @@ add_library(
     src/sensors/GyroscopeRecordingCsv.cpp
     src/sensors/GyroscopeScaleCalibration.cpp
     src/sensors/ImuCalibration.cpp
+    src/sensors/OrientationFusion.cpp
     src/sensors/XrealDevice.cpp
     src/sensors/XrealHidConnection.cpp
     src/sensors/XrealImuPacketDecoder.cpp
@@ -539,5 +541,28 @@ if(BUILD_TESTING)
     add_test(
         NAME xreal-gyroscope-orientation-tests
         COMMAND xreal-gyroscope-orientation-tests
+    )
+
+    add_executable(
+        xreal-orientation-fusion-tests
+        tests/OrientationFusionTests.cpp
+    )
+
+    target_link_libraries(
+        xreal-orientation-fusion-tests
+        PRIVATE
+            xreal-sensors
+    )
+
+    target_compile_options(
+        xreal-orientation-fusion-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+
+    add_test(
+        NAME xreal-orientation-fusion-tests
+        COMMAND xreal-orientation-fusion-tests
     )
 endif()

@@ -202,6 +202,104 @@ void testOrientationOptions()
            "orientation remains disabled for existing diagnostics");
 }
 
+void testFusionOptions()
+{
+    constexpr std::array valid{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--apply-gyro-bias"),
+        std::string_view("--gyro-scale-raw-per-dps"), std::string_view("4090"),
+        std::string_view("--fuse-gyro-accelerometer"),
+        std::string_view("--fusion-mode"), std::string_view("complementary"),
+        std::string_view("--accelerometer-profile"), std::string_view("accel.json"),
+        std::string_view("--accelerometer-correction-time-constant"), std::string_view("2.5"),
+        std::string_view("--accelerometer-max-correction-dps"), std::string_view("8"),
+        std::string_view("--accelerometer-confidence-full-deviation-g"), std::string_view("0.04"),
+        std::string_view("--accelerometer-confidence-zero-deviation-g"), std::string_view("0.18"),
+        std::string_view("--accelerometer-confidence-smoothing-seconds"), std::string_view("0.3"),
+        std::string_view("--fusion-startup"), std::string_view("gravity"),
+        std::string_view("--print-accelerometer-physical"),
+        std::string_view("--print-fusion-diagnostics"),
+        std::string_view("--fusion-output"), std::string_view("both"),
+        std::string_view("--fusion-print-rate"), std::string_view("20"),
+        std::string_view("--fusion-json-output"), std::string_view("fusion.json"),
+    };
+    const auto result = parse(valid);
+    expect(result.options.has_value(), "complete complementary-fusion options are accepted");
+    expect(result.options->fuseGyroscopeAccelerometer
+               && result.options->fusionMode == xreal::diagnostics::FusionMode::complementary
+               && result.options->fusionStartup == xreal::diagnostics::FusionStartupMode::gravity
+               && result.options->accelerometerCorrectionTimeConstantSeconds == 2.5
+               && result.options->accelerometerMaximumCorrectionDegreesPerSecond == 8.0
+               && result.options->fusionPrintRateHz == 20U,
+           "fusion values are parsed exactly");
+
+    constexpr std::array invalidMode{
+        std::string_view("--fuse-gyro-accelerometer"),
+        std::string_view("--fusion-mode"), std::string_view("kalman")};
+    expect(!parse(invalidMode).options.has_value(), "unknown fusion mode is rejected");
+
+    constexpr std::array zeroTimeConstant{
+        std::string_view("--fuse-gyro-accelerometer"),
+        std::string_view("--accelerometer-correction-time-constant"), std::string_view("0")};
+    expect(!parse(zeroTimeConstant).options.has_value(),
+           "non-positive fusion correction time constant is rejected");
+
+    constexpr std::array negativeCorrectionRate{
+        std::string_view("--fuse-gyro-accelerometer"),
+        std::string_view("--accelerometer-max-correction-dps"), std::string_view("-1")};
+    expect(!parse(negativeCorrectionRate).options.has_value(),
+           "negative maximum correction rate is rejected");
+
+    constexpr std::array inconsistentThresholds{
+        std::string_view("--fuse-gyro-accelerometer"),
+        std::string_view("--accelerometer-confidence-full-deviation-g"), std::string_view("0.2"),
+        std::string_view("--accelerometer-confidence-zero-deviation-g"), std::string_view("0.1")};
+    expect(!parse(inconsistentThresholds).options.has_value(),
+           "inconsistent confidence thresholds are rejected");
+
+    constexpr std::array noScale{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--apply-gyro-bias"),
+        std::string_view("--fuse-gyro-accelerometer"),
+        std::string_view("--accelerometer-profile"), std::string_view("accel.json")};
+    expect(!parse(noScale).options.has_value(), "fusion without gyro scale is rejected");
+
+    constexpr std::array noBias{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--gyro-scale-raw-per-dps"), std::string_view("4090"),
+        std::string_view("--fuse-gyro-accelerometer"),
+        std::string_view("--accelerometer-profile"), std::string_view("accel.json")};
+    expect(!parse(noBias).options.has_value(), "fusion without applied bias is rejected");
+
+    constexpr std::array noAccelerometerProfile{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--apply-gyro-bias"),
+        std::string_view("--gyro-scale-raw-per-dps"), std::string_view("4090"),
+        std::string_view("--fuse-gyro-accelerometer")};
+    expect(!parse(noAccelerometerProfile).options.has_value(),
+           "complementary fusion without accelerometer profile is rejected");
+
+    constexpr std::array contradictory{
+        std::string_view("--integrate-gyro-orientation"),
+        std::string_view("--fuse-gyro-accelerometer")};
+    expect(!parse(contradictory).options.has_value(),
+           "simultaneous legacy and fusion modes are rejected without silent precedence");
+
+    constexpr std::array validGyroOnly{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--apply-gyro-bias"),
+        std::string_view("--gyro-scale-raw-per-dps"), std::string_view("4090"),
+        std::string_view("--fuse-gyro-accelerometer"),
+        std::string_view("--fusion-mode"), std::string_view("gyro-only")};
+    expect(parse(validGyroOnly).options.has_value(),
+           "fusion CLI gyro-only mode does not require an accelerometer profile");
+
+    constexpr std::array fusionOptionWithoutMode{
+        std::string_view("--fusion-print-rate"), std::string_view("10")};
+    expect(!parse(fusionOptionWithoutMode).options.has_value(),
+           "fusion-specific option without fusion mode is rejected");
+}
+
 } // namespace
 
 int main()
@@ -211,6 +309,7 @@ int main()
     testExistingAccelerometerOptionsRemainValid();
     testPhysicalUnitOptions();
     testOrientationOptions();
+    testFusionOptions();
 
     if (failureCount != 0)
     {

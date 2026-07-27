@@ -76,6 +76,7 @@ records the quaternion convention, mapping and scale provenance, final
 orientation, optional diagnostic Euler angles, and sample counters.
 
 This is gyro-only dead reckoning. Bias error accumulates, yaw drift is expected,
-and pitch and roll are not gravity-corrected. Accelerometer fusion, magnetic or
-visual heading correction, pose prediction, and rendering are not implemented
-in this milestone.
+and pitch and roll are not gravity-corrected. The separate optional
+[gyroscope/accelerometer fusion](orientation-fusion.md) layer can stabilize
+tilt; magnetic or visual heading correction, pose prediction, and rendering
+remain unimplemented.

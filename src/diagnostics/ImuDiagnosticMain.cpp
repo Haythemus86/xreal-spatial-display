@@ -3,6 +3,8 @@
 #include "sensors/GyroscopeBiasCalibration.hpp"
 #include "sensors/GyroscopePhysicalUnits.hpp"
 #include "sensors/GyroscopeOrientation.hpp"
+#include "sensors/AccelerometerPhysicalUnits.hpp"
+#include "sensors/OrientationFusion.hpp"
 #include "sensors/ImuCalibration.hpp"
 #include "sensors/XrealImuStream.hpp"
 
@@ -16,7 +18,9 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <mutex>
+#include <numbers>
 #include <optional>
 #include <span>
 #include <sstream>
@@ -244,6 +248,60 @@ void printOrientation(
               << " rejected=" << state.rejectedSampleCount << '\n';
 }
 
+void printFusion(
+    const xreal::sensors::OrientationFusionFilter& filter,
+    const xreal::sensors::OrientationFusionResult& result,
+    const xreal::sensors::AccelerometerPhysicalSample& acceleration,
+    xreal::diagnostics::OrientationOutputMode outputMode,
+    bool printPhysical,
+    bool printDiagnostics)
+{
+    const auto fused = filter.relativeOrientation();
+    std::cout << "fusion";
+    if (outputMode != xreal::diagnostics::OrientationOutputMode::euler)
+    {
+        std::cout << " fused_wxyz=[" << fused.w << ", " << fused.x << ", "
+                  << fused.y << ", " << fused.z << ']';
+    }
+    if (outputMode != xreal::diagnostics::OrientationOutputMode::quaternion)
+    {
+        const auto euler = xreal::sensors::quaternionToEulerDiagnostic(fused);
+        std::cout << " euler_zyx_degrees=[yaw=" << euler.yawDegrees
+                  << ", pitch=" << euler.pitchDegrees << ", roll=" << euler.rollDegrees << ']';
+    }
+    if (printPhysical)
+    {
+        std::cout << " accel_raw=[" << acceleration.raw.x << ", " << acceleration.raw.y
+                  << ", " << acceleration.raw.z << ']'
+                  << " accel_g=[" << acceleration.accelerationG.x << ", "
+                  << acceleration.accelerationG.y << ", " << acceleration.accelerationG.z << ']'
+                  << " accel_m_s2=[" << acceleration.accelerationMetersPerSecondSquared.x
+                  << ", " << acceleration.accelerationMetersPerSecondSquared.y << ", "
+                  << acceleration.accelerationMetersPerSecondSquared.z << ']'
+                  << " accel_norm_g=" << acceleration.normG;
+    }
+    if (printDiagnostics)
+    {
+        constexpr double radiansToDegrees = 180.0 / std::numbers::pi;
+        const auto& predicted = result.gyroscopePrediction;
+        std::cout << " gyro_prediction_wxyz=[" << predicted.w << ", " << predicted.x
+                  << ", " << predicted.y << ", " << predicted.z << ']'
+                  << " confidence=" << result.gravity.confidence.correctionConfidence
+                  << " correction_degrees="
+                  << result.appliedCorrectionAngleRadians * radiansToDegrees
+                  << " correction_status="
+                  << (result.correctionStatus == xreal::sensors::FusionCorrectionStatus::applied
+                          ? "applied" : result.correctionStatus
+                              == xreal::sensors::FusionCorrectionStatus::rejected ? "rejected" : "skipped")
+                  << " reason=" << xreal::sensors::fusionReasonText(result.reason);
+    }
+    const auto& state = filter.state();
+    std::cout << " gyro_applied=" << state.appliedGyroscopeSampleCount
+              << " accel_applied=" << state.appliedAccelerometerCorrectionCount
+              << " accel_skipped=" << state.skippedAccelerometerCorrectionCount
+              << " rejected=" << state.rejectedSampleCount << '\n';
+}
+
 } // namespace
 
 int main(int argc, char* argv[])
@@ -268,6 +326,17 @@ int main(int argc, char* argv[])
         return 2;
     }
     const xreal::diagnostics::ImuDiagnosticOptions& options = *optionResult.options;
+    const bool runComplementaryFusion = options.fuseGyroscopeAccelerometer
+        && options.fusionMode == xreal::diagnostics::FusionMode::complementary;
+    const bool runGyroscopeOnlyOrientation = options.integrateGyroscopeOrientation
+        || (options.fuseGyroscopeAccelerometer
+            && options.fusionMode == xreal::diagnostics::FusionMode::gyroOnly);
+    const auto selectedOrientationOutput = options.fuseGyroscopeAccelerometer
+        ? options.fusionOutput
+        : options.orientationOutput;
+    const unsigned int selectedOrientationPrintRate = options.fuseGyroscopeAccelerometer
+        ? options.fusionPrintRateHz
+        : options.orientationPrintRateHz;
 
     try
     {
@@ -296,7 +365,7 @@ int main(int argc, char* argv[])
             gyroscopeScale = xreal::sensors::makeExperimentalGyroscopeScaleProfile(
                 *options.gyroscopeScaleRawPerDegreePerSecond);
         }
-        if (options.integrateGyroscopeOrientation)
+        if (runGyroscopeOnlyOrientation || runComplementaryFusion)
         {
             const auto& profile = *gyroscopeScale;
             const bool allAxesUsable = profile.x.enabled && profile.x.valid
@@ -311,6 +380,34 @@ int main(int argc, char* argv[])
                           << '\n';
                 return 1;
             }
+        }
+
+        std::optional<xreal::sensors::AccelerometerCalibrationProfile> accelerometerProfile;
+        if (options.accelerometerProfilePath.has_value())
+        {
+            std::ifstream profileInput(*options.accelerometerProfilePath);
+            if (!profileInput)
+            {
+                std::cerr << "Failed to open accelerometer calibration profile: "
+                          << *options.accelerometerProfilePath << '\n';
+                return 1;
+            }
+            std::ostringstream profileJson;
+            profileJson << profileInput.rdbuf();
+            const auto loaded = xreal::sensors::loadAccelerometerCalibrationProfileJson(
+                profileJson.str(),
+                *options.accelerometerProfilePath);
+            if (!loaded.profile.has_value())
+            {
+                std::cerr << "Invalid accelerometer calibration profile: " << loaded.error << '\n';
+                return 1;
+            }
+            accelerometerProfile = *loaded.profile;
+        }
+        if (runComplementaryFusion && !accelerometerProfile.has_value())
+        {
+            std::cerr << "Complementary fusion requires an explicit accelerometer profile.\n";
+            return 1;
         }
 
         const xreal::sensors::XrealDevice deviceEnumerator;
@@ -357,7 +454,7 @@ int main(int argc, char* argv[])
         {
             std::cout << "  Gyroscope physical-unit conversion: disabled (no explicit scale).\n";
         }
-        if (options.integrateGyroscopeOrientation)
+        if (runGyroscopeOnlyOrientation)
         {
             std::cout << "\nWARNING: gyro-only orientation is experimental and will drift.\n"
                       << "  It uses calibrated angular velocity and device timestamps only.\n"
@@ -372,6 +469,26 @@ int main(int argc, char* argv[])
                 || !gyroscopeScale->axisMapping.verified)
             {
                 std::cout << "  WARNING: orientation axis mapping is experimental or unverified.\n";
+            }
+        }
+        if (runComplementaryFusion)
+        {
+            std::cout << "\nWARNING: gyro/accelerometer complementary fusion is experimental.\n"
+                      << "  Accelerometer profile source: " << accelerometerProfile->source << '\n'
+                      << "  Accelerometer mapping source: "
+                      << accelerometerProfile->axisMapping.source << '\n'
+                      << "  Correction time constant: "
+                      << options.accelerometerCorrectionTimeConstantSeconds << " seconds\n"
+                      << "  Maximum correction rate: "
+                      << options.accelerometerMaximumCorrectionDegreesPerSecond
+                      << " degrees/second\n"
+                      << "  Confidence deviations: full="
+                      << options.accelerometerFullConfidenceDeviationG << " g, zero="
+                      << options.accelerometerZeroConfidenceDeviationG << " g\n";
+            if (accelerometerProfile->experimental || !accelerometerProfile->verified)
+            {
+                std::cout << "  WARNING: accelerometer calibration or axis mapping is experimental"
+                             " or unverified.\n";
             }
         }
         if (options.calibrationName.has_value())
@@ -418,7 +535,7 @@ int main(int argc, char* argv[])
             writeCsvHeader(csv);
         }
 
-        SampleQueue<xreal::sensors::ImuSample, 8192> samples;
+        auto samples = std::make_unique<SampleQueue<xreal::sensors::ImuSample, 8192>>();
         std::atomic_uint64_t diagnosticQueueDrops{};
         std::optional<xreal::sensors::ImuCalibrationAccumulator> calibrationAccumulator;
         if (options.calibrationName.has_value())
@@ -432,7 +549,7 @@ int main(int argc, char* argv[])
         }
         std::optional<xreal::sensors::GyroscopeBias> acceptedGyroscopeBias;
         std::optional<xreal::sensors::GyroscopeOrientationIntegrator> orientationIntegrator;
-        if (options.integrateGyroscopeOrientation)
+        if (runGyroscopeOnlyOrientation)
         {
             xreal::sensors::OrientationIntegratorConfig configuration;
             configuration.maximumDeviceTimestampDelta = options.orientationMaximumDelta;
@@ -441,6 +558,32 @@ int main(int argc, char* argv[])
         }
         std::optional<std::chrono::steady_clock::time_point> orientationStartTime;
         bool orientationRecentered{};
+        std::optional<xreal::sensors::OrientationFusionFilter> fusionFilter;
+        if (runComplementaryFusion)
+        {
+            xreal::sensors::OrientationFusionConfig configuration;
+            configuration.maximumDeviceTimestampDelta = options.orientationMaximumDelta;
+            configuration.gyroscopeAxisMapping = gyroscopeScale->axisMapping;
+            configuration.correctionTimeConstant = std::chrono::duration<double>(
+                options.accelerometerCorrectionTimeConstantSeconds);
+            configuration.maximumCorrectionDegreesPerSecond =
+                options.accelerometerMaximumCorrectionDegreesPerSecond;
+            configuration.confidence.fullConfidenceDeviationG =
+                options.accelerometerFullConfidenceDeviationG;
+            configuration.confidence.zeroConfidenceDeviationG =
+                options.accelerometerZeroConfidenceDeviationG;
+            configuration.confidence.smoothingTimeConstant = std::chrono::duration<double>(
+                options.accelerometerConfidenceSmoothingSeconds);
+            configuration.startupMode = options.fusionStartup
+                    == xreal::diagnostics::FusionStartupMode::gravity
+                ? xreal::sensors::FusionStartupMode::gravity
+                : xreal::sensors::FusionStartupMode::identity;
+            fusionFilter.emplace(configuration);
+        }
+        std::optional<xreal::sensors::OrientationFusionResult> latestFusionResult;
+        std::optional<xreal::sensors::AccelerometerPhysicalSample> latestPhysicalAcceleration;
+        std::optional<std::chrono::steady_clock::time_point> fusionStartTime;
+        bool fusionRecentered{};
 
         const auto consumeGyroscopeCalibration = [&](const xreal::sensors::ImuSample& sample) {
             if (!gyroscopeCalibrator.has_value() || gyroscopeCalibrator->isComplete())
@@ -479,9 +622,42 @@ int main(int argc, char* argv[])
                 orientationStartTime = sample.hostReceiveTimestamp;
             }
         };
+        const auto consumeFusion = [&](const xreal::sensors::ImuSample& sample) {
+            if (!fusionFilter.has_value()
+                || !acceptedGyroscopeBias.has_value()
+                || !gyroscopeScale.has_value()
+                || !accelerometerProfile.has_value())
+            {
+                return;
+            }
+            const auto gyroscope = xreal::sensors::convertGyroscopeToPhysicalUnits(
+                sample.gyroscopeRaw,
+                *acceptedGyroscopeBias,
+                *gyroscopeScale);
+            if (!gyroscope.x.valid || !gyroscope.y.valid || !gyroscope.z.valid)
+            {
+                return;
+            }
+            latestPhysicalAcceleration = xreal::sensors::convertAccelerometerToPhysicalUnits(
+                sample.accelerometerRaw,
+                *accelerometerProfile);
+            const xreal::sensors::AngularVelocityRadians angularVelocity{
+                gyroscope.x.radiansPerSecond,
+                gyroscope.y.radiansPerSecond,
+                gyroscope.z.radiansPerSecond,
+            };
+            latestFusionResult = fusionFilter->update(
+                angularVelocity,
+                *latestPhysicalAcceleration,
+                sample.deviceTimestamp.nanoseconds);
+            if (!fusionStartTime.has_value())
+            {
+                fusionStartTime = sample.hostReceiveTimestamp;
+            }
+        };
         xreal::sensors::XrealImuStream stream(*device);
         if (!stream.start([&](std::span<const std::uint8_t, 64>, const xreal::sensors::ImuSample& sample) {
-                if (!samples.tryPush(sample))
+                if (!samples->tryPush(sample))
                 {
                     ++diagnosticQueueDrops;
                 }
@@ -495,7 +671,7 @@ int main(int argc, char* argv[])
         const auto deadline = start + options.duration;
         const auto printInterval = std::chrono::milliseconds(1000U / options.printRateHz);
         const auto orientationPrintInterval = std::chrono::milliseconds(
-            1000U / options.orientationPrintRateHz);
+            1000U / selectedOrientationPrintRate);
         constexpr std::chrono::milliseconds processingInterval{20};
         auto nextPrint = start + printInterval;
         auto nextOrientationPrint = start + orientationPrintInterval;
@@ -510,7 +686,7 @@ int main(int argc, char* argv[])
         while (std::chrono::steady_clock::now() < deadline && stream.isRunning())
         {
             xreal::sensors::ImuSample sample;
-            while (samples.tryPop(sample))
+            while (samples->tryPop(sample))
             {
                 if (csv)
                 {
@@ -522,6 +698,7 @@ int main(int argc, char* argv[])
                 }
                 consumeGyroscopeCalibration(sample);
                 consumeOrientation(sample);
+                consumeFusion(sample);
 
                 if (previousSample.has_value())
                 {
@@ -535,6 +712,21 @@ int main(int argc, char* argv[])
             }
 
             const auto now = std::chrono::steady_clock::now();
+            if (fusionFilter.has_value()
+                && fusionStartTime.has_value()
+                && options.recenterAfterSeconds.has_value()
+                && !fusionRecentered
+                && std::chrono::duration<double>(now - *fusionStartTime).count()
+                    >= *options.recenterAfterSeconds)
+            {
+                fusionRecentered = fusionFilter->recenter();
+                if (fusionRecentered)
+                {
+                    std::cout << "Fused orientation recentered after "
+                              << *options.recenterAfterSeconds << " seconds.\n";
+                }
+            }
+
             if (orientationIntegrator.has_value()
                 && orientationStartTime.has_value()
                 && options.recenterAfterSeconds.has_value()
@@ -568,7 +760,21 @@ int main(int argc, char* argv[])
                 && orientationStartTime.has_value()
                 && now >= nextOrientationPrint)
             {
-                printOrientation(*orientationIntegrator, options.orientationOutput);
+                printOrientation(*orientationIntegrator, selectedOrientationOutput);
+                nextOrientationPrint = now + orientationPrintInterval;
+            }
+            if (fusionFilter.has_value()
+                && latestFusionResult.has_value()
+                && latestPhysicalAcceleration.has_value()
+                && now >= nextOrientationPrint)
+            {
+                printFusion(
+                    *fusionFilter,
+                    *latestFusionResult,
+                    *latestPhysicalAcceleration,
+                    options.fusionOutput,
+                    options.printAccelerometerPhysical,
+                    options.printFusionDiagnostics);
                 nextOrientationPrint = now + orientationPrintInterval;
             }
             nextProcessing = now + processingInterval;
@@ -584,7 +790,7 @@ int main(int argc, char* argv[])
 
         stream.stop();
         xreal::sensors::ImuSample remainingSample;
-        while (samples.tryPop(remainingSample))
+        while (samples->tryPop(remainingSample))
         {
             if (csv)
             {
@@ -596,6 +802,7 @@ int main(int argc, char* argv[])
             }
             consumeGyroscopeCalibration(remainingSample);
             consumeOrientation(remainingSample);
+            consumeFusion(remainingSample);
         }
         if (csv)
         {
@@ -635,7 +842,43 @@ int main(int argc, char* argv[])
                       << xreal::sensors::orientationRejectionReasonText(
                              orientationState.lastRejectionReason)
                       << '\n';
-            printOrientation(*orientationIntegrator, options.orientationOutput);
+            printOrientation(*orientationIntegrator, selectedOrientationOutput);
+        }
+
+        if (fusionFilter.has_value())
+        {
+            const auto& fusionState = fusionFilter->state();
+            std::cout << "\nGyroscope/accelerometer fusion summary\n"
+                      << "  Gyroscope samples applied: "
+                      << fusionState.appliedGyroscopeSampleCount << '\n'
+                      << "  Accelerometer corrections applied: "
+                      << fusionState.appliedAccelerometerCorrectionCount << '\n'
+                      << "  Accelerometer corrections skipped: "
+                      << fusionState.skippedAccelerometerCorrectionCount << '\n'
+                      << "  Rejected samples: " << fusionState.rejectedSampleCount << '\n'
+                      << "  Integrated device duration: "
+                      << std::chrono::duration<double>(fusionState.integrationDuration).count()
+                      << " seconds\n"
+                      << "  Current acceleration norm: "
+                      << fusionState.currentAccelerationNormG << " g\n"
+                      << "  Current accelerometer confidence: "
+                      << fusionState.currentAccelerometerConfidence << '\n'
+                      << "  Accumulated correction angle: "
+                      << fusionState.accumulatedCorrectionAngleRadians
+                          * (180.0 / std::numbers::pi)
+                      << " degrees\n"
+                      << "  Last status: "
+                      << xreal::sensors::fusionReasonText(fusionState.lastReason) << '\n';
+            if (latestFusionResult.has_value() && latestPhysicalAcceleration.has_value())
+            {
+                printFusion(
+                    *fusionFilter,
+                    *latestFusionResult,
+                    *latestPhysicalAcceleration,
+                    options.fusionOutput,
+                    options.printAccelerometerPhysical,
+                    true);
+            }
         }
 
         bool calibrationRejected{};
@@ -782,18 +1025,23 @@ int main(int argc, char* argv[])
         }
 
         if (orientationIntegrator.has_value()
-            && options.orientationProfileOutputPath.has_value())
+            && (options.orientationProfileOutputPath.has_value()
+                || (options.fuseGyroscopeAccelerometer
+                    && options.fusionJsonOutputPath.has_value())))
         {
+            const auto& outputPath = options.fuseGyroscopeAccelerometer
+                ? *options.fusionJsonOutputPath
+                : *options.orientationProfileOutputPath;
             std::ofstream json(
-                *options.orientationProfileOutputPath,
+                outputPath,
                 std::ios::out | std::ios::trunc);
             if (!json)
             {
                 std::cerr << "Failed to open orientation JSON output file: "
-                          << *options.orientationProfileOutputPath << '\n';
+                          << outputPath << '\n';
                 return 1;
             }
-            const bool includeEuler = options.orientationOutput
+            const bool includeEuler = selectedOrientationOutput
                 != xreal::diagnostics::OrientationOutputMode::quaternion;
             json << xreal::sensors::serializeGyroscopeOrientationJson(
                 *orientationIntegrator,
@@ -802,10 +1050,35 @@ int main(int argc, char* argv[])
             if (!json)
             {
                 std::cerr << "Failed while writing orientation JSON output file: "
-                          << *options.orientationProfileOutputPath << '\n';
+                          << outputPath << '\n';
                 return 1;
             }
-            std::cout << "  Orientation JSON: " << *options.orientationProfileOutputPath << '\n';
+            std::cout << "  Orientation JSON: " << outputPath << '\n';
+        }
+
+        if (fusionFilter.has_value() && options.fusionJsonOutputPath.has_value())
+        {
+            std::ofstream json(*options.fusionJsonOutputPath, std::ios::out | std::ios::trunc);
+            if (!json)
+            {
+                std::cerr << "Failed to open fusion JSON output file: "
+                          << *options.fusionJsonOutputPath << '\n';
+                return 1;
+            }
+            const bool includeEuler = options.fusionOutput
+                != xreal::diagnostics::OrientationOutputMode::quaternion;
+            json << xreal::sensors::serializeOrientationFusionJson(
+                *fusionFilter,
+                *gyroscopeScale,
+                *accelerometerProfile,
+                includeEuler);
+            if (!json)
+            {
+                std::cerr << "Failed while writing fusion JSON output file: "
+                          << *options.fusionJsonOutputPath << '\n';
+                return 1;
+            }
+            std::cout << "  Fusion JSON: " << *options.fusionJsonOutputPath << '\n';
         }
 
         const std::wstring streamError = stream.errorMessage();
