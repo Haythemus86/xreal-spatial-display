@@ -32,8 +32,12 @@ add_library(
     src/sensors/GyroscopeRecordingCsv.cpp
     src/sensors/GyroscopeScaleCalibration.cpp
     src/sensors/ImuCalibration.cpp
+    src/sensors/LiveOrientationPrediction.cpp
     src/sensors/OrientationFusion.cpp
     src/sensors/OrientationComparison.cpp
+    src/sensors/OrientationPrediction.cpp
+    src/sensors/OrientationPredictionEvaluation.cpp
+    src/sensors/OrientationPredictionAnalysis.cpp
     src/sensors/XrealDevice.cpp
     src/sensors/XrealHidConnection.cpp
     src/sensors/XrealImuPacketDecoder.cpp
@@ -169,6 +173,11 @@ add_executable(
     src/diagnostics/GyroScaleProfileMain.cpp
 )
 
+add_executable(
+    xreal-orientation-analyzer
+    src/diagnostics/OrientationAnalyzerMain.cpp
+)
+
 target_link_libraries(
     xreal-sensor-diagnostic
     PRIVATE
@@ -216,6 +225,12 @@ target_link_libraries(
         xreal-sensors
 )
 
+target_link_libraries(
+    xreal-orientation-analyzer
+    PRIVATE
+        xreal-sensors
+)
+
 foreach(target xreal-sensor-diagnostic xreal-interface-probe xreal-imu-diagnostic xreal-gyro-scale-calibration xreal-gyro-recording-analyzer xreal-gyro-scale-profile)
     add_custom_command(
         TARGET ${target}
@@ -240,6 +255,7 @@ set(xreal_project_targets
     xreal-gyro-scale-calibration
     xreal-gyro-recording-analyzer
     xreal-gyro-scale-profile
+    xreal-orientation-analyzer
 )
 
 foreach(target IN LISTS xreal_project_targets)
@@ -588,5 +604,66 @@ if(BUILD_TESTING)
     add_test(
         NAME xreal-orientation-comparison-tests
         COMMAND xreal-orientation-comparison-tests
+    )
+
+    add_executable(
+        xreal-orientation-prediction-tests
+        tests/OrientationPredictionTests.cpp
+    )
+
+    target_link_libraries(
+        xreal-orientation-prediction-tests
+        PRIVATE
+            xreal-sensors
+    )
+
+    target_compile_options(
+        xreal-orientation-prediction-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+
+    add_test(
+        NAME xreal-orientation-prediction-tests
+        COMMAND xreal-orientation-prediction-tests
+    )
+
+    add_executable(
+        xreal-orientation-prediction-analysis-tests
+        tests/OrientationPredictionAnalysisTests.cpp
+    )
+
+    target_link_libraries(
+        xreal-orientation-prediction-analysis-tests
+        PRIVATE
+            xreal-sensors
+    )
+
+    target_compile_options(
+        xreal-orientation-prediction-analysis-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+
+    add_test(
+        NAME xreal-orientation-prediction-analysis-tests
+        COMMAND xreal-orientation-prediction-analysis-tests
+    )
+
+    add_test(
+        NAME xreal-orientation-analyzer-missing-file-test
+        COMMAND xreal-orientation-analyzer
+            --evaluate-orientation-prediction
+            --prediction-input-csv ${CMAKE_CURRENT_BINARY_DIR}/orientation-prediction-missing.csv
+            --prediction-horizons-ms 0,5,10
+            --prediction-mode constant-velocity
+            --prediction-evaluation-json ${CMAKE_CURRENT_BINARY_DIR}/unused-prediction.json
+            --prediction-evaluation-csv ${CMAKE_CURRENT_BINARY_DIR}/unused-prediction.csv
+    )
+    set_tests_properties(
+        xreal-orientation-analyzer-missing-file-test
+        PROPERTIES WILL_FAIL TRUE
     )
 endif()

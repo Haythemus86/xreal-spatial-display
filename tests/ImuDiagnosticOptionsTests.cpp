@@ -379,6 +379,121 @@ void testOrientationComparisonOptions()
            "comparison remains disabled by default");
 }
 
+void testOrientationPredictionOptions()
+{
+    using xreal::diagnostics::FusionMode;
+    using xreal::sensors::PredictionLimitBehavior;
+    using xreal::sensors::PredictionMode;
+    constexpr std::array disabled{std::string_view("--duration"), std::string_view("5")};
+    const auto defaults = parse(disabled);
+    expect(defaults.options.has_value() && !defaults.options->predictOrientation
+               && defaults.options->predictionMode == PredictionMode::constantVelocity,
+           "prediction and constant acceleration are disabled by default");
+
+    constexpr std::array valid{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--apply-gyro-bias"),
+        std::string_view("--gyro-scale-raw-per-dps"), std::string_view("4090"),
+        std::string_view("--accelerometer-profile"), std::string_view("accel.json"),
+        std::string_view("--fuse-gyro-accelerometer"),
+        std::string_view("--fusion-mode"), std::string_view("complementary"),
+        std::string_view("--predict-orientation"),
+        std::string_view("--prediction-mode"), std::string_view("constant-velocity"),
+        std::string_view("--prediction-horizon-ms"), std::string_view("10"),
+        std::string_view("--prediction-max-horizon-ms"), std::string_view("50"),
+        std::string_view("--prediction-angular-velocity-smoothing-seconds"), std::string_view("0.01"),
+        std::string_view("--prediction-max-angular-speed-dps"), std::string_view("1000"),
+        std::string_view("--prediction-max-angular-acceleration-dps2"), std::string_view("20000"),
+        std::string_view("--prediction-max-angle-degrees"), std::string_view("30"),
+        std::string_view("--prediction-limit-behavior"), std::string_view("reject"),
+        std::string_view("--prediction-evaluate-delayed"),
+        std::string_view("--prediction-evaluation-tolerance-ms"), std::string_view("2"),
+        std::string_view("--prediction-output"), std::string_view("both"),
+        std::string_view("--prediction-print-rate"), std::string_view("10"),
+        std::string_view("--prediction-json-output"), std::string_view("prediction.json"),
+        std::string_view("--prediction-csv-output"), std::string_view("prediction.csv")};
+    const auto parsed = parse(valid);
+    expect(parsed.options.has_value() && parsed.options->predictOrientation
+               && parsed.options->predictionMode == PredictionMode::constantVelocity
+               && parsed.options->predictionHorizonMilliseconds == 10.0
+               && parsed.options->predictionEvaluateDelayed,
+           "complete constant-velocity prediction options are accepted");
+
+    constexpr std::array acceleration{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--apply-gyro-bias"),
+        std::string_view("--gyro-scale-raw-per-dps"), std::string_view("4090"),
+        std::string_view("--accelerometer-profile"), std::string_view("accel.json"),
+        std::string_view("--fuse-gyro-accelerometer"),
+        std::string_view("--fusion-mode"), std::string_view("complementary"),
+        std::string_view("--predict-orientation"),
+        std::string_view("--prediction-mode"), std::string_view("constant-acceleration"),
+        std::string_view("--prediction-angular-acceleration-smoothing-seconds"), std::string_view("0.02")};
+    expect(parse(acceleration).options.has_value()
+               && parse(acceleration).options->predictionMode == PredictionMode::constantAcceleration,
+           "constant-acceleration prediction options are accepted explicitly");
+
+    constexpr std::array negativeHorizon{std::string_view("--predict-orientation"),
+        std::string_view("--prediction-horizon-ms"), std::string_view("-1")};
+    constexpr std::array excessiveHorizon{std::string_view("--predict-orientation"),
+        std::string_view("--prediction-horizon-ms"), std::string_view("60")};
+    constexpr std::array clampedHorizon{std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--apply-gyro-bias"), std::string_view("--gyro-scale-raw-per-dps"), std::string_view("4090"),
+        std::string_view("--accelerometer-profile"), std::string_view("a.json"),
+        std::string_view("--fuse-gyro-accelerometer"), std::string_view("--predict-orientation"),
+        std::string_view("--prediction-horizon-ms"), std::string_view("60"),
+        std::string_view("--prediction-limit-behavior"), std::string_view("clamp")};
+    expect(!parse(negativeHorizon).options.has_value(), "negative prediction horizon is rejected");
+    expect(!parse(excessiveHorizon).options.has_value(), "excessive prediction horizon rejects by default");
+    expect(parse(clampedHorizon).options.has_value()
+               && parse(clampedHorizon).options->predictionLimitBehavior == PredictionLimitBehavior::clamp,
+           "excessive prediction horizon is accepted only with explicit clamp policy");
+
+    const auto invalidValue = [](std::string_view option, std::string_view value) {
+        const std::array arguments{std::string_view("--predict-orientation"), option, value};
+        return !parse(arguments).options.has_value();
+    };
+    expect(invalidValue("--prediction-mode", "linear"), "invalid prediction mode is rejected");
+    expect(invalidValue("--prediction-limit-behavior", "ignore"), "invalid limit behavior is rejected");
+    expect(invalidValue("--prediction-angular-velocity-smoothing-seconds", "-1"),
+           "negative velocity smoothing is rejected");
+    expect(invalidValue("--prediction-angular-acceleration-smoothing-seconds", "nan"),
+           "non-finite acceleration smoothing is rejected");
+    expect(invalidValue("--prediction-max-angular-speed-dps", "0"),
+           "zero angular speed limit is rejected");
+    expect(invalidValue("--prediction-max-angular-acceleration-dps2", "-1"),
+           "negative acceleration limit is rejected");
+    expect(invalidValue("--prediction-max-angle-degrees", "0"),
+           "zero prediction angle limit is rejected");
+    expect(invalidValue("--prediction-evaluation-tolerance-ms", "0"),
+           "zero evaluation tolerance is rejected");
+
+    constexpr std::array noFusion{std::string_view("--predict-orientation")};
+    constexpr std::array gyroOnlyFusion{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--apply-gyro-bias"), std::string_view("--gyro-scale-raw-per-dps"),
+        std::string_view("4090"), std::string_view("--fuse-gyro-accelerometer"),
+        std::string_view("--fusion-mode"), std::string_view("gyro-only"),
+        std::string_view("--predict-orientation")};
+    expect(!parse(noFusion).options.has_value(), "prediction requires fusion");
+    expect(!parse(gyroOnlyFusion).options.has_value(), "prediction rejects gyro-only fusion");
+
+    constexpr std::array outputWithoutPrediction{
+        std::string_view("--prediction-json-output"), std::string_view("p.json")};
+    constexpr std::array delayedWithoutPrediction{std::string_view("--prediction-evaluate-delayed")};
+    expect(!parse(outputWithoutPrediction).options.has_value(), "prediction output requires prediction mode");
+    expect(!parse(delayedWithoutPrediction).options.has_value(), "delayed evaluation requires prediction");
+
+    constexpr std::array comparisonPrediction{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--apply-gyro-bias"), std::string_view("--gyro-scale-raw-per-dps"),
+        std::string_view("4090"), std::string_view("--accelerometer-profile"),
+        std::string_view("accel.json"), std::string_view("--compare-gyro-and-fusion"),
+        std::string_view("--predict-orientation")};
+    expect(parse(comparisonPrediction).options.has_value(),
+           "comparison mode supports prediction from its fused path");
+}
+
 } // namespace
 
 int main()
@@ -390,6 +505,7 @@ int main()
     testOrientationOptions();
     testFusionOptions();
     testOrientationComparisonOptions();
+    testOrientationPredictionOptions();
 
     if (failureCount != 0)
     {

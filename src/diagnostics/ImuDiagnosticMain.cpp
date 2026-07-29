@@ -6,6 +6,7 @@
 #include "sensors/AccelerometerPhysicalUnits.hpp"
 #include "sensors/OrientationFusion.hpp"
 #include "sensors/OrientationComparison.hpp"
+#include "sensors/LiveOrientationPrediction.hpp"
 #include "sensors/DeviceTimestampDelta.hpp"
 #include "sensors/ImuCalibration.hpp"
 #include "sensors/XrealImuStream.hpp"
@@ -363,6 +364,102 @@ void printComparison(
               << xreal::sensors::fusionReasonText(record.correctionReason) << '\n';
 }
 
+void printPrediction(
+    const xreal::sensors::OrientationPredictionRecord& record,
+    xreal::diagnostics::OrientationOutputMode outputMode)
+{
+    const auto& prediction = record.prediction;
+    std::cout << "prediction prediction_mode="
+              << xreal::sensors::predictionModeText(record.mode)
+              << " prediction_requested_horizon_ms=" << prediction.horizon.requested.count() * 1000.0
+              << " prediction_applied_horizon_ms=" << prediction.horizon.applied.count() * 1000.0
+              << " prediction_valid="
+              << (prediction.validity == xreal::sensors::PredictionValidity::valid ? "yes" : "no")
+              << " angular_velocity_raw_rad_s=["
+              << prediction.angularVelocity.raw.xRadiansPerSecond << ','
+              << prediction.angularVelocity.raw.yRadiansPerSecond << ','
+              << prediction.angularVelocity.raw.zRadiansPerSecond << ']'
+              << " angular_velocity_filtered_rad_s=["
+              << prediction.angularVelocity.filtered.xRadiansPerSecond << ','
+              << prediction.angularVelocity.filtered.yRadiansPerSecond << ','
+              << prediction.angularVelocity.filtered.zRadiansPerSecond << ']';
+    if (prediction.angularAcceleration.available)
+    {
+        std::cout << " angular_acceleration_raw_rad_s2=["
+                  << prediction.angularAcceleration.raw.xRadiansPerSecondSquared << ','
+                  << prediction.angularAcceleration.raw.yRadiansPerSecondSquared << ','
+                  << prediction.angularAcceleration.raw.zRadiansPerSecondSquared << ']'
+                  << " angular_acceleration_filtered_rad_s2=["
+                  << prediction.angularAcceleration.filtered.xRadiansPerSecondSquared << ','
+                  << prediction.angularAcceleration.filtered.yRadiansPerSecondSquared << ','
+                  << prediction.angularAcceleration.filtered.zRadiansPerSecondSquared << ']';
+    }
+    else
+    {
+        std::cout << " angular_acceleration_raw_rad_s2=unavailable"
+                     " angular_acceleration_filtered_rad_s2=unavailable";
+    }
+    std::cout << " angular_acceleration_used="
+              << (prediction.angularAcceleration.used ? "yes" : "no");
+    if (outputMode != xreal::diagnostics::OrientationOutputMode::euler)
+    {
+        printQuaternion("fused_measured_absolute_wxyz", record.measuredAbsolute.value);
+        printQuaternion("fused_predicted_absolute_wxyz", prediction.absolute.value);
+        printQuaternion("fused_measured_relative_wxyz", record.measuredRelative.value);
+        printQuaternion("fused_predicted_relative_wxyz", prediction.relative.value);
+    }
+    if (outputMode != xreal::diagnostics::OrientationOutputMode::quaternion)
+    {
+        printEuler("fused_measured_absolute_euler_zyx_degrees",
+            xreal::sensors::quaternionToEulerDiagnostic(record.measuredAbsolute.value));
+        printEuler("fused_predicted_absolute_euler_zyx_degrees",
+            xreal::sensors::quaternionToEulerDiagnostic(prediction.absolute.value));
+        printEuler("fused_measured_relative_euler_zyx_degrees",
+            xreal::sensors::quaternionToEulerDiagnostic(record.measuredRelative.value));
+        printEuler("fused_predicted_relative_euler_zyx_degrees",
+            xreal::sensors::quaternionToEulerDiagnostic(prediction.relative.value));
+    }
+    std::cout << " predicted_delta_angle_degrees="
+              << prediction.diagnostics.predictedAngleRadians * (180.0 / std::numbers::pi)
+              << " prediction_status="
+              << xreal::sensors::predictionValidityText(prediction.validity)
+              << " prediction_reason="
+              << xreal::sensors::predictionRejectionReasonText(prediction.rejectionReason)
+              << " prediction_fallback="
+              << xreal::sensors::predictionFallbackReasonText(
+                     prediction.diagnostics.fallbackReason)
+              << " prediction_clamped="
+              << (prediction.horizon.clamped || prediction.diagnostics.speedClamped
+                     || prediction.diagnostics.accelerationClamped
+                     || prediction.diagnostics.angleClamped ? "yes" : "no");
+    if (record.delayedEvaluation.has_value())
+    {
+        const auto& evaluation = *record.delayedEvaluation;
+        std::cout << " evaluated_target_device_timestamp_ns="
+                  << evaluation.targetDeviceTimestampNanoseconds
+                  << " target_timestamp_error_ns=" << evaluation.targetTimestampErrorNanoseconds
+                  << " unpredicted_error_degrees=" << evaluation.baselineTotalErrorDegrees
+                  << " predicted_error_degrees=" << evaluation.predictionTotalErrorDegrees
+                  << " unpredicted_tilt_error_degrees=" << evaluation.baselineTiltErrorDegrees
+                  << " predicted_tilt_error_degrees=" << evaluation.predictionTiltErrorDegrees
+                  << " prediction_improvement_degrees=" << evaluation.totalImprovementDegrees
+                  << " prediction_improvement_percent=";
+        if (evaluation.totalImprovementPercent.has_value())
+        {
+            std::cout << *evaluation.totalImprovementPercent;
+        }
+        else
+        {
+            std::cout << "unavailable";
+        }
+    }
+    else
+    {
+        std::cout << " delayed_evaluation=unavailable";
+    }
+    std::cout << '\n';
+}
+
 void printDrift(std::string_view label, const xreal::sensors::DriftMetrics& metrics)
 {
     std::cout << "  " << label << ": ";
@@ -611,6 +708,15 @@ int main(int argc, char* argv[])
                       << "  Maximum range: " << configuration.maximumRangeRaw
                       << " raw units per axis\n";
         }
+        if (options.predictOrientation)
+        {
+            std::cout << "\nWARNING: orientation pose prediction is experimental.\n"
+                      << "  It predicts fused orientation only; gyro scale and axis mappings remain unverified.\n"
+                      << "  Mode: " << xreal::sensors::predictionModeText(options.predictionMode)
+                      << "\n  Requested horizon: " << options.predictionHorizonMilliseconds
+                      << " ms\n  Delayed evaluation: "
+                      << (options.predictionEvaluateDelayed ? "enabled" : "disabled") << '\n';
+        }
 
         std::ofstream csv;
         if (options.csvPath.has_value())
@@ -635,6 +741,19 @@ int main(int argc, char* argv[])
                 return 1;
             }
             comparisonCsv << xreal::sensors::orientationComparisonCsvHeader() << '\n';
+        }
+        std::ofstream predictionCsv;
+        if (options.predictionCsvOutputPath.has_value())
+        {
+            predictionCsv.imbue(std::locale::classic());
+            predictionCsv.open(*options.predictionCsvOutputPath, std::ios::out | std::ios::trunc);
+            if (!predictionCsv)
+            {
+                std::cerr << "Failed to open prediction CSV output file: "
+                          << *options.predictionCsvOutputPath << '\n';
+                return 1;
+            }
+            predictionCsv << xreal::sensors::orientationPredictionCsvHeader() << '\n';
         }
 
         auto samples = std::make_unique<SampleQueue<xreal::sensors::ImuSample, 8192>>();
@@ -754,6 +873,46 @@ int main(int argc, char* argv[])
         xreal::sensors::PhaseTimeRange stationaryBeforeTime;
         xreal::sensors::PhaseTimeRange motionTime;
         xreal::sensors::PhaseTimeRange stationaryAfterTime;
+        std::optional<xreal::sensors::LiveOrientationPredictionSession> predictionSession;
+        if (options.predictOrientation)
+        {
+            xreal::sensors::LiveOrientationPredictionConfig configuration;
+            configuration.predictor.mode = options.predictionMode;
+            configuration.predictor.horizon = std::chrono::duration<double>(
+                options.predictionHorizonMilliseconds / 1000.0);
+            configuration.predictor.maximumHorizon = std::chrono::duration<double>(
+                options.predictionMaximumHorizonMilliseconds / 1000.0);
+            if (options.predictionAngularVelocitySmoothingSeconds.has_value())
+            {
+                configuration.predictor.angularVelocitySmoothingTimeConstant =
+                    std::chrono::duration<double>(
+                        *options.predictionAngularVelocitySmoothingSeconds);
+            }
+            if (options.predictionAngularAccelerationSmoothingSeconds.has_value())
+            {
+                configuration.predictor.angularAccelerationSmoothingTimeConstant =
+                    std::chrono::duration<double>(
+                        *options.predictionAngularAccelerationSmoothingSeconds);
+            }
+            constexpr double degreesToRadians = std::numbers::pi / 180.0;
+            configuration.predictor.maximumTimestampDelta = options.orientationMaximumDelta;
+            configuration.predictor.maximumAngularSpeedRadiansPerSecond =
+                options.predictionMaximumAngularSpeedDegreesPerSecond * degreesToRadians;
+            configuration.predictor.maximumAngularAccelerationRadiansPerSecondSquared =
+                options.predictionMaximumAngularAccelerationDegreesPerSecondSquared
+                    * degreesToRadians;
+            configuration.predictor.maximumPredictionAngleRadians =
+                options.predictionMaximumAngleDegrees * degreesToRadians;
+            configuration.predictor.limitBehavior = options.predictionLimitBehavior;
+            configuration.evaluator.tolerance = std::chrono::nanoseconds(
+                static_cast<std::int64_t>(
+                    options.predictionEvaluationToleranceMilliseconds * 1'000'000.0));
+            configuration.evaluateDelayed = options.predictionEvaluateDelayed;
+            predictionSession.emplace(configuration);
+        }
+        std::optional<xreal::sensors::OrientationPredictionRecord> latestPredictionRecord;
+        std::optional<std::uint64_t> predictionStartDeviceTimestamp;
+        std::uint64_t predictionRecenterGeneration{};
 
         const auto consumeGyroscopeCalibration = [&](const xreal::sensors::ImuSample& sample) {
             if (!gyroscopeCalibrator.has_value() || gyroscopeCalibrator->isComplete())
@@ -877,6 +1036,7 @@ int main(int argc, char* argv[])
                 comparisonRecentered = comparisonEngine->recenter();
                 if (comparisonRecentered)
                 {
+                    ++predictionRecenterGeneration;
                     std::cout << "Gyro and fused relative orientations recentered together at "
                               << std::chrono::duration<double>(elapsed).count()
                               << " seconds of device time. Absolute states were preserved.\n";
@@ -963,6 +1123,76 @@ int main(int argc, char* argv[])
                 updatePhaseTime(motionTime);
             }
         };
+        const auto consumePrediction = [&](const xreal::sensors::ImuSample& sample) {
+            if (!predictionSession.has_value() || !acceptedGyroscopeBias.has_value()
+                || !gyroscopeScale.has_value())
+            {
+                return;
+            }
+            const auto physical = xreal::sensors::convertGyroscopeToPhysicalUnits(
+                sample.gyroscopeRaw, *acceptedGyroscopeBias, *gyroscopeScale);
+            if (!physical.x.valid || !physical.y.valid || !physical.z.valid)
+            {
+                return;
+            }
+            const xreal::sensors::AngularVelocityRadians sensorAngularVelocity{
+                physical.x.radiansPerSecond,
+                physical.y.radiansPerSecond,
+                physical.z.radiansPerSecond,
+            };
+            const auto bodyAngularVelocity = xreal::sensors::mapAngularVelocity(
+                sensorAngularVelocity, gyroscopeScale->axisMapping);
+
+            xreal::sensors::LiveOrientationPredictionInput input;
+            input.bodyAngularVelocity = bodyAngularVelocity;
+            input.deviceTimestampNanoseconds = sample.deviceTimestamp.nanoseconds;
+            input.hostTimestampNanoseconds = static_cast<std::uint64_t>(
+                std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    sample.hostReceiveTimestamp.time_since_epoch()).count());
+            input.sequence = sample.packetSequence;
+            input.recenterGeneration = predictionRecenterGeneration;
+            if (comparisonEngine.has_value())
+            {
+                const auto snapshot = comparisonEngine->snapshot();
+                input.fusedOrientationValid = comparisonEngine->fusion().state().valid;
+                input.measuredAbsolute = {snapshot.fusedAbsolute.value};
+                input.measuredRelative = {snapshot.fusedRelative.value};
+                input.recenterReference = snapshot.fusedRecenterReference;
+                if (latestComparisonRecord.has_value())
+                {
+                    input.phase = xreal::sensors::experimentPhaseText(
+                        latestComparisonRecord->phase);
+                }
+            }
+            else if (fusionFilter.has_value())
+            {
+                const auto& state = fusionFilter->state();
+                input.fusedOrientationValid = state.valid && latestFusionResult.has_value();
+                input.measuredAbsolute = {fusionFilter->orientation()};
+                input.measuredRelative = {fusionFilter->relativeOrientation()};
+                input.recenterReference = {state.recenterReference, state.recenterActive};
+            }
+            if (!predictionStartDeviceTimestamp.has_value())
+            {
+                predictionStartDeviceTimestamp = sample.deviceTimestamp.nanoseconds;
+            }
+            const auto elapsed = xreal::sensors::forwardDeviceTimestampDelta(
+                sample.deviceTimestamp.nanoseconds, *predictionStartDeviceTimestamp);
+            input.elapsedSeconds = elapsed.has_value()
+                ? std::chrono::duration<double>(std::chrono::nanoseconds(*elapsed)).count()
+                : 0.0;
+            const auto record = predictionSession->consume(input);
+            if (!record.has_value())
+            {
+                return;
+            }
+            latestPredictionRecord = *record;
+            if (predictionCsv)
+            {
+                predictionCsv << xreal::sensors::serializeOrientationPredictionCsvRow(*record)
+                              << '\n';
+            }
+        };
         xreal::sensors::XrealImuStream stream(*device);
         if (runComparison)
         {
@@ -985,9 +1215,12 @@ int main(int argc, char* argv[])
         const auto printInterval = std::chrono::milliseconds(1000U / options.printRateHz);
         const auto orientationPrintInterval = std::chrono::milliseconds(
             1000U / selectedOrientationPrintRate);
+        const auto predictionPrintInterval = std::chrono::milliseconds(
+            1000U / options.predictionPrintRateHz);
         constexpr std::chrono::milliseconds processingInterval{20};
         auto nextPrint = start + printInterval;
         auto nextOrientationPrint = start + orientationPrintInterval;
+        auto nextPredictionPrint = start + predictionPrintInterval;
         auto nextProcessing = start + processingInterval;
         std::optional<xreal::sensors::ImuSample> latestSample;
         std::optional<xreal::sensors::ImuSample> previousSample;
@@ -1013,6 +1246,7 @@ int main(int argc, char* argv[])
                 consumeOrientation(sample);
                 consumeFusion(sample);
                 consumeComparison(sample);
+                consumePrediction(sample);
 
                 if (previousSample.has_value())
                 {
@@ -1036,6 +1270,7 @@ int main(int argc, char* argv[])
                 fusionRecentered = fusionFilter->recenter();
                 if (fusionRecentered)
                 {
+                    ++predictionRecenterGeneration;
                     std::cout << "Fused orientation recentered after "
                               << *options.recenterAfterSeconds << " seconds.\n";
                 }
@@ -1101,12 +1336,18 @@ int main(int argc, char* argv[])
                     options.printFusionDiagnostics);
                 nextOrientationPrint = now + orientationPrintInterval;
             }
+            if (latestPredictionRecord.has_value() && now >= nextPredictionPrint)
+            {
+                printPrediction(*latestPredictionRecord, options.predictionOutput);
+                nextPredictionPrint = now + predictionPrintInterval;
+            }
             nextProcessing = now + processingInterval;
 
             std::unique_lock lock(timerMutex);
             timer.wait_until(lock, std::min({
                 nextPrint,
                 nextOrientationPrint,
+                nextPredictionPrint,
                 nextProcessing,
                 deadline,
             }));
@@ -1128,6 +1369,7 @@ int main(int argc, char* argv[])
             consumeOrientation(remainingSample);
             consumeFusion(remainingSample);
             consumeComparison(remainingSample);
+            consumePrediction(remainingSample);
         }
         if (csv)
         {
@@ -1145,6 +1387,16 @@ int main(int argc, char* argv[])
             {
                 std::cerr << "Failed while writing comparison CSV output file: "
                           << *options.comparisonCsvOutputPath << '\n';
+                return 1;
+            }
+        }
+        if (predictionCsv)
+        {
+            predictionCsv.flush();
+            if (!predictionCsv)
+            {
+                std::cerr << "Failed while writing prediction CSV output file: "
+                          << *options.predictionCsvOutputPath << '\n';
                 return 1;
             }
         }
@@ -1213,6 +1465,74 @@ int main(int argc, char* argv[])
                     options.fusionOutput,
                     options.printAccelerometerPhysical,
                     true);
+            }
+        }
+
+        if (predictionSession.has_value())
+        {
+            predictionSession->finish();
+            const auto& predictorStatistics = predictionSession->predictor().state().statistics;
+            const auto& evaluationStatistics = predictionSession->evaluator().statistics();
+            const std::uint64_t clampedCount = predictorStatistics.clampedHorizons
+                + predictorStatistics.clampedSpeeds + predictorStatistics.clampedAccelerations
+                + predictorStatistics.clampedAngles;
+            std::cout << "\nOrientation pose prediction summary\n"
+                      << "  Requests: " << predictorStatistics.requested << '\n'
+                      << "  Applied: " << predictorStatistics.produced << '\n'
+                      << "  Rejected: " << predictorStatistics.rejected << '\n'
+                      << "  Clamping events: " << clampedCount << '\n'
+                      << "  Constant-velocity predictions: "
+                      << predictorStatistics.constantVelocityPredictions << '\n'
+                      << "  Constant-acceleration predictions: "
+                      << predictorStatistics.constantAccelerationPredictions << '\n'
+                      << "  Acceleration fallbacks: "
+                      << predictorStatistics.constantVelocityFallbacks << '\n'
+                      << "  Delayed evaluations matched: " << evaluationStatistics.matched << '\n'
+                      << "  Delayed evaluations unmatched: " << evaluationStatistics.unmatched << '\n'
+                      << "  Mean predicted total error: "
+                      << evaluationStatistics.meanPredictionTotalErrorDegrees << " degrees\n"
+                      << "  Mean unpredicted total error: "
+                      << evaluationStatistics.meanBaselineTotalErrorDegrees << " degrees\n"
+                      << "  Mean improvement: "
+                      << evaluationStatistics.meanTotalImprovementDegrees << " degrees\n"
+                      << "  Improved evaluation ratio: "
+                      << evaluationStatistics.improvedRatio << '\n';
+            if (latestPredictionRecord.has_value())
+            {
+                printPrediction(*latestPredictionRecord, options.predictionOutput);
+            }
+            if (options.predictionJsonOutputPath.has_value())
+            {
+                xreal::sensors::OrientationPredictionMetadata metadata;
+                metadata.gyroscopeScaleSource = gyroscopeScale->source;
+                metadata.accelerometerProfileSource = accelerometerProfile->source;
+                metadata.gyroscopeAxisMappingSource = gyroscopeScale->axisMapping.source;
+                metadata.accelerometerAxisMappingSource = accelerometerProfile->axisMapping.source;
+                metadata.recenterGeneration = predictionRecenterGeneration;
+                metadata.recenterActive = comparisonEngine.has_value()
+                    ? comparisonEngine->snapshot().fusedRecenterReference.active
+                    : fusionFilter->state().recenterActive;
+                std::ofstream json(
+                    *options.predictionJsonOutputPath, std::ios::out | std::ios::trunc);
+                if (!json)
+                {
+                    std::cerr << "Failed to open prediction JSON output file: "
+                              << *options.predictionJsonOutputPath << '\n';
+                    return 1;
+                }
+                json << xreal::sensors::serializeOrientationPredictionJson(
+                    predictionSession->predictor().configuration(),
+                    predictorStatistics,
+                    evaluationStatistics,
+                    latestPredictionRecord,
+                    metadata);
+                if (!json)
+                {
+                    std::cerr << "Failed while writing prediction JSON output file: "
+                              << *options.predictionJsonOutputPath << '\n';
+                    return 1;
+                }
+                std::cout << "  Prediction JSON: " << *options.predictionJsonOutputPath << '\n';
             }
         }
 

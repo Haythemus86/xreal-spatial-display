@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sensors/GyroscopeBiasCalibration.hpp"
+#include "sensors/OrientationPrediction.hpp"
 
 #include <chrono>
 #include <optional>
@@ -90,6 +91,24 @@ struct ImuDiagnosticOptions
     std::optional<std::string> comparisonJsonOutputPath;
     std::optional<std::string> comparisonCsvOutputPath;
     bool comparisonOptionExplicit{};
+    bool predictOrientation{};
+    sensors::PredictionMode predictionMode{sensors::PredictionMode::constantVelocity};
+    double predictionHorizonMilliseconds{10.0};
+    double predictionMaximumHorizonMilliseconds{50.0};
+    std::optional<double> predictionAngularVelocitySmoothingSeconds;
+    std::optional<double> predictionAngularAccelerationSmoothingSeconds;
+    double predictionMaximumAngularSpeedDegreesPerSecond{1000.0};
+    double predictionMaximumAngularAccelerationDegreesPerSecondSquared{20'000.0};
+    double predictionMaximumAngleDegrees{30.0};
+    sensors::PredictionLimitBehavior predictionLimitBehavior{
+        sensors::PredictionLimitBehavior::reject};
+    bool predictionEvaluateDelayed{};
+    double predictionEvaluationToleranceMilliseconds{2.0};
+    OrientationOutputMode predictionOutput{OrientationOutputMode::both};
+    unsigned int predictionPrintRateHz{10};
+    std::optional<std::string> predictionJsonOutputPath;
+    std::optional<std::string> predictionCsvOutputPath;
+    bool predictionOptionExplicit{};
     bool verbose{};
 };
 

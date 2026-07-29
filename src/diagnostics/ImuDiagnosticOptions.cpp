@@ -34,6 +34,18 @@ namespace
     return parsed;
 }
 
+[[nodiscard]] std::optional<double> parseNonNegativeDouble(std::string_view value)
+{
+    double parsed{};
+    const auto result = std::from_chars(value.data(), value.data() + value.size(), parsed);
+    if (result.ec != std::errc{} || result.ptr != value.data() + value.size()
+        || !std::isfinite(parsed) || parsed < 0.0)
+    {
+        return std::nullopt;
+    }
+    return parsed;
+}
+
 [[nodiscard]] bool isValueOption(std::string_view argument)
 {
     return argument == "--duration"
@@ -78,7 +90,21 @@ namespace
         || argument == "--comparison-csv-output"
         || argument == "--gyro-max-stddev"
         || argument == "--gyro-max-range"
-        || argument == "--gyro-min-samples";
+        || argument == "--gyro-min-samples"
+        || argument == "--prediction-mode"
+        || argument == "--prediction-horizon-ms"
+        || argument == "--prediction-max-horizon-ms"
+        || argument == "--prediction-angular-velocity-smoothing-seconds"
+        || argument == "--prediction-angular-acceleration-smoothing-seconds"
+        || argument == "--prediction-max-angular-speed-dps"
+        || argument == "--prediction-max-angular-acceleration-dps2"
+        || argument == "--prediction-max-angle-degrees"
+        || argument == "--prediction-limit-behavior"
+        || argument == "--prediction-evaluation-tolerance-ms"
+        || argument == "--prediction-output"
+        || argument == "--prediction-print-rate"
+        || argument == "--prediction-json-output"
+        || argument == "--prediction-csv-output";
 }
 
 } // namespace
@@ -143,6 +169,17 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
             options.comparisonOptionExplicit = true;
             continue;
         }
+        if (argument == "--predict-orientation")
+        {
+            options.predictOrientation = true;
+            continue;
+        }
+        if (argument == "--prediction-evaluate-delayed")
+        {
+            options.predictionEvaluateDelayed = true;
+            options.predictionOptionExplicit = true;
+            continue;
+        }
         if (argument == "--print-accelerometer-physical")
         {
             options.printAccelerometerPhysical = true;
@@ -173,7 +210,9 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
             || argument == "--accelerometer-profile"
             || argument == "--fusion-json-output"
             || argument == "--comparison-json-output"
-            || argument == "--comparison-csv-output")
+            || argument == "--comparison-csv-output"
+            || argument == "--prediction-json-output"
+            || argument == "--prediction-csv-output")
         {
             if (value.empty())
             {
@@ -217,6 +256,16 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
                     {
                         options.comparisonCsvOutputPath = value;
                         options.comparisonOptionExplicit = true;
+                    }
+                    else if (argument == "--prediction-json-output")
+                    {
+                        options.predictionJsonOutputPath = value;
+                        options.predictionOptionExplicit = true;
+                    }
+                    else if (argument == "--prediction-csv-output")
+                    {
+                        options.predictionCsvOutputPath = value;
+                        options.predictionOptionExplicit = true;
                     }
                     else
                     {
@@ -280,6 +329,83 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
                 return {std::nullopt, "--comparison-output requires quaternion, euler or both.", false};
             }
             options.comparisonOptionExplicit = true;
+            continue;
+        }
+
+        if (argument == "--prediction-mode")
+        {
+            if (value == "constant-velocity")
+            {
+                options.predictionMode = sensors::PredictionMode::constantVelocity;
+            }
+            else if (value == "constant-acceleration")
+            {
+                options.predictionMode = sensors::PredictionMode::constantAcceleration;
+            }
+            else
+            {
+                return {std::nullopt,
+                        "--prediction-mode requires constant-velocity or constant-acceleration.", false};
+            }
+            options.predictionOptionExplicit = true;
+            continue;
+        }
+        if (argument == "--prediction-limit-behavior")
+        {
+            if (value == "reject")
+            {
+                options.predictionLimitBehavior = sensors::PredictionLimitBehavior::reject;
+            }
+            else if (value == "clamp")
+            {
+                options.predictionLimitBehavior = sensors::PredictionLimitBehavior::clamp;
+            }
+            else
+            {
+                return {std::nullopt, "--prediction-limit-behavior requires reject or clamp.", false};
+            }
+            options.predictionOptionExplicit = true;
+            continue;
+        }
+        if (argument == "--prediction-output")
+        {
+            if (value == "quaternion") { options.predictionOutput = OrientationOutputMode::quaternion; }
+            else if (value == "euler") { options.predictionOutput = OrientationOutputMode::euler; }
+            else if (value == "both") { options.predictionOutput = OrientationOutputMode::both; }
+            else
+            {
+                return {std::nullopt, "--prediction-output requires quaternion, euler or both.", false};
+            }
+            options.predictionOptionExplicit = true;
+            continue;
+        }
+        if (argument == "--prediction-horizon-ms"
+            || argument == "--prediction-max-horizon-ms"
+            || argument == "--prediction-angular-velocity-smoothing-seconds"
+            || argument == "--prediction-angular-acceleration-smoothing-seconds"
+            || argument == "--prediction-max-angular-speed-dps"
+            || argument == "--prediction-max-angular-acceleration-dps2"
+            || argument == "--prediction-max-angle-degrees"
+            || argument == "--prediction-evaluation-tolerance-ms")
+        {
+            const bool permitsZero = argument == "--prediction-horizon-ms"
+                || argument == "--prediction-angular-velocity-smoothing-seconds"
+                || argument == "--prediction-angular-acceleration-smoothing-seconds";
+            const auto parsed = permitsZero ? parseNonNegativeDouble(value) : parsePositiveDouble(value);
+            if (!parsed.has_value())
+            {
+                return {std::nullopt, std::string(argument) + " requires a finite "
+                        + (permitsZero ? "non-negative" : "positive") + " value.", false};
+            }
+            if (argument == "--prediction-horizon-ms") { options.predictionHorizonMilliseconds = *parsed; }
+            else if (argument == "--prediction-max-horizon-ms") { options.predictionMaximumHorizonMilliseconds = *parsed; }
+            else if (argument == "--prediction-angular-velocity-smoothing-seconds") { options.predictionAngularVelocitySmoothingSeconds = *parsed; }
+            else if (argument == "--prediction-angular-acceleration-smoothing-seconds") { options.predictionAngularAccelerationSmoothingSeconds = *parsed; }
+            else if (argument == "--prediction-max-angular-speed-dps") { options.predictionMaximumAngularSpeedDegreesPerSecond = *parsed; }
+            else if (argument == "--prediction-max-angular-acceleration-dps2") { options.predictionMaximumAngularAccelerationDegreesPerSecondSquared = *parsed; }
+            else if (argument == "--prediction-max-angle-degrees") { options.predictionMaximumAngleDegrees = *parsed; }
+            else { options.predictionEvaluationToleranceMilliseconds = *parsed; }
+            options.predictionOptionExplicit = true;
             continue;
         }
 
@@ -592,6 +718,15 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
             options.comparisonPrintRateHz = *parsed;
             options.comparisonOptionExplicit = true;
         }
+        else if (argument == "--prediction-print-rate")
+        {
+            if (*parsed > 100U)
+            {
+                return {std::nullopt, "--prediction-print-rate must be between 1 and 100 Hz.", false};
+            }
+            options.predictionPrintRateHz = *parsed;
+            options.predictionOptionExplicit = true;
+        }
         else if (*parsed > 10U)
         {
             return {std::nullopt, "--print-rate must be between 1 and 10 Hz.", false};
@@ -772,6 +907,27 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
                 "Full-confidence acceleration deviation must be smaller than zero-confidence deviation.",
                 false};
     }
+    if (options.predictionOptionExplicit && !options.predictOrientation)
+    {
+        return {std::nullopt, "Prediction-specific options require --predict-orientation.", false};
+    }
+    if (options.predictOrientation
+        && !options.fuseGyroscopeAccelerometer && !options.compareGyroscopeAndFusion)
+    {
+        return {std::nullopt,
+                "--predict-orientation requires complementary fusion or comparison mode.", false};
+    }
+    if (options.predictOrientation && options.fuseGyroscopeAccelerometer
+        && options.fusionMode != FusionMode::complementary)
+    {
+        return {std::nullopt, "Orientation prediction requires complementary fusion.", false};
+    }
+    if (options.predictionHorizonMilliseconds > options.predictionMaximumHorizonMilliseconds
+        && options.predictionLimitBehavior == sensors::PredictionLimitBehavior::reject)
+    {
+        return {std::nullopt,
+                "Prediction horizon exceeds the maximum; select clamp explicitly to bound it.", false};
+    }
 
     return {options, {}, false};
 }
@@ -814,6 +970,18 @@ std::string imuDiagnosticUsage()
            " [--comparison-output <quaternion|euler|both>]"
            " [--comparison-print-rate <hz>] [--comparison-json-output <file.json>]"
            " [--comparison-csv-output <file.csv>]"
+           " [--predict-orientation]"
+           " [--prediction-mode <constant-velocity|constant-acceleration>]"
+           " [--prediction-horizon-ms <value>] [--prediction-max-horizon-ms <value>]"
+           " [--prediction-angular-velocity-smoothing-seconds <value>]"
+           " [--prediction-angular-acceleration-smoothing-seconds <value>]"
+           " [--prediction-max-angular-speed-dps <value>]"
+           " [--prediction-max-angular-acceleration-dps2 <value>]"
+           " [--prediction-max-angle-degrees <value>]"
+           " [--prediction-limit-behavior <reject|clamp>] [--prediction-evaluate-delayed]"
+           " [--prediction-evaluation-tolerance-ms <value>]"
+           " [--prediction-output <quaternion|euler|both>] [--prediction-print-rate <hz>]"
+           " [--prediction-json-output <file.json>] [--prediction-csv-output <file.csv>]"
            " [--verbose]\n";
 }
 
