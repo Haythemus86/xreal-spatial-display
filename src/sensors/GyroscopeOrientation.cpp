@@ -128,6 +128,7 @@ void GyroscopeOrientationIntegrator::reset() noexcept
     state_.orientation = Quaternion::identity();
     state_.valid = true;
     recenterReference_ = Quaternion::identity();
+    recenterActive_ = false;
 }
 
 void GyroscopeOrientationIntegrator::clearTimestamp() noexcept
@@ -158,12 +159,14 @@ bool GyroscopeOrientationIntegrator::recenter() noexcept
         return false;
     }
     recenterReference_ = *normalized;
+    recenterActive_ = true;
     return true;
 }
 
 void GyroscopeOrientationIntegrator::clearRecenter() noexcept
 {
     recenterReference_ = Quaternion::identity();
+    recenterActive_ = false;
 }
 
 Quaternion GyroscopeOrientationIntegrator::orientation() const noexcept
@@ -180,6 +183,16 @@ Quaternion GyroscopeOrientationIntegrator::relativeOrientation() const noexcept
     }
     const auto relative = (*inverse * state_.orientation).normalized();
     return relative.value_or(state_.orientation);
+}
+
+Quaternion GyroscopeOrientationIntegrator::recenterReference() const noexcept
+{
+    return recenterReference_;
+}
+
+bool GyroscopeOrientationIntegrator::recenterActive() const noexcept
+{
+    return recenterActive_;
 }
 
 const OrientationState& GyroscopeOrientationIntegrator::state() const noexcept

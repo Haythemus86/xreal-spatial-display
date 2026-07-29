@@ -110,6 +110,8 @@ public:
     void clearRecenter() noexcept;
     [[nodiscard]] Quaternion orientation() const noexcept;
     [[nodiscard]] Quaternion relativeOrientation() const noexcept;
+    [[nodiscard]] Quaternion recenterReference() const noexcept;
+    [[nodiscard]] bool recenterActive() const noexcept;
     [[nodiscard]] const OrientationState& state() const noexcept;
     [[nodiscard]] const OrientationIntegratorConfig& configuration() const noexcept;
 
@@ -122,6 +124,7 @@ private:
     OrientationIntegratorConfig configuration_;
     OrientationState state_;
     Quaternion recenterReference_;
+    bool recenterActive_{};
 };
 
 [[nodiscard]] AngularVelocityRadians mapAngularVelocity(

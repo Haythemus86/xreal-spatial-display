@@ -4,6 +4,7 @@
 #include <charconv>
 #include <cmath>
 #include <limits>
+#include <vector>
 
 namespace xreal::diagnostics
 {
@@ -62,6 +63,19 @@ namespace
         || argument == "--fusion-output"
         || argument == "--fusion-print-rate"
         || argument == "--fusion-json-output"
+        || argument == "--experiment-stationary-before-seconds"
+        || argument == "--experiment-motion-seconds"
+        || argument == "--experiment-stationary-after-seconds"
+        || argument == "--experiment-recenter-seconds"
+        || argument == "--stationary-gyro-threshold-dps"
+        || argument == "--stationary-accel-deviation-g"
+        || argument == "--stationary-min-duration-seconds"
+        || argument == "--convergence-thresholds-degrees"
+        || argument == "--convergence-sustain-seconds"
+        || argument == "--comparison-output"
+        || argument == "--comparison-print-rate"
+        || argument == "--comparison-json-output"
+        || argument == "--comparison-csv-output"
         || argument == "--gyro-max-stddev"
         || argument == "--gyro-max-range"
         || argument == "--gyro-min-samples";
@@ -118,6 +132,17 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
             options.fuseGyroscopeAccelerometer = true;
             continue;
         }
+        if (argument == "--compare-gyro-and-fusion")
+        {
+            options.compareGyroscopeAndFusion = true;
+            continue;
+        }
+        if (argument == "--orientation-comparison-experiment")
+        {
+            options.orientationComparisonExperiment = true;
+            options.comparisonOptionExplicit = true;
+            continue;
+        }
         if (argument == "--print-accelerometer-physical")
         {
             options.printAccelerometerPhysical = true;
@@ -146,7 +171,9 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
             || argument == "--gyro-scale-profile"
             || argument == "--orientation-profile-output"
             || argument == "--accelerometer-profile"
-            || argument == "--fusion-json-output")
+            || argument == "--fusion-json-output"
+            || argument == "--comparison-json-output"
+            || argument == "--comparison-csv-output")
         {
             if (value.empty())
             {
@@ -181,6 +208,16 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
                         options.accelerometerProfilePath = value;
                         options.fusionOptionExplicit = true;
                     }
+                    else if (argument == "--comparison-json-output")
+                    {
+                        options.comparisonJsonOutputPath = value;
+                        options.comparisonOptionExplicit = true;
+                    }
+                    else if (argument == "--comparison-csv-output")
+                    {
+                        options.comparisonCsvOutputPath = value;
+                        options.comparisonOptionExplicit = true;
+                    }
                     else
                     {
                         options.fusionJsonOutputPath = value;
@@ -188,6 +225,111 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
                     }
                 }
             }
+            continue;
+        }
+
+        if (argument == "--convergence-thresholds-degrees")
+        {
+            std::vector<double> thresholds;
+            std::size_t begin{};
+            while (begin < value.size())
+            {
+                const std::size_t comma = value.find(',', begin);
+                const std::string_view token = value.substr(
+                    begin, comma == std::string_view::npos ? value.size() - begin : comma - begin);
+                const auto parsed = parsePositiveDouble(token);
+                if (!parsed.has_value()
+                    || (!thresholds.empty() && *parsed >= thresholds.back()))
+                {
+                    return {std::nullopt,
+                            "--convergence-thresholds-degrees requires a strictly decreasing CSV of positive values.",
+                            false};
+                }
+                thresholds.push_back(*parsed);
+                if (comma == std::string_view::npos)
+                {
+                    break;
+                }
+                begin = comma + 1U;
+            }
+            if (thresholds.empty())
+            {
+                return {std::nullopt, "--convergence-thresholds-degrees cannot be empty.", false};
+            }
+            options.convergenceThresholdsDegrees = std::move(thresholds);
+            options.comparisonOptionExplicit = true;
+            continue;
+        }
+
+        if (argument == "--comparison-output")
+        {
+            if (value == "quaternion")
+            {
+                options.comparisonOutput = OrientationOutputMode::quaternion;
+            }
+            else if (value == "euler")
+            {
+                options.comparisonOutput = OrientationOutputMode::euler;
+            }
+            else if (value == "both")
+            {
+                options.comparisonOutput = OrientationOutputMode::both;
+            }
+            else
+            {
+                return {std::nullopt, "--comparison-output requires quaternion, euler or both.", false};
+            }
+            options.comparisonOptionExplicit = true;
+            continue;
+        }
+
+        if (argument == "--experiment-stationary-before-seconds"
+            || argument == "--experiment-motion-seconds"
+            || argument == "--experiment-stationary-after-seconds"
+            || argument == "--experiment-recenter-seconds"
+            || argument == "--stationary-gyro-threshold-dps"
+            || argument == "--stationary-accel-deviation-g"
+            || argument == "--stationary-min-duration-seconds"
+            || argument == "--convergence-sustain-seconds")
+        {
+            const auto parsed = parsePositiveDouble(value);
+            if (!parsed.has_value())
+            {
+                return {std::nullopt, std::string(argument) + " requires a finite positive value.", false};
+            }
+            if (argument == "--experiment-stationary-before-seconds")
+            {
+                options.experimentStationaryBeforeSeconds = *parsed;
+            }
+            else if (argument == "--experiment-motion-seconds")
+            {
+                options.experimentMotionSeconds = *parsed;
+            }
+            else if (argument == "--experiment-stationary-after-seconds")
+            {
+                options.experimentStationaryAfterSeconds = *parsed;
+            }
+            else if (argument == "--experiment-recenter-seconds")
+            {
+                options.experimentRecenterSeconds = *parsed;
+            }
+            else if (argument == "--stationary-gyro-threshold-dps")
+            {
+                options.stationaryGyroscopeThresholdDegreesPerSecond = *parsed;
+            }
+            else if (argument == "--stationary-accel-deviation-g")
+            {
+                options.stationaryAccelerometerDeviationG = *parsed;
+            }
+            else if (argument == "--stationary-min-duration-seconds")
+            {
+                options.stationaryMinimumDurationSeconds = *parsed;
+            }
+            else
+            {
+                options.convergenceSustainSeconds = *parsed;
+            }
+            options.comparisonOptionExplicit = true;
             continue;
         }
 
@@ -441,6 +583,15 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
             options.fusionPrintRateHz = *parsed;
             options.fusionOptionExplicit = true;
         }
+        else if (argument == "--comparison-print-rate")
+        {
+            if (*parsed > 100U)
+            {
+                return {std::nullopt, "--comparison-print-rate must be between 1 and 100 Hz.", false};
+            }
+            options.comparisonPrintRateHz = *parsed;
+            options.comparisonOptionExplicit = true;
+        }
         else if (*parsed > 10U)
         {
             return {std::nullopt, "--print-rate must be between 1 and 10 Hz.", false};
@@ -533,7 +684,12 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
                 "Gyroscope orientation integration requires same-run bias calibration and --apply-gyro-bias.",
                 false};
     }
-    if (options.fusionOptionExplicit && !options.fuseGyroscopeAccelerometer)
+    if (options.comparisonOptionExplicit && !options.compareGyroscopeAndFusion)
+    {
+        return {std::nullopt, "Comparison-specific options require --compare-gyro-and-fusion.", false};
+    }
+    if (options.fusionOptionExplicit
+        && !options.fuseGyroscopeAccelerometer && !options.compareGyroscopeAndFusion)
     {
         return {std::nullopt, "Fusion-specific options require --fuse-gyro-accelerometer.", false};
     }
@@ -543,8 +699,22 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
                 "Choose either --integrate-gyro-orientation or --fuse-gyro-accelerometer.",
                 false};
     }
+    if (options.compareGyroscopeAndFusion
+        && (options.integrateGyroscopeOrientation || options.fuseGyroscopeAccelerometer))
+    {
+        return {std::nullopt,
+                "--compare-gyro-and-fusion cannot be combined with either independent orientation mode.",
+                false};
+    }
+    if (options.compareGyroscopeAndFusion && options.recenterAfterSeconds.has_value())
+    {
+        return {std::nullopt,
+                "Comparison mode uses --experiment-recenter-seconds, not --recenter-after-seconds.",
+                false};
+    }
     if (options.recenterAfterSeconds.has_value()
-        && !options.integrateGyroscopeOrientation && !options.fuseGyroscopeAccelerometer)
+        && !options.integrateGyroscopeOrientation && !options.fuseGyroscopeAccelerometer
+        && !options.compareGyroscopeAndFusion)
     {
         return {std::nullopt,
                 "--recenter-after-seconds requires an orientation or fusion mode.",
@@ -559,6 +729,32 @@ ImuDiagnosticOptionResult parseImuDiagnosticOptions(
     {
         return {std::nullopt,
                 "Fusion requires same-run gyroscope bias calibration and --apply-gyro-bias.",
+                false};
+    }
+    if (options.compareGyroscopeAndFusion && !hasScale)
+    {
+        return {std::nullopt, "Comparison mode requires an explicit gyroscope scale.", false};
+    }
+    if (options.compareGyroscopeAndFusion
+        && (!options.applyGyroscopeBias || !options.gyroscopeCalibration.has_value()))
+    {
+        return {std::nullopt,
+                "Comparison mode requires same-run gyroscope bias calibration and --apply-gyro-bias.",
+                false};
+    }
+    if (options.compareGyroscopeAndFusion && !options.accelerometerProfilePath.has_value())
+    {
+        return {std::nullopt,
+                "Comparison mode requires --accelerometer-profile; no fallback is used.",
+                false};
+    }
+    const double experimentDurationSeconds = options.experimentStationaryBeforeSeconds
+        + options.experimentMotionSeconds + options.experimentStationaryAfterSeconds;
+    if (options.orientationComparisonExperiment
+        && options.experimentRecenterSeconds > experimentDurationSeconds)
+    {
+        return {std::nullopt,
+                "--experiment-recenter-seconds must be within the configured experiment duration.",
                 false};
     }
     if (options.fuseGyroscopeAccelerometer
@@ -605,6 +801,19 @@ std::string imuDiagnosticUsage()
            " [--fusion-startup <identity|gravity>] [--print-accelerometer-physical]"
            " [--print-fusion-diagnostics] [--fusion-output <quaternion|euler|both>]"
            " [--fusion-print-rate <hz>] [--fusion-json-output <file.json>]"
+           " [--compare-gyro-and-fusion] [--orientation-comparison-experiment]"
+           " [--experiment-stationary-before-seconds <value>]"
+           " [--experiment-motion-seconds <value>]"
+           " [--experiment-stationary-after-seconds <value>]"
+           " [--experiment-recenter-seconds <value>]"
+           " [--stationary-gyro-threshold-dps <value>]"
+           " [--stationary-accel-deviation-g <value>]"
+           " [--stationary-min-duration-seconds <value>]"
+           " [--convergence-thresholds-degrees <csv>]"
+           " [--convergence-sustain-seconds <value>]"
+           " [--comparison-output <quaternion|euler|both>]"
+           " [--comparison-print-rate <hz>] [--comparison-json-output <file.json>]"
+           " [--comparison-csv-output <file.csv>]"
            " [--verbose]\n";
 }
 

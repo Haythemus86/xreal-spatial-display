@@ -300,6 +300,85 @@ void testFusionOptions()
            "fusion-specific option without fusion mode is rejected");
 }
 
+void testOrientationComparisonOptions()
+{
+    constexpr std::array valid{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--apply-gyro-bias"),
+        std::string_view("--gyro-scale-raw-per-dps"), std::string_view("4090"),
+        std::string_view("--accelerometer-profile"), std::string_view("accel.json"),
+        std::string_view("--compare-gyro-and-fusion"),
+        std::string_view("--orientation-comparison-experiment"),
+        std::string_view("--experiment-stationary-before-seconds"), std::string_view("6"),
+        std::string_view("--experiment-motion-seconds"), std::string_view("12"),
+        std::string_view("--experiment-stationary-after-seconds"), std::string_view("15"),
+        std::string_view("--experiment-recenter-seconds"), std::string_view("10"),
+        std::string_view("--stationary-gyro-threshold-dps"), std::string_view("1"),
+        std::string_view("--stationary-accel-deviation-g"), std::string_view("0.05"),
+        std::string_view("--stationary-min-duration-seconds"), std::string_view("0.5"),
+        std::string_view("--convergence-thresholds-degrees"), std::string_view("5,2,1"),
+        std::string_view("--convergence-sustain-seconds"), std::string_view("0.5"),
+        std::string_view("--comparison-output"), std::string_view("both"),
+        std::string_view("--comparison-print-rate"), std::string_view("10"),
+        std::string_view("--comparison-json-output"), std::string_view("comparison.json"),
+        std::string_view("--comparison-csv-output"), std::string_view("comparison.csv"),
+    };
+    const auto result = parse(valid);
+    expect(result.options.has_value(), "complete comparison options are accepted");
+    expect(result.options->compareGyroscopeAndFusion
+               && result.options->orientationComparisonExperiment
+               && result.options->convergenceThresholdsDegrees.size() == 3U
+               && result.options->comparisonPrintRateHz == 10U,
+           "comparison values are parsed exactly");
+
+    constexpr std::array invalidDuration{
+        std::string_view("--compare-gyro-and-fusion"),
+        std::string_view("--experiment-motion-seconds"), std::string_view("0")};
+    expect(!parse(invalidDuration).options.has_value(), "zero comparison duration is rejected");
+
+    constexpr std::array negativeThreshold{
+        std::string_view("--compare-gyro-and-fusion"),
+        std::string_view("--stationary-gyro-threshold-dps"), std::string_view("-1")};
+    expect(!parse(negativeThreshold).options.has_value(), "negative stationary threshold is rejected");
+
+    constexpr std::array invalidCsv{
+        std::string_view("--compare-gyro-and-fusion"),
+        std::string_view("--convergence-thresholds-degrees"), std::string_view("1,2,3")};
+    expect(!parse(invalidCsv).options.has_value(), "non-decreasing convergence thresholds are rejected");
+
+    constexpr std::array noScale{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--apply-gyro-bias"),
+        std::string_view("--accelerometer-profile"), std::string_view("accel.json"),
+        std::string_view("--compare-gyro-and-fusion")};
+    expect(!parse(noScale).options.has_value(), "comparison without gyroscope scale is rejected");
+
+    constexpr std::array noBias{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--gyro-scale-raw-per-dps"), std::string_view("4090"),
+        std::string_view("--accelerometer-profile"), std::string_view("accel.json"),
+        std::string_view("--compare-gyro-and-fusion")};
+    expect(!parse(noBias).options.has_value(), "comparison without applied bias is rejected");
+
+    constexpr std::array noAccelerometer{
+        std::string_view("--gyro-calibrate-seconds"), std::string_view("2"),
+        std::string_view("--apply-gyro-bias"),
+        std::string_view("--gyro-scale-raw-per-dps"), std::string_view("4090"),
+        std::string_view("--compare-gyro-and-fusion")};
+    expect(!parse(noAccelerometer).options.has_value(),
+           "comparison without accelerometer profile is rejected");
+
+    constexpr std::array incompatible{
+        std::string_view("--compare-gyro-and-fusion"),
+        std::string_view("--integrate-gyro-orientation")};
+    expect(!parse(incompatible).options.has_value(), "incompatible orientation modes are rejected");
+
+    constexpr std::array disabled{std::string_view("--duration"), std::string_view("5")};
+    expect(parse(disabled).options.has_value()
+               && !parse(disabled).options->compareGyroscopeAndFusion,
+           "comparison remains disabled by default");
+}
+
 } // namespace
 
 int main()
@@ -310,6 +389,7 @@ int main()
     testPhysicalUnitOptions();
     testOrientationOptions();
     testFusionOptions();
+    testOrientationComparisonOptions();
 
     if (failureCount != 0)
     {

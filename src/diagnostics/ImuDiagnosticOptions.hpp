@@ -7,6 +7,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace xreal::diagnostics
 {
@@ -73,6 +74,22 @@ struct ImuDiagnosticOptions
     unsigned int fusionPrintRateHz{10};
     std::optional<std::string> fusionJsonOutputPath;
     bool fusionOptionExplicit{};
+    bool compareGyroscopeAndFusion{};
+    bool orientationComparisonExperiment{};
+    double experimentStationaryBeforeSeconds{6.0};
+    double experimentMotionSeconds{12.0};
+    double experimentStationaryAfterSeconds{15.0};
+    double experimentRecenterSeconds{10.0};
+    double stationaryGyroscopeThresholdDegreesPerSecond{1.0};
+    double stationaryAccelerometerDeviationG{0.05};
+    double stationaryMinimumDurationSeconds{0.5};
+    std::vector<double> convergenceThresholdsDegrees{5.0, 2.0, 1.0};
+    double convergenceSustainSeconds{0.5};
+    OrientationOutputMode comparisonOutput{OrientationOutputMode::both};
+    unsigned int comparisonPrintRateHz{10};
+    std::optional<std::string> comparisonJsonOutputPath;
+    std::optional<std::string> comparisonCsvOutputPath;
+    bool comparisonOptionExplicit{};
     bool verbose{};
 };
 

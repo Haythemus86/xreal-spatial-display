@@ -1,5 +1,8 @@
 # Gyroscope and accelerometer orientation fusion
 
+For simultaneous gyro-only/fused measurements and explicit absolute versus
+relative field names, see [orientation comparison diagnostics](orientation-comparison-diagnostics.md).
+
 The optional complementary filter combines high-frequency gyroscope prediction
 with a slow gravity correction for pitch and roll. It is experimental and is
 disabled unless `--fuse-gyro-accelerometer` is supplied. The existing

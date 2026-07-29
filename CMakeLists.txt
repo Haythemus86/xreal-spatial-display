@@ -33,6 +33,7 @@ add_library(
     src/sensors/GyroscopeScaleCalibration.cpp
     src/sensors/ImuCalibration.cpp
     src/sensors/OrientationFusion.cpp
+    src/sensors/OrientationComparison.cpp
     src/sensors/XrealDevice.cpp
     src/sensors/XrealHidConnection.cpp
     src/sensors/XrealImuPacketDecoder.cpp
@@ -564,5 +565,28 @@ if(BUILD_TESTING)
     add_test(
         NAME xreal-orientation-fusion-tests
         COMMAND xreal-orientation-fusion-tests
+    )
+
+    add_executable(
+        xreal-orientation-comparison-tests
+        tests/OrientationComparisonTests.cpp
+    )
+
+    target_link_libraries(
+        xreal-orientation-comparison-tests
+        PRIVATE
+            xreal-sensors
+    )
+
+    target_compile_options(
+        xreal-orientation-comparison-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+
+    add_test(
+        NAME xreal-orientation-comparison-tests
+        COMMAND xreal-orientation-comparison-tests
     )
 endif()

@@ -102,6 +102,7 @@ struct OrientationFusionState
     Quaternion fusedOrientation;
     Quaternion gyroscopePredictedOrientation;
     Quaternion recenterReference;
+    bool recenterActive{};
     bool initialized{};
     bool valid{true};
     bool gravityStartupApplied{};

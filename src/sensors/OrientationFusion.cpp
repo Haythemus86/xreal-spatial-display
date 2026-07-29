@@ -288,12 +288,14 @@ bool OrientationFusionFilter::recenter() noexcept
         return false;
     }
     state_.recenterReference = *normalizedValue;
+    state_.recenterActive = true;
     return true;
 }
 
 void OrientationFusionFilter::clearRecenter() noexcept
 {
     state_.recenterReference = Quaternion::identity();
+    state_.recenterActive = false;
 }
 
 Quaternion OrientationFusionFilter::orientation() const noexcept
