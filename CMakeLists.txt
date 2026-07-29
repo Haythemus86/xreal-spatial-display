@@ -119,7 +119,9 @@ target_link_libraries(
 
 add_library(
     xreal-platform-windows
+    src/platform/windows/DisplayTopology.cpp
     src/platform/windows/HidDeviceCapabilities.cpp
+    src/platform/windows/RenderWindow.cpp
 )
 
 target_include_directories(
@@ -132,6 +134,52 @@ target_link_libraries(
     xreal-platform-windows
     PRIVATE
         hid
+        dxgi
+        user32
+        gdi32
+)
+
+add_library(
+    xreal-rendering-core
+    src/rendering/Camera.cpp
+    src/rendering/DemoOrientationSource.cpp
+    src/rendering/OrientationRenderBridge.cpp
+    src/rendering/RenderDiagnostics.cpp
+    src/rendering/RendererOptions.cpp
+    src/rendering/RendererSummary.cpp
+    src/rendering/RenderMath.cpp
+    src/rendering/SensorOrientationService.cpp
+)
+
+target_include_directories(
+    xreal-rendering-core
+    PUBLIC
+        src
+)
+
+target_link_libraries(
+    xreal-rendering-core
+    PUBLIC
+        xreal-sensors
+)
+
+add_library(
+    xreal-graphics-d3d11
+    src/graphics/D3D11Renderer.cpp
+)
+
+target_include_directories(
+    xreal-graphics-d3d11
+    PUBLIC
+        src
+)
+
+target_link_libraries(
+    xreal-graphics-d3d11
+    PRIVATE
+        d3d11
+        dxgi
+        d3dcompiler
 )
 
 target_include_directories(
@@ -177,6 +225,15 @@ add_executable(
     xreal-orientation-analyzer
     src/diagnostics/OrientationAnalyzerMain.cpp
 )
+
+add_executable(
+    xreal-spatial-renderer
+    src/rendering/RendererApplication.cpp
+    src/rendering/RendererMain.cpp
+    shaders/Panel.hlsl
+)
+
+set_source_files_properties(shaders/Panel.hlsl PROPERTIES HEADER_FILE_ONLY TRUE)
 
 target_link_libraries(
     xreal-sensor-diagnostic
@@ -231,7 +288,15 @@ target_link_libraries(
         xreal-sensors
 )
 
-foreach(target xreal-sensor-diagnostic xreal-interface-probe xreal-imu-diagnostic xreal-gyro-scale-calibration xreal-gyro-recording-analyzer xreal-gyro-scale-profile)
+target_link_libraries(
+    xreal-spatial-renderer
+    PRIVATE
+        xreal-graphics-d3d11
+        xreal-platform-windows
+        xreal-rendering-core
+)
+
+foreach(target xreal-sensor-diagnostic xreal-interface-probe xreal-imu-diagnostic xreal-gyro-scale-calibration xreal-gyro-recording-analyzer xreal-gyro-scale-profile xreal-spatial-renderer)
     add_custom_command(
         TARGET ${target}
         POST_BUILD
@@ -241,6 +306,14 @@ foreach(target xreal-sensor-diagnostic xreal-interface-probe xreal-imu-diagnosti
     )
 endforeach()
 
+add_custom_command(
+    TARGET xreal-spatial-renderer
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/shaders/Panel.hlsl
+        $<TARGET_FILE_DIR:xreal-spatial-renderer>/Panel.hlsl
+)
+
 set(xreal_project_targets
     xreal-sensors
     xreal-interface-probe-support
@@ -248,6 +321,8 @@ set(xreal_project_targets
     xreal-gyro-scale-calibration-support
     xreal-gyro-recording-analyzer-support
     xreal-platform-windows
+    xreal-rendering-core
+    xreal-graphics-d3d11
     xreal-sensor-diagnostic
     xreal-interface-probe
     xreal-imu-diagnostic
@@ -256,6 +331,7 @@ set(xreal_project_targets
     xreal-gyro-recording-analyzer
     xreal-gyro-scale-profile
     xreal-orientation-analyzer
+    xreal-spatial-renderer
 )
 
 foreach(target IN LISTS xreal_project_targets)
@@ -270,6 +346,26 @@ endforeach()
 include(CTest)
 
 if(BUILD_TESTING)
+    add_executable(
+        xreal-display-topology-tests
+        tests/DisplayTopologyTests.cpp
+    )
+
+    target_link_libraries(
+        xreal-display-topology-tests
+        PRIVATE
+            xreal-platform-windows
+    )
+
+    target_compile_options(
+        xreal-display-topology-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+
+    add_test(NAME xreal-display-topology-tests COMMAND xreal-display-topology-tests)
+
     add_executable(
         xreal-interface-probe-tests
         tests/InterfaceProbeSupportTests.cpp
@@ -666,4 +762,60 @@ if(BUILD_TESTING)
         xreal-orientation-analyzer-missing-file-test
         PROPERTIES WILL_FAIL TRUE
     )
+
+    add_executable(
+        xreal-rendering-math-tests
+        tests/RenderingMathTests.cpp
+    )
+    target_link_libraries(
+        xreal-rendering-math-tests
+        PRIVATE
+            xreal-rendering-core
+    )
+    target_compile_options(
+        xreal-rendering-math-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+    add_test(NAME xreal-rendering-math-tests COMMAND xreal-rendering-math-tests)
+
+    add_executable(
+        xreal-renderer-options-tests
+        tests/RendererOptionsTests.cpp
+    )
+    target_link_libraries(
+        xreal-renderer-options-tests
+        PRIVATE
+            xreal-rendering-core
+    )
+    target_compile_options(
+        xreal-renderer-options-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+    add_test(NAME xreal-renderer-options-tests COMMAND xreal-renderer-options-tests)
+
+    add_executable(
+        xreal-render-diagnostics-tests
+        tests/RenderDiagnosticsTests.cpp
+    )
+    target_include_directories(
+        xreal-render-diagnostics-tests
+        PRIVATE
+            tests
+    )
+    target_link_libraries(
+        xreal-render-diagnostics-tests
+        PRIVATE
+            xreal-rendering-core
+    )
+    target_compile_options(
+        xreal-render-diagnostics-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+    add_test(NAME xreal-render-diagnostics-tests COMMAND xreal-render-diagnostics-tests)
 endif()

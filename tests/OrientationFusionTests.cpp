@@ -134,6 +134,26 @@ void testPhysicalUnitsAndProfiles()
     expect(!validateAccelerometerCalibrationProfile(mapping),
            "duplicate accelerometer mapping targets are rejected");
 
+    auto air2Ultra = profile();
+    air2Ultra.axisMapping = makeExperimentalXrealAir2UltraAccelerometerAxisMapping();
+    const auto air2UltraMapped = convertAccelerometerToPhysicalUnits(
+        {1010, 1980, 4030}, air2Ultra);
+    expect(air2UltraMapped.valid && near(air2UltraMapped.accelerationG.x, 1.0)
+               && near(air2UltraMapped.accelerationG.y, -1.0)
+               && near(air2UltraMapped.accelerationG.z, 1.0),
+           "Air 2 Ultra accelerometer mapping corrects pitch gravity while preserving other axes");
+    expect(validateAccelerometerAxisMapping(air2Ultra.axisMapping)
+               && air2Ultra.axisMapping.experimental && air2Ultra.axisMapping.verified,
+           "Air 2 Ultra accelerometer mapping records successful hardware direction validation");
+    const auto air2UltraPitchGravity = convertAccelerometerToPhysicalUnits(
+        {10, -1020, 3494}, air2Ultra);
+    const auto air2UltraPitchStartup = gravityAlignedStartupOrientation(
+        air2UltraPitchGravity.accelerationG);
+    expect(air2UltraPitchStartup.has_value()
+               && near(quaternionToEulerDiagnostic(*air2UltraPitchStartup).rollDegrees,
+                       30.0, 0.1),
+           "Air 2 Ultra pitch gravity initializes with the corrected positive rotation sign");
+
     const std::string json = "{\"schema_version\":1,\"offset_raw\":{\"x\":10,\"y\":-20,\"z\":30},"
                              "\"raw_units_per_g\":{\"x\":1000,\"y\":2000,\"z\":4000}}";
     const auto loaded = loadAccelerometerCalibrationProfileJson(json, "synthetic.json");

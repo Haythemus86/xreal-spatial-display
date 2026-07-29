@@ -135,6 +135,22 @@ bool validateAccelerometerAxisMapping(const AccelerometerAxisMapping& mapping) n
     return true;
 }
 
+AccelerometerAxisMapping makeExperimentalXrealAir2UltraAccelerometerAxisMapping()
+{
+    AccelerometerAxisMapping mapping;
+    mapping.sensorX = {AccelerometerLogicalAxis::x, 1};
+    mapping.sensorY = {AccelerometerLogicalAxis::y, -1};
+    mapping.sensorZ = {AccelerometerLogicalAxis::z, 1};
+    mapping.experimental = true;
+    mapping.verified = true;
+    mapping.source = "xreal-air2-ultra-hardware-render-direction-validation";
+    mapping.notes = "The sensor Y gravity component constrains rotation about the corrected "
+                    "logical pitch axis, so its sign is inverted consistently with gyroscope X. "
+                    "X and Z remain unchanged. A second Air 2 Ultra rendering test validated "
+                    "pitch without regressing yaw or roll.";
+    return mapping;
+}
+
 bool validateAccelerometerCalibrationProfile(
     const AccelerometerCalibrationProfile& profile) noexcept
 {

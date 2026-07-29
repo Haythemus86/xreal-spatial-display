@@ -86,6 +86,8 @@ struct AccelerometerProfileLoadResult
 
 [[nodiscard]] bool validateAccelerometerAxisMapping(
     const AccelerometerAxisMapping& mapping) noexcept;
+[[nodiscard]] AccelerometerAxisMapping
+makeExperimentalXrealAir2UltraAccelerometerAxisMapping();
 [[nodiscard]] bool validateAccelerometerCalibrationProfile(
     const AccelerometerCalibrationProfile& profile) noexcept;
 [[nodiscard]] AccelerometerPhysicalSample convertAccelerometerToPhysicalUnits(

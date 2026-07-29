@@ -137,6 +137,17 @@ void testComparisonsAndMapping()
         {1.0, 2.0, 3.0}, profile.axisMapping);
     expect(near(mapped.x, 1.0) && near(mapped.y, 2.0) && near(mapped.z, -3.0),
            "axis mapping applies sign inversion without renaming sensor axes");
+
+    const auto air2UltraMapping =
+        xreal::sensors::makeExperimentalXrealAir2UltraGyroscopeAxisMapping();
+    const auto air2UltraMapped = xreal::sensors::applyGyroscopeAxisMapping(
+        {-1.0, 2.0, 3.0}, air2UltraMapping);
+    expect(near(air2UltraMapped.x, 1.0) && near(air2UltraMapped.y, 2.0)
+               && near(air2UltraMapped.z, 3.0),
+           "Air 2 Ultra mapping corrects pitch while preserving roll and yaw signs");
+    expect(xreal::sensors::validateGyroscopeAxisMapping(air2UltraMapping)
+               && air2UltraMapping.experimental && air2UltraMapping.verified,
+           "Air 2 Ultra gyroscope mapping records successful hardware direction validation");
 }
 
 } // namespace

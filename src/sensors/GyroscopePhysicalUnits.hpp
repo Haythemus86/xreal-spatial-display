@@ -163,6 +163,7 @@ struct GyroscopeScaleProfileLoadResult
 
 [[nodiscard]] GyroscopeScaleProfile makeExperimentalGyroscopeScaleProfile(
     double rawUnitsPerDegreePerSecond);
+[[nodiscard]] GyroscopeAxisMapping makeExperimentalXrealAir2UltraGyroscopeAxisMapping();
 [[nodiscard]] GyroscopeScaleValidationResult validateGyroscopeScaleProfile(
     const GyroscopeScaleProfile& profile) noexcept;
 [[nodiscard]] GyroscopePhysicalSample convertGyroscopeToPhysicalUnits(

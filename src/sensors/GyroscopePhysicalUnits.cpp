@@ -179,6 +179,22 @@ GyroscopeScaleProfile makeExperimentalGyroscopeScaleProfile(double rawUnitsPerDe
     return profile;
 }
 
+GyroscopeAxisMapping makeExperimentalXrealAir2UltraGyroscopeAxisMapping()
+{
+    GyroscopeAxisMapping mapping;
+    mapping.sensorX = {GyroscopeLogicalAxis::sensorX, -1};
+    mapping.sensorY = {GyroscopeLogicalAxis::sensorY, 1};
+    mapping.sensorZ = {GyroscopeLogicalAxis::sensorZ, 1};
+    mapping.experimental = true;
+    mapping.verified = true;
+    mapping.source = "xreal-air2-ultra-hardware-render-direction-validation";
+    mapping.notes = "Hardware rendering showed that the interface-2 gyroscope X sign is "
+                    "opposite the logical body pitch convention. Y and Z retain their "
+                    "hardware-validated roll and yaw signs. A second Air 2 Ultra rendering test "
+                    "validated pitch, yaw, roll and recenter behavior.";
+    return mapping;
+}
+
 GyroscopeScaleValidationResult validateGyroscopeScaleProfile(
     const GyroscopeScaleProfile& profile) noexcept
 {
