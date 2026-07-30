@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics/D3D11Renderer.hpp"
+#include "capture/DesktopCaptureStatistics.hpp"
 #include "platform/windows/RenderWindow.hpp"
 #include "rendering/OrientationRenderBridge.hpp"
 #include "rendering/RenderDiagnostics.hpp"
@@ -19,6 +20,8 @@ struct RendererSummary
     OrientationToRenderMapping mapping;
     FrameTimingStatistics timing;
     ImuHealthCounters imu;
+    capture::DesktopRenderStageStatistics desktop;
+    capture::DesktopCaptureStatistics capture;
     RendererStartupState finalState{RendererStartupState::shuttingDown};
     std::uint64_t recenterGeneration{};
     bool calibrationAccepted{};

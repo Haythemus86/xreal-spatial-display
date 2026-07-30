@@ -1,5 +1,7 @@
 #pragma once
 
+#include "capture/DesktopCaptureOptions.hpp"
+#include "rendering/DesktopPanelDiagnostics.hpp"
 #include "rendering/OrientationRenderBridge.hpp"
 #include "sensors/OrientationPrediction.hpp"
 
@@ -18,6 +20,8 @@ struct RendererOptions
     bool fullscreen{};
     bool borderless{};
     unsigned int monitorIndex{};
+    std::optional<std::string> renderMonitorDeviceName;
+    capture::DesktopCaptureOptions desktopCapture;
     bool vsync{true};
     bool allowWarpFallback{};
     std::optional<double> renderDurationSeconds;
@@ -38,8 +42,16 @@ struct RendererOptions
     char recenterKey{'R'};
     char resetRecenterKey{'C'};
     bool orientationDemoMode{};
+    bool orientationDemoStatic{};
     bool smokeTest{};
     unsigned int smokeTestFrames{10};
+    bool desktopCaptureSmokeTest{};
+    unsigned int desktopCaptureSmokeTestFrames{30};
+    bool desktopDebugCheckerboard{};
+    DesktopShaderDebugMode desktopShaderDebugMode{DesktopShaderDebugMode::normal};
+    bool desktopDebugOpaqueBase{};
+    std::optional<std::string> desktopDebugReadbackUploadPath;
+    std::optional<std::string> desktopDebugRenderTargetPath;
     bool applyGyroscopeBias{};
     double gyroscopeCalibrationSeconds{2.0};
     double gyroscopeWarmupSeconds{1.0};

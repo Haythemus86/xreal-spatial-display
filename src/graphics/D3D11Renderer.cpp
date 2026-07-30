@@ -1,4 +1,5 @@
 #include "graphics/D3D11Renderer.hpp"
+#include "capture/DesktopCpuFrame.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -10,9 +11,12 @@
 #include <wrl/client.h>
 
 #include <array>
+#include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 #include <utility>
 #include <vector>
@@ -33,11 +37,8 @@ struct Vertex
     float green{};
     float blue{};
     float alpha{1.0F};
-};
-
-struct ConstantBuffer
-{
-    std::array<float, 16> viewProjection{};
+    float textureU{};
+    float textureV{};
 };
 
 [[nodiscard]] std::string hresultText(HRESULT value)
@@ -62,6 +63,46 @@ struct ConstantBuffer
             static_cast<int>(wideMessage.size()), converted.data(), size, nullptr, nullptr);
         output << " (" << converted << ')';
     }
+    return output.str();
+}
+
+[[nodiscard]] rendering::DesktopTextureDescriptorContract textureContract(
+    const D3D11_TEXTURE2D_DESC& description) noexcept
+{
+    return {
+        description.Width,
+        description.Height,
+        description.MipLevels,
+        description.ArraySize,
+        static_cast<std::uint32_t>(description.Format),
+        description.SampleDesc.Count,
+        description.SampleDesc.Quality,
+        static_cast<std::uint32_t>(description.Usage),
+        description.BindFlags,
+        description.CPUAccessFlags,
+        description.MiscFlags,
+    };
+}
+
+[[nodiscard]] rendering::DesktopShaderResourceDescriptorContract shaderResourceContract(
+    const D3D11_SHADER_RESOURCE_VIEW_DESC& description) noexcept
+{
+    return {
+        static_cast<std::uint32_t>(description.Format),
+        static_cast<std::uint32_t>(description.ViewDimension),
+        description.Texture2D.MostDetailedMip,
+        description.Texture2D.MipLevels,
+    };
+}
+
+[[nodiscard]] std::string bgraPixelText(const capture::BgraPixel& pixel)
+{
+    std::ostringstream output;
+    output << std::hex << std::uppercase << std::setfill('0')
+           << std::setw(2) << static_cast<unsigned int>(pixel.blue) << ' '
+           << std::setw(2) << static_cast<unsigned int>(pixel.green) << ' '
+           << std::setw(2) << static_cast<unsigned int>(pixel.red) << ' '
+           << std::setw(2) << static_cast<unsigned int>(pixel.alpha);
     return output.str();
 }
 
@@ -128,6 +169,10 @@ public:
         requestedAdapterLuid_ = config.selectedAdapterLuid;
         requestedOutputDeviceName_ = config.selectedOutputDeviceName;
         fullscreen_ = config.fullscreen;
+        desktopShaderDebugMode_ = config.desktopShaderDebugMode;
+        desktopDebugOpaqueBase_ = config.desktopDebugOpaqueBase;
+        desktopDebugReadbackUploadPath_ = config.desktopDebugReadbackUploadPath;
+        desktopDebugRenderTargetPath_ = config.desktopDebugRenderTargetPath;
         information_.selectedAdapterRequested = requestedAdapterLuid_.has_value();
 
         if (!createDevice(false) && (!config.allowWarpFallback || !createDevice(true)))
@@ -486,6 +531,12 @@ public:
             }
             return false;
         }
+        if (errors && errors->GetBufferSize() > 0U)
+        {
+            std::cerr << "Shader compiler diagnostics for " << entry << ":\n"
+                      << std::string(static_cast<const char*>(errors->GetBufferPointer()),
+                             errors->GetBufferSize()) << '\n';
+        }
         return true;
     }
 
@@ -493,8 +544,10 @@ public:
     {
         ComPtr<ID3DBlob> vertexBytecode;
         ComPtr<ID3DBlob> pixelBytecode;
+        ComPtr<ID3DBlob> overlayPixelBytecode;
         if (!compileShader("VSMain", "vs_5_0", vertexBytecode)
-            || !compileShader("PSMain", "ps_5_0", pixelBytecode))
+            || !compileShader("PSMain", "ps_5_0", pixelBytecode)
+            || !compileShader("PSOverlay", "ps_5_0", overlayPixelBytecode))
         {
             return false;
         }
@@ -512,10 +565,19 @@ public:
             error_ = "CreatePixelShader failed: " + hresultText(result);
             return false;
         }
+        result = device_->CreatePixelShader(overlayPixelBytecode->GetBufferPointer(),
+            overlayPixelBytecode->GetBufferSize(), nullptr, &overlayPixelShader_);
+        if (FAILED(result))
+        {
+            error_ = "CreatePixelShader(overlay) failed: " + hresultText(result);
+            return false;
+        }
         constexpr std::array layout{
             D3D11_INPUT_ELEMENT_DESC{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
                 D3D11_INPUT_PER_VERTEX_DATA, 0},
             D3D11_INPUT_ELEMENT_DESC{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12,
+                D3D11_INPUT_PER_VERTEX_DATA, 0},
+            D3D11_INPUT_ELEMENT_DESC{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28,
                 D3D11_INPUT_PER_VERTEX_DATA, 0},
         };
         result = device_->CreateInputLayout(layout.data(), static_cast<UINT>(layout.size()),
@@ -526,7 +588,7 @@ public:
             return false;
         }
         D3D11_BUFFER_DESC constantDescription{};
-        constantDescription.ByteWidth = sizeof(ConstantBuffer);
+        constantDescription.ByteWidth = sizeof(rendering::PanelShaderConstants);
         constantDescription.Usage = D3D11_USAGE_DYNAMIC;
         constantDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
         constantDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -561,6 +623,15 @@ public:
             error_ = "CreateBlendState failed: " + hresultText(result);
             return false;
         }
+        D3D11_BLEND_DESC opaqueBlend{};
+        opaqueBlend.RenderTarget[0].BlendEnable = FALSE;
+        opaqueBlend.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+        result = device_->CreateBlendState(&opaqueBlend, &opaqueBlendState_);
+        if (FAILED(result))
+        {
+            error_ = "CreateBlendState(opaque desktop base) failed: " + hresultText(result);
+            return false;
+        }
         D3D11_DEPTH_STENCIL_DESC depth{};
         depth.DepthEnable = TRUE;
         depth.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
@@ -569,6 +640,26 @@ public:
         if (FAILED(result))
         {
             error_ = "CreateDepthStencilState failed: " + hresultText(result);
+            return false;
+        }
+        D3D11_SAMPLER_DESC pointSampler{};
+        pointSampler.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+        pointSampler.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+        pointSampler.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+        pointSampler.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+        pointSampler.MaxLOD = D3D11_FLOAT32_MAX;
+        result = device_->CreateSamplerState(&pointSampler, &pointSampler_);
+        if (FAILED(result))
+        {
+            error_ = "CreateSamplerState(point) failed: " + hresultText(result);
+            return false;
+        }
+        D3D11_SAMPLER_DESC linearSampler = pointSampler;
+        linearSampler.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+        result = device_->CreateSamplerState(&linearSampler, &linearSampler_);
+        if (FAILED(result))
+        {
+            error_ = "CreateSamplerState(linear) failed: " + hresultText(result);
             return false;
         }
         return true;
@@ -599,16 +690,27 @@ public:
         const float halfHeight = static_cast<float>(panelHeight_ * 0.5);
         const float z = static_cast<float>(-panelDistance_);
         panelVertices_ = {
-            {-halfWidth, -halfHeight, z, 0.04F, 0.08F, 0.16F, 0.88F},
-            {-halfWidth, halfHeight, z, 0.04F, 0.08F, 0.16F, 0.88F},
-            {halfWidth, -halfHeight, z, 0.04F, 0.08F, 0.16F, 0.88F},
-            {halfWidth, halfHeight, z, 0.04F, 0.08F, 0.16F, 0.88F},
+            {-halfWidth, -halfHeight, z, 0.04F, 0.08F, 0.16F, 0.88F, 0.0F, 1.0F},
+            {-halfWidth, halfHeight, z, 0.04F, 0.08F, 0.16F, 0.88F, 0.0F, 0.0F},
+            {halfWidth, -halfHeight, z, 0.04F, 0.08F, 0.16F, 0.88F, 1.0F, 1.0F},
+            {halfWidth, halfHeight, z, 0.04F, 0.08F, 0.16F, 0.88F, 1.0F, 0.0F},
         };
+        constexpr std::array panelUvs{
+            rendering::PanelVertexUv{0.0F, 1.0F},
+            rendering::PanelVertexUv{0.0F, 0.0F},
+            rendering::PanelVertexUv{1.0F, 1.0F},
+            rendering::PanelVertexUv{1.0F, 0.0F},
+        };
+        constexpr std::array<std::uint16_t, 6> panelIndices{0, 1, 2, 2, 1, 3};
+        if (!rendering::validatePanelGeometry(panelUvs, panelIndices))
+        {
+            error_ = "Panel vertex UVs or index ranges are invalid.";
+            return false;
+        }
         if (!createVertexBuffer(panelVertices_, panelBuffer_))
         {
             return false;
         }
-        constexpr std::array<std::uint16_t, 6> panelIndices{0, 1, 2, 2, 1, 3};
         D3D11_BUFFER_DESC indexDescription{};
         indexDescription.ByteWidth = sizeof(panelIndices);
         indexDescription.Usage = D3D11_USAGE_IMMUTABLE;
@@ -679,11 +781,153 @@ public:
         return createRenderTargets(width, height);
     }
 
+    [[nodiscard]] std::optional<capture::DesktopCaptureFrame> readbackTexture(
+        ID3D11Texture2D* texture,
+        std::uint64_t sequence,
+        std::string_view operation)
+    {
+        if (texture == nullptr)
+        {
+            error_ = std::string(operation) + " requires a valid D3D11 texture.";
+            return std::nullopt;
+        }
+        D3D11_TEXTURE2D_DESC sourceDescription{};
+        texture->GetDesc(&sourceDescription);
+        D3D11_TEXTURE2D_DESC stagingDescription = sourceDescription;
+        stagingDescription.MipLevels = 1U;
+        stagingDescription.ArraySize = 1U;
+        stagingDescription.SampleDesc.Count = 1U;
+        stagingDescription.SampleDesc.Quality = 0U;
+        stagingDescription.Usage = D3D11_USAGE_STAGING;
+        stagingDescription.BindFlags = 0U;
+        stagingDescription.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+        stagingDescription.MiscFlags = 0U;
+        ComPtr<ID3D11Texture2D> staging;
+        HRESULT result = device_->CreateTexture2D(&stagingDescription, nullptr, &staging);
+        if (FAILED(result))
+        {
+            error_ = std::string(operation) + " CreateTexture2D(staging) failed: "
+                + hresultText(result);
+            return std::nullopt;
+        }
+        context_->CopyResource(staging.Get(), texture);
+        D3D11_MAPPED_SUBRESOURCE mapped{};
+        result = context_->Map(staging.Get(), 0U, D3D11_MAP_READ, 0U, &mapped);
+        if (FAILED(result))
+        {
+            error_ = std::string(operation) + " Map(staging) failed: " + hresultText(result);
+            return std::nullopt;
+        }
+        const auto packed = capture::calculatePackedBgraLayout(
+            sourceDescription.Width, sourceDescription.Height);
+        auto pixels = packed.has_value()
+            ? std::make_shared<std::vector<std::byte>>(packed->bufferSize) : nullptr;
+        const bool copied = packed.has_value() && pixels
+            && capture::repackBgraRows(static_cast<const std::byte*>(mapped.pData),
+                static_cast<std::size_t>(mapped.RowPitch) * sourceDescription.Height,
+                mapped.RowPitch, *pixels, sourceDescription.Width, sourceDescription.Height);
+        context_->Unmap(staging.Get(), 0U);
+        if (!copied)
+        {
+            error_ = std::string(operation)
+                + " could not repack mapped rows using the returned RowPitch.";
+            return std::nullopt;
+        }
+        capture::DesktopCaptureFrame frame;
+        frame.sequence = sequence == 0U ? 1U : sequence;
+        frame.captureHostTimestamp = std::chrono::steady_clock::now();
+        frame.sourceWidth = sourceDescription.Width;
+        frame.sourceHeight = sourceDescription.Height;
+        frame.sourceFormat = static_cast<std::uint32_t>(sourceDescription.Format);
+        frame.cpuPixels = std::move(pixels);
+        frame.cpuRowPitch = packed->stride;
+        frame.valid = true;
+        frame.status = capture::DesktopCaptureStatus::active;
+        frame.sourceMonitorDeviceName = std::string(operation);
+        return frame;
+    }
+
+    [[nodiscard]] bool dumpTexture(
+        ID3D11Texture2D* texture,
+        const std::string& path,
+        std::uint64_t sequence,
+        std::string_view operation,
+        std::uint64_t& checksum)
+    {
+        auto frame = readbackTexture(texture, sequence, operation);
+        if (!frame.has_value())
+        {
+            return false;
+        }
+        const auto content = capture::analyzeDesktopFrameContent(*frame);
+        if (!content.has_value())
+        {
+            error_ = std::string(operation) + " produced an invalid BGRA readback.";
+            return false;
+        }
+        checksum = content->checksum;
+        const auto result = capture::writeDesktopFrameBmp(*frame, path);
+        if (!result.success)
+        {
+            error_ = std::string(operation) + " failed: " + result.error;
+            return false;
+        }
+        std::cout << operation << " path=" << path
+                  << " checksum=0x" << std::hex << std::uppercase << checksum
+                  << std::dec << '\n';
+        return true;
+    }
+
+    [[nodiscard]] bool traceDesktopDescriptors()
+    {
+        if (desktopLocalTexture_ == nullptr || desktopShaderResource_ == nullptr)
+        {
+            error_ = "Desktop texture/SRV descriptor tracing requires valid resources.";
+            return false;
+        }
+        D3D11_TEXTURE2D_DESC textureDescription{};
+        desktopLocalTexture_->GetDesc(&textureDescription);
+        D3D11_SHADER_RESOURCE_VIEW_DESC resourceDescription{};
+        desktopShaderResource_->GetDesc(&resourceDescription);
+        const auto texture = textureContract(textureDescription);
+        const auto resource = shaderResourceContract(resourceDescription);
+        if (!rendering::isCompatibleDesktopShaderResource(texture, resource))
+        {
+            error_ = "Desktop texture or SRV descriptor violates the BGRA shader-resource contract.";
+            return false;
+        }
+        std::cout << "Desktop Intel upload texture descriptor:"
+                  << " Width=" << texture.width
+                  << " Height=" << texture.height
+                  << " MipLevels=" << texture.mipLevels
+                  << " ArraySize=" << texture.arraySize
+                  << " Format=" << texture.format
+                  << " SampleDesc.Count=" << texture.sampleCount
+                  << " SampleDesc.Quality=" << texture.sampleQuality
+                  << " Usage=" << texture.usage
+                  << " BindFlags=0x" << std::hex << texture.bindFlags
+                  << " CPUAccessFlags=0x" << texture.cpuAccessFlags
+                  << " MiscFlags=0x" << texture.miscFlags << std::dec << '\n'
+                  << "Desktop SRV descriptor:"
+                  << " Format=" << resource.format
+                  << " ViewDimension=" << resource.viewDimension
+                  << " MostDetailedMip=" << resource.mostDetailedMip
+                  << " MipLevels=" << resource.mipLevels << '\n'
+                  << "Desktop shader registers: texture=t"
+                  << rendering::desktopTextureShaderRegister
+                  << " sampler=s" << rendering::desktopSamplerShaderRegister
+                  << " constants=b" << rendering::panelConstantBufferShaderRegister << '\n';
+        return true;
+    }
+
     [[nodiscard]] bool render(
         const rendering::Matrix4& viewProjection,
         bool backgroundGrid,
         bool worldAxes,
-        bool ready)
+        bool ready,
+        bool desktopContent,
+        capture::DesktopBackground desktopBackground,
+        bool desktopStale)
     {
         if (!viewProjection.finite())
         {
@@ -697,13 +941,70 @@ public:
             error_ = "ID3D11DeviceContext::Map(constant buffer) failed: " + hresultText(result);
             return false;
         }
-        ConstantBuffer constants;
+        rendering::PanelShaderConstants constants;
         for (std::size_t index = 0; index < constants.viewProjection.size(); ++index)
         {
             constants.viewProjection[index] = static_cast<float>(viewProjection.values[index]);
         }
-        *static_cast<ConstantBuffer*>(mapped.pData) = constants;
+        constants.desktopContentBounds = {
+            static_cast<float>(desktopLayout_.contentMinimum[0]),
+            static_cast<float>(desktopLayout_.contentMinimum[1]),
+            static_cast<float>(desktopLayout_.contentMaximum[0]),
+            static_cast<float>(desktopLayout_.contentMaximum[1]),
+        };
+        constants.desktopCrop = {
+            static_cast<float>(desktopLayout_.cropLeft),
+            static_cast<float>(desktopLayout_.cropTop),
+            static_cast<float>(desktopLayout_.cropWidth),
+            static_cast<float>(desktopLayout_.cropHeight),
+        };
+        constants.desktopRotation = static_cast<std::uint32_t>(desktopLayout_.rotation);
+        constants.desktopFlipY = desktopLayout_.flipY ? 1U : 0U;
+        desktopStatistics_.panelContentRequested = desktopContent
+            ? capture::PanelContent::desktop : capture::PanelContent::synthetic;
+        desktopStatistics_.desktopTextureAvailable = desktopShaderResource_ != nullptr;
+        desktopStatistics_.panelContentEffective = capture::effectiveDesktopPanelMode(
+            desktopStatistics_.panelContentRequested,
+            desktopStatistics_.desktopSrvValid, desktopStale);
+        constants.desktopEnabled = desktopContent ? 1U : 0U;
+        constants.desktopUnavailable = desktopStatistics_.panelContentEffective
+            == capture::DesktopPanelEffectiveMode::unavailable ? 1U : 0U;
+        constants.desktopBackgroundGrid = desktopBackground == capture::DesktopBackground::grid
+            ? 1U : 0U;
+        constants.desktopDebugMode = static_cast<std::uint32_t>(desktopShaderDebugMode_);
+        if (!rendering::panelUvConstantsFinite(constants))
+        {
+            context_->Unmap(constantBuffer_.Get(), 0);
+            error_ = "Panel desktop UV constants are non-finite or degenerate.";
+            return false;
+        }
+        *static_cast<rendering::PanelShaderConstants*>(mapped.pData) = constants;
         context_->Unmap(constantBuffer_.Get(), 0);
+        if (desktopContent && desktopDrawEvents_.size() == 2U)
+        {
+            desktopDrawEvents_.push_back(rendering::DesktopDrawEvent::constantsUpdated);
+        }
+        if (desktopContent && !desktopConstantsTraced_)
+        {
+            const float scaleX = constants.desktopCrop[2]
+                / (constants.desktopContentBounds[2] - constants.desktopContentBounds[0]);
+            const float scaleY = constants.desktopCrop[3]
+                / (constants.desktopContentBounds[3] - constants.desktopContentBounds[1]);
+            const float offsetX = constants.desktopCrop[0]
+                - constants.desktopContentBounds[0] * scaleX;
+            const float offsetY = constants.desktopCrop[1]
+                - constants.desktopContentBounds[1] * scaleY;
+            std::cout << "Desktop panel constants: content_mode=" << constants.desktopEnabled
+                      << " texture_available=" << (desktopStatistics_.desktopTextureAvailable ? 1 : 0)
+                      << " unavailable=" << constants.desktopUnavailable
+                      << " uv_scale=[" << scaleX << ',' << scaleY << ']'
+                      << " uv_offset=[" << offsetX << ',' << offsetY << ']'
+                      << " source_rotation=" << constants.desktopRotation
+                      << " flip_y=" << constants.desktopFlipY
+                      << " debug_mode="
+                      << rendering::desktopShaderDebugModeText(desktopShaderDebugMode_) << '\n';
+            desktopConstantsTraced_ = true;
+        }
 
         const std::array clearColor = ready
             ? std::array{0.005F, 0.008F, 0.018F, 1.0F}
@@ -714,25 +1015,107 @@ public:
         ID3D11RenderTargetView* target = renderTarget_.Get();
         context_->OMSetRenderTargets(1, &target, depthView_.Get());
         context_->IASetInputLayout(inputLayout_.Get());
-        context_->VSSetShader(vertexShader_.Get(), nullptr, 0);
-        context_->PSSetShader(pixelShader_.Get(), nullptr, 0);
-        ID3D11Buffer* constant = constantBuffer_.Get();
-        context_->VSSetConstantBuffers(0, 1, &constant);
-        context_->RSSetState(rasterizerState_.Get());
-        const std::array blendFactor{0.0F, 0.0F, 0.0F, 0.0F};
-        context_->OMSetBlendState(blendState_.Get(), blendFactor.data(), 0xFFFFFFFFU);
-        context_->OMSetDepthStencilState(depthStencilState_.Get(), 0);
         constexpr UINT stride = sizeof(Vertex);
         constexpr UINT offset = 0;
         ID3D11Buffer* panel = panelBuffer_.Get();
         context_->IASetVertexBuffers(0, 1, &panel, &stride, &offset);
         context_->IASetIndexBuffer(panelIndexBuffer_.Get(), DXGI_FORMAT_R16_UINT, 0);
         context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        if (desktopContent && desktopDrawEvents_.size() == 3U)
+        {
+            desktopDrawEvents_.push_back(rendering::DesktopDrawEvent::geometryBound);
+        }
+        context_->VSSetShader(vertexShader_.Get(), nullptr, 0);
+        context_->PSSetShader(pixelShader_.Get(), nullptr, 0);
+        if (desktopContent && desktopDrawEvents_.size() == 4U)
+        {
+            desktopDrawEvents_.push_back(rendering::DesktopDrawEvent::shadersBound);
+        }
+        ID3D11ShaderResourceView* desktopView = desktopStatistics_.panelContentEffective
+            == capture::DesktopPanelEffectiveMode::desktop
+            ? desktopShaderResource_.Get() : nullptr;
+        context_->PSSetShaderResources(rendering::desktopTextureShaderRegister, 1, &desktopView);
+        ID3D11SamplerState* desktopSampler = desktopFilter_ == capture::DesktopFilter::point
+            ? pointSampler_.Get() : linearSampler_.Get();
+        context_->PSSetSamplers(rendering::desktopSamplerShaderRegister, 1, &desktopSampler);
+        ID3D11Buffer* constant = constantBuffer_.Get();
+        context_->VSSetConstantBuffers(rendering::panelConstantBufferShaderRegister, 1, &constant);
+        context_->PSSetConstantBuffers(rendering::panelConstantBufferShaderRegister, 1, &constant);
+        if (desktopContent && desktopDrawEvents_.size() == 5U)
+        {
+            desktopDrawEvents_.push_back(rendering::DesktopDrawEvent::shaderResourceBound);
+            desktopDrawEvents_.push_back(rendering::DesktopDrawEvent::samplerBound);
+            desktopDrawEvents_.push_back(rendering::DesktopDrawEvent::constantBuffersBound);
+        }
+        context_->RSSetState(rasterizerState_.Get());
+        const std::array blendFactor{0.0F, 0.0F, 0.0F, 0.0F};
+        const bool opaqueBase = rendering::desktopBaseBlendMode(
+            desktopContent, desktopDebugOpaqueBase_) == rendering::DesktopPanelBlendMode::opaque;
+        context_->OMSetBlendState(
+            opaqueBase ? opaqueBlendState_.Get() : blendState_.Get(),
+            blendFactor.data(), 0xFFFFFFFFU);
+        context_->OMSetDepthStencilState(depthStencilState_.Get(), 0);
+        if (desktopContent && desktopDrawEvents_.size() == 8U)
+        {
+            desktopDrawEvents_.push_back(rendering::DesktopDrawEvent::statesBound);
+        }
+        if (desktopStatistics_.panelContentEffective
+            == capture::DesktopPanelEffectiveMode::desktop)
+        {
+            ++desktopStatistics_.desktopSrvBindCount;
+            desktopStatistics_.latestBoundSequence = desktopFrameSequence_;
+            if (!firstSrvBindTraced_)
+            {
+                std::cout << "desktop-first-frame stage=desktop_srv_bound sequence="
+                          << desktopFrameSequence_ << '\n';
+                firstSrvBindTraced_ = true;
+            }
+            if (!firstShaderPathTraced_)
+            {
+                std::cout << "desktop-first-frame stage=desktop_pixel_shader_selected sequence="
+                          << desktopFrameSequence_ << '\n';
+                firstShaderPathTraced_ = true;
+            }
+        }
         context_->DrawIndexed(6, 0, 0);
+        if (desktopContent && desktopDrawEvents_.size() == 9U)
+        {
+            desktopDrawEvents_.push_back(rendering::DesktopDrawEvent::baseDrawIndexed);
+        }
+        if (desktopStatistics_.panelContentEffective
+            == capture::DesktopPanelEffectiveMode::desktop)
+        {
+            ++desktopStatistics_.renderedDesktopFrames;
+            if (!firstDesktopRenderedTraced_)
+            {
+                std::cout << "desktop-first-frame stage=desktop_frame_rendered sequence="
+                          << desktopFrameSequence_ << '\n';
+                firstDesktopRenderedTraced_ = true;
+            }
+        }
+        else if (desktopStatistics_.panelContentEffective
+            == capture::DesktopPanelEffectiveMode::unavailable)
+        {
+            ++desktopStatistics_.renderedUnavailableFrames;
+        }
+        else
+        {
+            ++desktopStatistics_.renderedSyntheticFrames;
+        }
+        const bool drawPanelOverlay = rendering::desktopOverlayEnabled(desktopShaderDebugMode_);
         ID3D11Buffer* lines = lineBuffer_.Get();
         context_->IASetVertexBuffers(0, 1, &lines, &stride, &offset);
         context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-        context_->Draw(baseLineVertexCount_, 0);
+        context_->PSSetShader(overlayPixelShader_.Get(), nullptr, 0);
+        context_->OMSetBlendState(blendState_.Get(), blendFactor.data(), 0xFFFFFFFFU);
+        if (drawPanelOverlay)
+        {
+            context_->Draw(baseLineVertexCount_, 0);
+            if (desktopContent && desktopDrawEvents_.size() == 10U)
+            {
+                desktopDrawEvents_.push_back(rendering::DesktopDrawEvent::overlayDraw);
+            }
+        }
         if (backgroundGrid)
         {
             context_->Draw(gridVertexCount_, gridStartVertex_);
@@ -741,6 +1124,337 @@ public:
         {
             context_->Draw(axesVertexCount_, axesStartVertex_);
         }
+        ID3D11ShaderResourceView* nullView{};
+        context_->PSSetShaderResources(rendering::desktopTextureShaderRegister, 1, &nullView);
+        if (desktopContent
+            && desktopDrawEvents_.size() == (drawPanelOverlay ? 11U : 10U))
+        {
+            desktopDrawEvents_.push_back(rendering::DesktopDrawEvent::shaderResourceUnbound);
+        }
+        if (desktopContent && !desktopBlendStateTraced_)
+        {
+            std::cout << "Desktop blend states: base="
+                      << (opaqueBase ? "opaque_disabled_blending" : "alpha_blending")
+                      << " overlay=alpha_blending"
+                      << " overlay_enabled=" << (drawPanelOverlay ? "yes" : "no") << '\n'
+                      << "Desktop bound slots: texture=t"
+                      << rendering::desktopTextureShaderRegister
+                      << " sampler=s" << rendering::desktopSamplerShaderRegister
+                      << " VS_constants=b" << rendering::panelConstantBufferShaderRegister
+                      << " PS_constants=b" << rendering::panelConstantBufferShaderRegister << '\n';
+            desktopBlendStateTraced_ = true;
+        }
+        if (desktopDebugRenderTargetPath_.has_value() && !renderTargetDumpAttempted_)
+        {
+            renderTargetDumpAttempted_ = true;
+            ComPtr<ID3D11Resource> targetResource;
+            renderTarget_->GetResource(&targetResource);
+            ComPtr<ID3D11Texture2D> targetTexture;
+            result = targetResource.As(&targetTexture);
+            if (FAILED(result))
+            {
+                error_ = "Render-target resource is not an ID3D11Texture2D: "
+                    + hresultText(result);
+                return false;
+            }
+            if (!dumpTexture(targetTexture.Get(), *desktopDebugRenderTargetPath_,
+                    desktopFrameSequence_, "desktop_render_target_readback",
+                    renderTargetReadbackChecksum_))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    [[nodiscard]] bool updateDesktopFrame(
+        const capture::DesktopCaptureFrame& frame,
+        capture::DesktopFit fit,
+        capture::DesktopFilter filter,
+        bool flipY)
+    {
+        if (!frame.valid || (!frame.cpuPixels
+                && (!frame.surface || frame.surface->sharedHandle() == nullptr)))
+        {
+            error_ = "Refusing to consume an invalid desktop capture frame.";
+            return false;
+        }
+        if (frame.cpuPixels)
+        {
+            ++desktopStatistics_.cpuFramesSeen;
+            const auto packed = capture::calculatePackedBgraLayout(
+                frame.sourceWidth, frame.sourceHeight);
+            const bool bufferValid = packed.has_value()
+                && frame.cpuRowPitch >= packed->stride
+                && frame.cpuPixels->size() >= static_cast<std::size_t>(frame.cpuRowPitch)
+                    * frame.sourceHeight;
+            capture::DesktopUploadState uploadState{
+                desktopFrameSequence_, desktopWidth_, desktopHeight_, desktopFormat_,
+                desktopLocalTexture_ != nullptr && desktopSurfaceIdentity_ == nullptr};
+            const auto action = capture::decideDesktopUpload(uploadState, frame.sequence,
+                frame.sourceWidth, frame.sourceHeight, frame.sourceFormat,
+                frame.valid && bufferValid);
+            if (action == capture::DesktopUploadAction::skipSameSequence)
+            {
+                ++desktopStatistics_.cpuFramesSkippedSameSequence;
+                return true;
+            }
+            if (action == capture::DesktopUploadAction::invalid)
+            {
+                ++desktopStatistics_.updateSubresourceFailures;
+                error_ = "CPU desktop frame has invalid dimensions, format, sequence, stride, or buffer size.";
+                return false;
+            }
+            ++desktopStatistics_.cpuFramesConsumed;
+            desktopStatistics_.latestConsumedSequence = frame.sequence;
+            if (!firstCpuConsumedTraced_)
+            {
+                std::cout << "desktop-first-frame stage=cpu_frame_consumed sequence="
+                          << frame.sequence << '\n';
+                firstCpuConsumedTraced_ = true;
+            }
+            const bool dimensionsChanged = action == capture::DesktopUploadAction::create
+                || action == capture::DesktopUploadAction::recreate;
+            if (dimensionsChanged)
+            {
+                D3D11_TEXTURE2D_DESC description{};
+                description.Width = frame.sourceWidth;
+                description.Height = frame.sourceHeight;
+                description.MipLevels = 1;
+                description.ArraySize = 1;
+                description.Format = static_cast<DXGI_FORMAT>(frame.sourceFormat);
+                description.SampleDesc.Count = 1;
+                description.Usage = D3D11_USAGE_DEFAULT;
+                description.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+                const auto textureDescriptionContract = textureContract(description);
+                if (!rendering::isShaderReadableDesktopTexture(textureDescriptionContract))
+                {
+                    error_ = "CPU-upload texture descriptor is not a shader-readable BGRA texture.";
+                    return false;
+                }
+                desktopShaderResource_.Reset();
+                desktopLocalTexture_.Reset();
+                HRESULT result = device_->CreateTexture2D(
+                    &description, nullptr, &desktopLocalTexture_);
+                if (FAILED(result))
+                {
+                    error_ = "Creating CPU-upload desktop texture failed: " + hresultText(result);
+                    return false;
+                }
+                if (action == capture::DesktopUploadAction::create)
+                {
+                    ++desktopStatistics_.uploadTextureCreations;
+                }
+                else
+                {
+                    ++desktopStatistics_.uploadTextureRecreations;
+                }
+                if (!firstUploadTextureTraced_)
+                {
+                    std::cout << "desktop-first-frame stage=upload_texture_created sequence="
+                              << frame.sequence << '\n';
+                    firstUploadTextureTraced_ = true;
+                }
+                D3D11_SHADER_RESOURCE_VIEW_DESC resourceDescription{};
+                resourceDescription.Format = description.Format;
+                resourceDescription.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+                resourceDescription.Texture2D.MostDetailedMip = 0U;
+                resourceDescription.Texture2D.MipLevels = 1U;
+                result = device_->CreateShaderResourceView(desktopLocalTexture_.Get(),
+                    &resourceDescription, &desktopShaderResource_);
+                if (FAILED(result))
+                {
+                    ++desktopStatistics_.desktopSrvFailures;
+                    error_ = "Creating CPU-upload desktop SRV failed: " + hresultText(result);
+                    return false;
+                }
+                ++desktopStatistics_.desktopSrvCreations;
+                desktopStatistics_.desktopSrvValid = true;
+                desktopSharedTexture_.Reset();
+                desktopKeyedMutex_.Reset();
+                desktopSurfaceIdentity_ = nullptr;
+                desktopSharedHandle_ = nullptr;
+                desktopWidth_ = frame.sourceWidth;
+                desktopHeight_ = frame.sourceHeight;
+                desktopFormat_ = frame.sourceFormat;
+                if (!desktopDescriptorsTraced_)
+                {
+                    if (!traceDesktopDescriptors())
+                    {
+                        return false;
+                    }
+                    desktopDescriptorsTraced_ = true;
+                }
+            }
+            ++desktopStatistics_.updateSubresourceCalls;
+            context_->UpdateSubresource(desktopLocalTexture_.Get(), 0U, nullptr,
+                frame.cpuPixels->data(), frame.cpuRowPitch, 0U);
+            if (!firstUpdateTraced_)
+            {
+                std::cout << "desktop-first-frame stage=update_subresource_completed sequence="
+                          << frame.sequence << '\n';
+                firstUpdateTraced_ = true;
+            }
+            if (!firstSrvCreatedTraced_ && desktopStatistics_.desktopSrvValid)
+            {
+                std::cout << "desktop-first-frame stage=desktop_srv_created sequence="
+                          << frame.sequence << '\n';
+                firstSrvCreatedTraced_ = true;
+            }
+            if (desktopDrawEvents_.empty())
+            {
+                desktopDrawEvents_.push_back(rendering::DesktopDrawEvent::textureUpdated);
+                desktopDrawEvents_.push_back(rendering::DesktopDrawEvent::shaderResourceReady);
+            }
+            if (desktopDebugReadbackUploadPath_.has_value() && !uploadReadbackAttempted_)
+            {
+                uploadReadbackAttempted_ = true;
+                const auto sourceContent = capture::analyzeDesktopFrameContent(frame);
+                if (!sourceContent.has_value())
+                {
+                    ++desktopStatistics_.updateSubresourceFailures;
+                    error_ = "CPU desktop frame could not be analyzed for debug readback.";
+                    return false;
+                }
+                desktopUploadSourceChecksum_ = sourceContent->checksum;
+                if (!dumpTexture(desktopLocalTexture_.Get(), *desktopDebugReadbackUploadPath_,
+                        frame.sequence, "desktop_upload_readback", uploadReadbackChecksum_))
+                {
+                    return false;
+                }
+                std::cout << "Desktop upload checksum comparison: source=0x"
+                          << std::hex << std::uppercase << desktopUploadSourceChecksum_
+                          << " readback=0x" << uploadReadbackChecksum_ << std::dec
+                          << " match="
+                          << (desktopUploadSourceChecksum_ == uploadReadbackChecksum_
+                                  ? "yes" : "no") << '\n';
+                if (desktopUploadSourceChecksum_ != uploadReadbackChecksum_)
+                {
+                    error_ = "Desktop upload readback checksum does not match the CPU source.";
+                    return false;
+                }
+            }
+            desktopFrameSequence_ = frame.sequence;
+            desktopStatistics_.latestUploadedSequence = frame.sequence;
+            desktopStatistics_.latestUploadWidth = frame.sourceWidth;
+            desktopStatistics_.latestUploadHeight = frame.sourceHeight;
+            desktopStatistics_.latestUploadFormat = frame.sourceFormat;
+            desktopStatistics_.uploadTextureValid = desktopLocalTexture_ != nullptr;
+            desktopFilter_ = filter;
+            desktopLayout_ = capture::calculateDesktopTextureLayout(
+                frame.sourceWidth, frame.sourceHeight, panelWidth_ / panelHeight_,
+                fit, frame.rotation, flipY);
+            return true;
+        }
+        if (frame.sequence == desktopFrameSequence_)
+        {
+            return true;
+        }
+        const bool resourceChanged = frame.surface->sharedHandle() != desktopSharedHandle_
+            || frame.recoveryGeneration != desktopRecoveryGeneration_
+            || frame.sourceWidth != desktopWidth_ || frame.sourceHeight != desktopHeight_
+            || frame.sourceFormat != desktopFormat_;
+        if (resourceChanged)
+        {
+            ComPtr<ID3D11Device1> device1;
+            HRESULT result = device_.As(&device1);
+            if (FAILED(result))
+            {
+                error_ = "Render device does not expose ID3D11Device1 for NT shared handles: "
+                    + hresultText(result);
+                return false;
+            }
+            ComPtr<ID3D11Texture2D> sharedTexture;
+            result = device1->OpenSharedResource1(
+                static_cast<HANDLE>(frame.surface->sharedHandle()), IID_PPV_ARGS(&sharedTexture));
+            if (FAILED(result))
+            {
+                error_ = "ID3D11Device1::OpenSharedResource1 failed for the desktop texture: "
+                    + hresultText(result)
+                    + ". Cross-adapter sharing was not claimed and no CPU fallback was used.";
+                return false;
+            }
+            ComPtr<IDXGIKeyedMutex> keyedMutex;
+            result = sharedTexture.As(&keyedMutex);
+            if (FAILED(result))
+            {
+                error_ = "Shared desktop texture does not expose IDXGIKeyedMutex: "
+                    + hresultText(result);
+                return false;
+            }
+            D3D11_TEXTURE2D_DESC description{};
+            sharedTexture->GetDesc(&description);
+            description.MiscFlags = 0U;
+            description.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+            description.CPUAccessFlags = 0U;
+            description.Usage = D3D11_USAGE_DEFAULT;
+            ComPtr<ID3D11Texture2D> localTexture;
+            result = device_->CreateTexture2D(&description, nullptr, &localTexture);
+            if (FAILED(result))
+            {
+                error_ = "Creating render-owned desktop texture failed: " + hresultText(result);
+                return false;
+            }
+            ComPtr<ID3D11ShaderResourceView> shaderResource;
+            D3D11_SHADER_RESOURCE_VIEW_DESC resourceDescription{};
+            resourceDescription.Format = description.Format;
+            resourceDescription.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+            resourceDescription.Texture2D.MostDetailedMip = 0U;
+            resourceDescription.Texture2D.MipLevels = 1U;
+            result = device_->CreateShaderResourceView(
+                localTexture.Get(), &resourceDescription, &shaderResource);
+            if (FAILED(result))
+            {
+                error_ = "Creating desktop shader-resource view failed: " + hresultText(result);
+                return false;
+            }
+            desktopSharedTexture_ = std::move(sharedTexture);
+            desktopKeyedMutex_ = std::move(keyedMutex);
+            desktopLocalTexture_ = std::move(localTexture);
+            desktopShaderResource_ = std::move(shaderResource);
+            desktopStatistics_.desktopSrvValid = true;
+            desktopSurfaceIdentity_ = frame.surface.get();
+            desktopSharedHandle_ = frame.surface->sharedHandle();
+            desktopRecoveryGeneration_ = frame.recoveryGeneration;
+            desktopWidth_ = frame.sourceWidth;
+            desktopHeight_ = frame.sourceHeight;
+            desktopFormat_ = frame.sourceFormat;
+            if (!desktopDescriptorsTraced_)
+            {
+                if (!traceDesktopDescriptors())
+                {
+                    return false;
+                }
+                desktopDescriptorsTraced_ = true;
+            }
+        }
+        const HRESULT acquired = desktopKeyedMutex_->AcquireSync(1U, 0U);
+        if (acquired == WAIT_TIMEOUT)
+        {
+            return true;
+        }
+        if (FAILED(acquired))
+        {
+            error_ = "Render keyed-mutex AcquireSync failed: " + hresultText(acquired);
+            return false;
+        }
+        context_->CopyResource(desktopLocalTexture_.Get(), desktopSharedTexture_.Get());
+        if (desktopDrawEvents_.empty())
+        {
+            desktopDrawEvents_.push_back(rendering::DesktopDrawEvent::textureUpdated);
+            desktopDrawEvents_.push_back(rendering::DesktopDrawEvent::shaderResourceReady);
+        }
+        const HRESULT released = desktopKeyedMutex_->ReleaseSync(0U);
+        if (FAILED(released))
+        {
+            error_ = "Render keyed-mutex ReleaseSync failed: " + hresultText(released);
+            return false;
+        }
+        desktopFrameSequence_ = frame.sequence;
+        desktopFilter_ = filter;
+        desktopLayout_ = capture::calculateDesktopTextureLayout(
+            frame.sourceWidth, frame.sourceHeight, panelWidth_ / panelHeight_,
+            fit, frame.rotation, flipY);
         return true;
     }
 
@@ -762,6 +1476,24 @@ public:
             error_ = "IDXGISwapChain::Present failed: " + hresultText(result);
             return false;
         }
+        if (!desktopDrawEventLogPrinted_ && !desktopDrawEvents_.empty()
+            && desktopDrawEvents_.back() == rendering::DesktopDrawEvent::shaderResourceUnbound)
+        {
+            desktopDrawEvents_.push_back(rendering::DesktopDrawEvent::presented);
+            const bool overlayExpected = rendering::desktopOverlayEnabled(desktopShaderDebugMode_);
+            if (!rendering::validateDesktopDrawOrdering(desktopDrawEvents_, overlayExpected))
+            {
+                error_ = "First desktop frame violated the required draw-call ordering.";
+                return false;
+            }
+            std::cout << "Desktop first-frame draw ordering:\n";
+            for (const auto event : desktopDrawEvents_)
+            {
+                std::cout << "  desktop-draw-event="
+                          << rendering::desktopDrawEventText(event) << '\n';
+            }
+            desktopDrawEventLogPrinted_ = true;
+        }
         return true;
     }
 
@@ -774,6 +1506,11 @@ public:
     D3D_FEATURE_LEVEL featureLevel_{};
     bool debugLayerUnavailable_{};
     bool fullscreen_{};
+    rendering::DesktopShaderDebugMode desktopShaderDebugMode_{
+        rendering::DesktopShaderDebugMode::normal};
+    bool desktopDebugOpaqueBase_{};
+    std::optional<std::string> desktopDebugReadbackUploadPath_;
+    std::optional<std::string> desktopDebugRenderTargetPath_;
     HANDLE frameLatencyWaitableObject_{};
     D3D11RendererInformation information_;
     std::string error_;
@@ -789,11 +1526,46 @@ public:
     ComPtr<ID3D11DepthStencilView> depthView_;
     ComPtr<ID3D11VertexShader> vertexShader_;
     ComPtr<ID3D11PixelShader> pixelShader_;
+    ComPtr<ID3D11PixelShader> overlayPixelShader_;
     ComPtr<ID3D11InputLayout> inputLayout_;
     ComPtr<ID3D11Buffer> constantBuffer_;
     ComPtr<ID3D11RasterizerState> rasterizerState_;
     ComPtr<ID3D11BlendState> blendState_;
+    ComPtr<ID3D11BlendState> opaqueBlendState_;
     ComPtr<ID3D11DepthStencilState> depthStencilState_;
+    ComPtr<ID3D11SamplerState> pointSampler_;
+    ComPtr<ID3D11SamplerState> linearSampler_;
+    ComPtr<ID3D11Texture2D> desktopSharedTexture_;
+    ComPtr<IDXGIKeyedMutex> desktopKeyedMutex_;
+    ComPtr<ID3D11Texture2D> desktopLocalTexture_;
+    ComPtr<ID3D11ShaderResourceView> desktopShaderResource_;
+    const capture::DesktopCaptureSurface* desktopSurfaceIdentity_{};
+    void* desktopSharedHandle_{};
+    std::uint64_t desktopRecoveryGeneration_{};
+    std::uint64_t desktopFrameSequence_{};
+    std::uint32_t desktopWidth_{};
+    std::uint32_t desktopHeight_{};
+    std::uint32_t desktopFormat_{};
+    capture::DesktopFilter desktopFilter_{capture::DesktopFilter::linear};
+    capture::DesktopTextureLayout desktopLayout_;
+    capture::DesktopRenderStageStatistics desktopStatistics_;
+    std::uint64_t desktopUploadSourceChecksum_{};
+    std::uint64_t uploadReadbackChecksum_{};
+    std::uint64_t renderTargetReadbackChecksum_{};
+    std::vector<rendering::DesktopDrawEvent> desktopDrawEvents_;
+    bool desktopDescriptorsTraced_{};
+    bool desktopConstantsTraced_{};
+    bool desktopBlendStateTraced_{};
+    bool uploadReadbackAttempted_{};
+    bool renderTargetDumpAttempted_{};
+    bool desktopDrawEventLogPrinted_{};
+    bool firstCpuConsumedTraced_{};
+    bool firstUploadTextureTraced_{};
+    bool firstUpdateTraced_{};
+    bool firstSrvCreatedTraced_{};
+    bool firstSrvBindTraced_{};
+    bool firstShaderPathTraced_{};
+    bool firstDesktopRenderedTraced_{};
     ComPtr<ID3D11Buffer> panelBuffer_;
     ComPtr<ID3D11Buffer> panelIndexBuffer_;
     ComPtr<ID3D11Buffer> lineBuffer_;
@@ -821,13 +1593,26 @@ bool D3D11Renderer::resize(unsigned int width, unsigned int height)
     return implementation_->resize(width, height);
 }
 
+bool D3D11Renderer::updateDesktopFrame(
+    const capture::DesktopCaptureFrame& frame,
+    capture::DesktopFit fit,
+    capture::DesktopFilter filter,
+    bool flipY)
+{
+    return implementation_->updateDesktopFrame(frame, fit, filter, flipY);
+}
+
 bool D3D11Renderer::render(
     const rendering::Matrix4& matrix,
     bool grid,
     bool axes,
-    bool ready)
+    bool ready,
+    bool desktopContent,
+    capture::DesktopBackground desktopBackground,
+    bool desktopStale)
 {
-    return implementation_->render(matrix, grid, axes, ready);
+    return implementation_->render(
+        matrix, grid, axes, ready, desktopContent, desktopBackground, desktopStale);
 }
 
 bool D3D11Renderer::present(bool vsync) { return implementation_->present(vsync); }
@@ -835,6 +1620,11 @@ bool D3D11Renderer::present(bool vsync) { return implementation_->present(vsync)
 const D3D11RendererInformation& D3D11Renderer::information() const noexcept
 {
     return implementation_->information_;
+}
+
+capture::DesktopRenderStageStatistics D3D11Renderer::desktopStatistics() const noexcept
+{
+    return implementation_->desktopStatistics_;
 }
 
 const std::string& D3D11Renderer::error() const noexcept { return implementation_->error_; }

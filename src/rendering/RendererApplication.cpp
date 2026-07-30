@@ -1,5 +1,8 @@
 #include "rendering/RendererApplication.hpp"
 
+#include "capture/DesktopCaptureDiagnostics.hpp"
+#include "capture/DesktopCpuFrame.hpp"
+#include "capture/DesktopDuplicationCapture.hpp"
 #include "graphics/D3D11Renderer.hpp"
 #include "platform/windows/RenderWindow.hpp"
 #include "rendering/Camera.hpp"
@@ -24,6 +27,17 @@ namespace xreal::rendering
 {
 namespace
 {
+
+[[nodiscard]] std::string bgraPixelText(const capture::BgraPixel& pixel)
+{
+    std::ostringstream output;
+    output << std::hex << std::uppercase << std::setfill('0')
+           << std::setw(2) << static_cast<unsigned int>(pixel.blue) << ' '
+           << std::setw(2) << static_cast<unsigned int>(pixel.green) << ' '
+           << std::setw(2) << static_cast<unsigned int>(pixel.red) << ' '
+           << std::setw(2) << static_cast<unsigned int>(pixel.alpha);
+    return output.str();
+}
 
 [[nodiscard]] std::optional<std::string> readTextFile(
     const std::string& path,
@@ -194,13 +208,18 @@ int RendererApplication::run()
         std::cerr << "Display topology warning: " << topology.error << '\n';
     }
     printMonitors(monitors);
-    if (options_.monitorIndex >= monitors.size())
+    capture::MonitorSelector renderSelector;
+    renderSelector.index = options_.monitorIndex;
+    renderSelector.deviceName = options_.renderMonitorDeviceName;
+    const auto renderSelection = capture::resolveMonitor(monitors, renderSelector, "Render");
+    if (renderSelection.monitor == nullptr)
     {
-        std::cerr << "Monitor index " << options_.monitorIndex << " does not exist.\n";
+        std::cerr << renderSelection.error << '\n';
         return 1;
     }
-    const auto& selectedMonitor = monitors[options_.monitorIndex];
-    std::cout << "Selected monitor [" << selectedMonitor.index << "]: "
+    const auto& selectedMonitor = *renderSelection.monitor;
+    options_.monitorIndex = selectedMonitor.index;
+    std::cout << "Selected render monitor [" << selectedMonitor.index << "]: "
               << selectedMonitor.deviceName << '\n';
     if (!selectedMonitor.dxgiOutput.has_value())
     {
@@ -293,6 +312,10 @@ int RendererApplication::run()
     rendererConfig.panelDistance = options_.panelDistance;
     rendererConfig.panelWidth = options_.panelWidth;
     rendererConfig.panelHeight = options_.panelHeight;
+    rendererConfig.desktopShaderDebugMode = options_.desktopShaderDebugMode;
+    rendererConfig.desktopDebugOpaqueBase = options_.desktopDebugOpaqueBase;
+    rendererConfig.desktopDebugReadbackUploadPath = options_.desktopDebugReadbackUploadPath;
+    rendererConfig.desktopDebugRenderTargetPath = options_.desktopDebugRenderTargetPath;
     if (selectedMonitor.dxgiOutput.has_value())
     {
         rendererConfig.selectedAdapterLuid = selectedMonitor.dxgiOutput->adapterLuid;
@@ -331,13 +354,123 @@ int RendererApplication::run()
         std::cout << "D3D11 debug layer unavailable or disabled; rendering continues without it.\n";
     }
 
+    capture::DesktopCaptureBridge desktopBridge;
+    capture::DesktopCaptureDiagnostics desktopDiagnostics;
+    std::unique_ptr<capture::DesktopDuplicationCapture> desktopCapture;
+    capture::DesktopCaptureStatistics checkerboardCaptureStatistics;
+    const platform::windows::MonitorInformation* captureMonitor{};
+    if (options_.desktopCapture.panelContent == capture::PanelContent::desktop)
+    {
+        if (options_.desktopDebugCheckerboard)
+        {
+            if (!graphicsInfo.adapterLuid.has_value())
+            {
+                std::cerr << "The render adapter LUID is unavailable for checkerboard metadata.\n";
+                return 1;
+            }
+            captureMonitor = &selectedMonitor;
+            auto checkerboard = capture::makeDesktopCheckerboardFrame(640U, 360U);
+            if (!checkerboard.has_value())
+            {
+                std::cerr << "Failed to create the desktop debug checkerboard.\n";
+                return 1;
+            }
+            const auto checkerboardContent = capture::analyzeDesktopFrameContent(*checkerboard);
+            if (!checkerboardContent.has_value() || checkerboardContent->allZero
+                || !checkerboardContent->allOpaque
+                || checkerboardContent->distinctColorCount < 4U)
+            {
+                std::cerr << "Desktop debug checkerboard failed opacity or color validation.\n";
+                return 1;
+            }
+            std::cout << "Desktop checkerboard source: dimensions=640x360"
+                      << " stride=" << checkerboard->cpuRowPitch
+                      << " format=" << checkerboard->sourceFormat
+                      << " valid=yes sequence=" << checkerboard->sequence
+                      << " bytes=" << checkerboardContent->byteCount
+                      << " first_bgra=" << bgraPixelText(checkerboardContent->firstPixel)
+                      << " center_bgra=" << bgraPixelText(checkerboardContent->centerPixel)
+                      << " last_bgra=" << bgraPixelText(checkerboardContent->lastPixel)
+                      << " distinct_colors=" << checkerboardContent->distinctColorCount
+                      << " opaque=yes all_zero=no checksum=0x"
+                      << std::hex << std::uppercase << checkerboardContent->checksum
+                      << std::dec << '\n';
+            checkerboard->sourceAdapterLuid = *graphicsInfo.adapterLuid;
+            const std::uint64_t sequence = desktopBridge.publish(std::move(*checkerboard));
+            if (sequence == 0U)
+            {
+                std::cerr << "Failed to publish the desktop debug checkerboard.\n";
+                return 1;
+            }
+            checkerboardCaptureStatistics.state = capture::DesktopCaptureStatus::active;
+            checkerboardCaptureStatistics.transferMode = "debug_cpu_checkerboard";
+            checkerboardCaptureStatistics.acquiredFrames = 1U;
+            checkerboardCaptureStatistics.stagingCopies = 1U;
+            checkerboardCaptureStatistics.stagingMaps = 1U;
+            checkerboardCaptureStatistics.stagingMapSuccesses = 1U;
+            checkerboardCaptureStatistics.cpuBuffersCreated = 1U;
+            checkerboardCaptureStatistics.cpuFramesPublished = 1U;
+            checkerboardCaptureStatistics.latestPublishedSequence = sequence;
+            checkerboardCaptureStatistics.sourceWidth = 640U;
+            checkerboardCaptureStatistics.sourceHeight = 360U;
+            checkerboardCaptureStatistics.sourceFormat = 87U;
+            std::cout << "Desktop debug checkerboard published through CPU bridge.\n"
+                      << "desktop-first-frame stage=acquired capture_candidate=1\n"
+                      << "desktop-first-frame stage=cpu_staging_map_succeeded capture_candidate=1\n"
+                      << "desktop-first-frame stage=cpu_frame_published sequence="
+                      << sequence << '\n';
+        }
+        else
+        {
+        const auto captureSelection = capture::resolveMonitor(
+            monitors, options_.desktopCapture.captureMonitor, "Capture");
+        if (captureSelection.monitor == nullptr)
+        {
+            std::cerr << captureSelection.error << '\n';
+            return 1;
+        }
+        captureMonitor = captureSelection.monitor;
+        if (!graphicsInfo.adapterLuid.has_value())
+        {
+            std::cerr << "The render adapter LUID is unavailable; desktop transfer topology "
+                         "cannot be validated.\n";
+            return 1;
+        }
+        const bool captureSameAdapter = capture::sameAdapter(selectedMonitor, *captureMonitor);
+        std::cout << "Selected capture monitor [" << captureMonitor->index << "]: "
+                  << captureMonitor->deviceName << '\n'
+                  << "Capture adapter: " << captureMonitor->dxgiOutput->adapterDescription
+                  << " LUID=" << platform::windows::dxgiAdapterLuidText(
+                         captureMonitor->dxgiOutput->adapterLuid) << '\n'
+                  << "Capture/render topology: "
+                  << (captureSameAdapter ? "same-adapter" : "cross-adapter") << '\n'
+                  << "Requested transfer policy: "
+                  << capture::crossAdapterPolicyText(
+                         options_.desktopCapture.crossAdapterPolicy) << '\n'
+                  << "CPU fallback: "
+                  << (options_.desktopCapture.allowCpuFallback ? "explicitly allowed" : "disabled")
+                  << '\n';
+        desktopCapture = std::make_unique<capture::DesktopDuplicationCapture>(desktopBridge);
+        capture::DesktopDuplicationConfig captureConfig;
+        captureConfig.captureMonitor = *captureMonitor;
+        captureConfig.renderAdapterLuid = *graphicsInfo.adapterLuid;
+        captureConfig.options = options_.desktopCapture;
+        if (!desktopCapture->start(std::move(captureConfig)))
+        {
+            std::cerr << "Desktop capture startup failed: " << desktopCapture->error() << '\n';
+            return 1;
+        }
+        }
+    }
+
     RendererStartupState state = RendererStartupState::initializingRenderer;
     std::unique_ptr<DemoOrientationSource> demo;
     std::unique_ptr<SensorOrientationService> sensor;
     std::string startupError;
     if (options_.orientationDemoMode)
     {
-        demo = std::make_unique<DemoOrientationSource>(bridge, options_.predictionHorizonMilliseconds);
+        demo = std::make_unique<DemoOrientationSource>(bridge,
+            options_.orientationDemoStatic ? 0.0 : options_.predictionHorizonMilliseconds);
         state = RendererStartupState::ready;
         if (options_.recenterOnStart)
         {
@@ -378,6 +511,7 @@ int RendererApplication::run()
     auto nextPacedFrame = start;
     std::uint64_t previousSnapshotSequence{};
     std::uint64_t renderedFrames{};
+    std::optional<capture::DesktopCaptureFrame> latestDesktopFrame;
     std::string shutdownReason{"window_closed"};
     std::string runtimeError;
     ImuHealthCounters finalImu;
@@ -432,7 +566,7 @@ int RendererApplication::run()
             demoPitchSteps = 0;
             demoRollSteps = 0;
             if (demoReset) { demo->reset(); demoReset = false; }
-            demo->update(elapsed);
+            demo->update(options_.orientationDemoStatic ? 0.0 : elapsed);
         }
         else if (sensor)
         {
@@ -468,11 +602,46 @@ int RendererApplication::run()
             break;
         }
 
+        if (options_.desktopCapture.panelContent == capture::PanelContent::desktop)
+        {
+            if (desktopCapture)
+            {
+                const auto captureState = desktopCapture->statistics();
+                if (captureState.state == capture::DesktopCaptureStatus::fatalError
+                    || captureState.state == capture::DesktopCaptureStatus::unsupported
+                    || captureState.state == capture::DesktopCaptureStatus::outputMissing)
+                {
+                    runtimeError = desktopCapture->error();
+                    shutdownReason = "desktop_capture_error";
+                    break;
+                }
+            }
+            if (auto frame = desktopBridge.latest(); frame.has_value())
+            {
+                latestDesktopFrame = std::move(frame);
+                if (!renderer.updateDesktopFrame(*latestDesktopFrame,
+                        options_.desktopCapture.fit, options_.desktopCapture.filter,
+                        options_.desktopCapture.flipY))
+                {
+                    runtimeError = renderer.error();
+                    shutdownReason = "desktop_transfer_error";
+                    break;
+                }
+                desktopDiagnostics.recordRendered(*latestDesktopFrame, now);
+            }
+        }
+
         timing.beginFrame();
         timing.recordSnapshot(snapshot.has_value() ? &*snapshot : nullptr,
             repeated, !selected.valid, selected.preservingLastValid);
+        const bool desktopStale = !options_.desktopDebugCheckerboard
+            && latestDesktopFrame.has_value()
+            && now - latestDesktopFrame->captureHostTimestamp
+                > std::chrono::milliseconds(options_.desktopCapture.staleThresholdMilliseconds);
         const bool rendered = renderer.render(*viewProjection.matrix,
-            options_.backgroundGrid, options_.worldAxes, ready);
+            options_.backgroundGrid, options_.worldAxes, ready,
+            options_.desktopCapture.panelContent == capture::PanelContent::desktop,
+            options_.desktopCapture.background, desktopStale);
         const bool presented = rendered && renderer.present(options_.vsync);
         timing.endFrame(presented);
         if (!rendered || !presented)
@@ -487,10 +656,86 @@ int RendererApplication::run()
         {
             printFrameDiagnostics(timing.statistics(), state,
                 options_.orientationSource, options_.orientationFrame);
+            if (options_.desktopCapture.panelContent == capture::PanelContent::desktop
+                && options_.desktopCapture.diagnostics)
+            {
+                const auto captureStatistics = desktopCapture
+                    ? desktopCapture->statistics() : checkerboardCaptureStatistics;
+                const auto bridgeStatistics = desktopBridge.statistics();
+                const auto renderCaptureStatistics = desktopDiagnostics.snapshot();
+                const auto upload = renderer.desktopStatistics();
+                std::cout << "capture status="
+                          << capture::desktopCaptureStatusText(captureStatistics.state)
+                          << " capture_monitor=" << captureMonitor->deviceName
+                          << " transfer_mode=" << captureStatistics.transferMode
+                          << " capture_frame_sequence="
+                          << (latestDesktopFrame.has_value() ? latestDesktopFrame->sequence : 0U)
+                          << " capture_fps=" << captureStatistics.capturedFramesPerSecond
+                          << " source=" << captureStatistics.sourceWidth << 'x'
+                          << captureStatistics.sourceHeight
+                          << " format=" << captureStatistics.sourceFormat
+                          << " rotation="
+                          << static_cast<unsigned int>(captureStatistics.sourceRotation)
+                          << " source_frame_age_ms="
+                          << renderCaptureStatistics.averageSourceFrameAgeMilliseconds
+                          << " repeated=" << renderCaptureStatistics.repeatedCaptureFrames
+                          << " dropped=" << bridgeStatistics.droppedPublications
+                          << " access_loss_count=" << captureStatistics.accessLossEvents
+                          << " recovery_generation=" << captureStatistics.recoveryGeneration
+                          << " frames_acquired=" << captureStatistics.acquiredFrames
+                          << " staging_copies=" << captureStatistics.stagingCopies
+                          << " staging_maps=" << captureStatistics.stagingMaps
+                          << " staging_map_successes=" << captureStatistics.stagingMapSuccesses
+                          << " cpu_buffers_created=" << captureStatistics.cpuBuffersCreated
+                          << " cpu_frames_published=" << captureStatistics.cpuFramesPublished
+                          << " latest_published_sequence=" << captureStatistics.latestPublishedSequence
+                          << " cpu_frames_seen=" << upload.cpuFramesSeen
+                          << " cpu_frames_consumed=" << upload.cpuFramesConsumed
+                          << " cpu_frames_skipped_same_sequence=" << upload.cpuFramesSkippedSameSequence
+                          << " latest_consumed_sequence=" << upload.latestConsumedSequence
+                          << " upload_texture_creations=" << upload.uploadTextureCreations
+                          << " upload_texture_recreations=" << upload.uploadTextureRecreations
+                          << " update_subresource_calls=" << upload.updateSubresourceCalls
+                          << " update_subresource_failures=" << upload.updateSubresourceFailures
+                          << " latest_uploaded_sequence=" << upload.latestUploadedSequence
+                          << " latest_upload=" << upload.latestUploadWidth << 'x'
+                          << upload.latestUploadHeight << ':' << upload.latestUploadFormat
+                          << " upload_texture_valid=" << (upload.uploadTextureValid ? "yes" : "no")
+                          << " desktop_srv_creations=" << upload.desktopSrvCreations
+                          << " desktop_srv_failures=" << upload.desktopSrvFailures
+                          << " desktop_srv_bind_count=" << upload.desktopSrvBindCount
+                          << " latest_bound_sequence=" << upload.latestBoundSequence
+                          << " desktop_srv_valid=" << (upload.desktopSrvValid ? "yes" : "no")
+                          << " panel_content_requested="
+                          << capture::panelContentText(upload.panelContentRequested)
+                          << " panel_content_effective="
+                          << capture::desktopPanelEffectiveModeText(upload.panelContentEffective)
+                          << " desktop_texture_available="
+                          << (upload.desktopTextureAvailable ? "yes" : "no")
+                          << " rendered_desktop_frames=" << upload.renderedDesktopFrames
+                          << " rendered_unavailable_frames=" << upload.renderedUnavailableFrames
+                          << " rendered_synthetic_frames=" << upload.renderedSyntheticFrames
+                          << '\n';
+            }
             nextDiagnostics = now + std::chrono::milliseconds(
                 1000 / options_.renderDiagnosticsRateHz);
         }
-        if (options_.smokeTest && renderedFrames >= options_.smokeTestFrames)
+        if (options_.desktopCaptureSmokeTest && desktopCapture)
+        {
+            const auto captureStatistics = desktopCapture->statistics();
+            if (captureStatistics.acquiredFrames >= options_.desktopCaptureSmokeTestFrames)
+            {
+                shutdownReason = "desktop_capture_smoke_test_complete";
+                break;
+            }
+            if (elapsed >= 10.0)
+            {
+                runtimeError = "Desktop capture smoke test timed out before acquiring the requested frames.";
+                shutdownReason = "desktop_capture_smoke_test_timeout";
+                break;
+            }
+        }
+        else if (options_.smokeTest && renderedFrames >= options_.smokeTestFrames)
         {
             shutdownReason = "smoke_test_complete";
             break;
@@ -518,6 +763,10 @@ int RendererApplication::run()
     if (sensor)
     {
         sensor->stop();
+    }
+    if (desktopCapture)
+    {
+        desktopCapture->stop();
     }
     state = runtimeError.empty() ? RendererStartupState::shuttingDown : RendererStartupState::error;
     const auto statistics = timing.statistics();
@@ -547,6 +796,9 @@ int RendererApplication::run()
         summary.calibrationAccepted = calibrationAccepted;
         summary.shutdownReason = shutdownReason;
         summary.error = runtimeError;
+        summary.desktop = renderer.desktopStatistics();
+        summary.capture = desktopCapture
+            ? desktopCapture->statistics() : checkerboardCaptureStatistics;
         std::ofstream output(*options_.renderJsonOutputPath, std::ios::trunc);
         if (!output)
         {
@@ -558,6 +810,37 @@ int RendererApplication::run()
         if (!output)
         {
             std::cerr << "Failed to write render JSON output.\n";
+            return 1;
+        }
+    }
+    if (options_.desktopCapture.panelContent == capture::PanelContent::desktop
+        && options_.desktopCapture.jsonOutputPath.has_value()
+        && captureMonitor != nullptr)
+    {
+        capture::DesktopCaptureSummary summary;
+        summary.renderMonitor = selectedMonitor;
+        summary.captureMonitor = *captureMonitor;
+        summary.options = options_.desktopCapture;
+        summary.capture = desktopCapture
+            ? desktopCapture->statistics() : checkerboardCaptureStatistics;
+        summary.bridge = desktopBridge.statistics();
+        summary.render = desktopDiagnostics.snapshot();
+        summary.stages = renderer.desktopStatistics();
+        summary.sameAdapter = capture::sameAdapter(selectedMonitor, *captureMonitor);
+        summary.sharedHandleSupported = summary.capture.gpuCopies > 0U;
+        summary.cpuFallbackUsed = summary.capture.cpuFallbackCopies > 0U;
+        summary.finalError = runtimeError;
+        std::ofstream output(*options_.desktopCapture.jsonOutputPath, std::ios::trunc);
+        if (!output)
+        {
+            std::cerr << "Failed to open desktop capture JSON output: "
+                      << *options_.desktopCapture.jsonOutputPath << '\n';
+            return 1;
+        }
+        output << capture::serializeDesktopCaptureSummaryJson(summary);
+        if (!output)
+        {
+            std::cerr << "Failed to write desktop capture JSON output.\n";
             return 1;
         }
     }

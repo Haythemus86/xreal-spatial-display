@@ -142,6 +142,7 @@ target_link_libraries(
 add_library(
     xreal-rendering-core
     src/rendering/Camera.cpp
+    src/rendering/DesktopPanelDiagnostics.cpp
     src/rendering/DemoOrientationSource.cpp
     src/rendering/OrientationRenderBridge.cpp
     src/rendering/RenderDiagnostics.cpp
@@ -149,6 +150,34 @@ add_library(
     src/rendering/RendererSummary.cpp
     src/rendering/RenderMath.cpp
     src/rendering/SensorOrientationService.cpp
+)
+
+add_library(
+    xreal-desktop-capture
+    src/capture/DesktopCaptureBridge.cpp
+    src/capture/DesktopCaptureDiagnostics.cpp
+    src/capture/DesktopCaptureFrame.cpp
+    src/capture/DesktopCaptureOptions.cpp
+    src/capture/DesktopCaptureStatistics.cpp
+    src/capture/DesktopDuplicationCapture.cpp
+    src/capture/DesktopCpuFrame.cpp
+    src/capture/DesktopRenderStages.cpp
+    src/capture/DesktopTextureLayout.cpp
+)
+
+target_include_directories(
+    xreal-desktop-capture
+    PUBLIC
+        src
+)
+
+target_link_libraries(
+    xreal-desktop-capture
+    PUBLIC
+        xreal-platform-windows
+    PRIVATE
+        d3d11
+        dxgi
 )
 
 target_include_directories(
@@ -161,6 +190,7 @@ target_link_libraries(
     xreal-rendering-core
     PUBLIC
         xreal-sensors
+        xreal-desktop-capture
 )
 
 add_library(
@@ -177,6 +207,8 @@ target_include_directories(
 target_link_libraries(
     xreal-graphics-d3d11
     PRIVATE
+        xreal-desktop-capture
+        xreal-rendering-core
         d3d11
         dxgi
         d3dcompiler
@@ -292,6 +324,7 @@ target_link_libraries(
     xreal-spatial-renderer
     PRIVATE
         xreal-graphics-d3d11
+        xreal-desktop-capture
         xreal-platform-windows
         xreal-rendering-core
 )
@@ -321,6 +354,7 @@ set(xreal_project_targets
     xreal-gyro-scale-calibration-support
     xreal-gyro-recording-analyzer-support
     xreal-platform-windows
+    xreal-desktop-capture
     xreal-rendering-core
     xreal-graphics-d3d11
     xreal-sensor-diagnostic
@@ -346,6 +380,28 @@ endforeach()
 include(CTest)
 
 if(BUILD_TESTING)
+    add_executable(
+        xreal-desktop-capture-tests
+        tests/DesktopCaptureTests.cpp
+    )
+    target_include_directories(
+        xreal-desktop-capture-tests
+        PRIVATE
+            tests
+    )
+    target_link_libraries(
+        xreal-desktop-capture-tests
+        PRIVATE
+            xreal-desktop-capture
+    )
+    target_compile_options(
+        xreal-desktop-capture-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+    add_test(NAME xreal-desktop-capture-tests COMMAND xreal-desktop-capture-tests)
+
     add_executable(
         xreal-display-topology-tests
         tests/DisplayTopologyTests.cpp
@@ -788,6 +844,11 @@ if(BUILD_TESTING)
         xreal-renderer-options-tests
         PRIVATE
             xreal-rendering-core
+    )
+    target_compile_definitions(
+        xreal-renderer-options-tests
+        PRIVATE
+            XREAL_PANEL_SHADER_PATH="${CMAKE_CURRENT_SOURCE_DIR}/shaders/Panel.hlsl"
     )
     target_compile_options(
         xreal-renderer-options-tests

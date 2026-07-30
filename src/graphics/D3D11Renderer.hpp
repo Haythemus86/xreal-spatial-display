@@ -1,6 +1,10 @@
 #pragma once
 
+#include "capture/DesktopCaptureFrame.hpp"
+#include "capture/DesktopCaptureOptions.hpp"
+#include "capture/DesktopRenderStages.hpp"
 #include "platform/windows/DisplayTopology.hpp"
+#include "rendering/DesktopPanelDiagnostics.hpp"
 #include "rendering/RenderMath.hpp"
 
 #include <memory>
@@ -21,6 +25,11 @@ struct D3D11RendererConfig
     double panelDistance{2.0};
     double panelWidth{1.6};
     double panelHeight{0.9};
+    rendering::DesktopShaderDebugMode desktopShaderDebugMode{
+        rendering::DesktopShaderDebugMode::normal};
+    bool desktopDebugOpaqueBase{};
+    std::optional<std::string> desktopDebugReadbackUploadPath;
+    std::optional<std::string> desktopDebugRenderTargetPath;
 };
 
 struct D3D11RendererInformation
@@ -51,13 +60,22 @@ public:
 
     [[nodiscard]] bool initialize(void* nativeWindow, const D3D11RendererConfig& config);
     [[nodiscard]] bool resize(unsigned int width, unsigned int height);
+    [[nodiscard]] bool updateDesktopFrame(
+        const capture::DesktopCaptureFrame& frame,
+        capture::DesktopFit fit,
+        capture::DesktopFilter filter,
+        bool flipY);
     [[nodiscard]] bool render(
         const rendering::Matrix4& viewProjection,
         bool backgroundGrid,
         bool worldAxes,
-        bool ready);
+        bool ready,
+        bool desktopContent = false,
+        capture::DesktopBackground desktopBackground = capture::DesktopBackground::black,
+        bool desktopStale = false);
     [[nodiscard]] bool present(bool vsync);
     [[nodiscard]] const D3D11RendererInformation& information() const noexcept;
+    [[nodiscard]] capture::DesktopRenderStageStatistics desktopStatistics() const noexcept;
     [[nodiscard]] const std::string& error() const noexcept;
 
 private:

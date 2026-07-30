@@ -137,6 +137,41 @@ std::string serializeRendererSummaryJson(const RendererSummary& summary)
            << "  \"device_counters\":{\"received\":" << summary.imu.received
            << ",\"dropped\":" << summary.imu.dropped << ",\"invalid\":"
            << summary.imu.invalid << ",\"out_of_sequence\":" << summary.imu.outOfSequence
+           << "},\n  \"desktop_frame_path\":{\"frames_acquired\":"
+           << summary.capture.acquiredFrames << ",\"staging_copies\":"
+           << summary.capture.stagingCopies << ",\"staging_maps\":"
+           << summary.capture.stagingMaps << ",\"staging_map_successes\":"
+           << summary.capture.stagingMapSuccesses << ",\"cpu_buffers_created\":"
+           << summary.capture.cpuBuffersCreated << ",\"cpu_frames_published\":"
+           << summary.capture.cpuFramesPublished << ",\"latest_published_sequence\":"
+           << summary.capture.latestPublishedSequence << ",\"cpu_frames_seen\":"
+           << summary.desktop.cpuFramesSeen << ",\"cpu_frames_consumed\":"
+           << summary.desktop.cpuFramesConsumed << ",\"cpu_frames_skipped_same_sequence\":"
+           << summary.desktop.cpuFramesSkippedSameSequence << ",\"latest_consumed_sequence\":"
+           << summary.desktop.latestConsumedSequence << ",\"upload_texture_creations\":"
+           << summary.desktop.uploadTextureCreations << ",\"upload_texture_recreations\":"
+           << summary.desktop.uploadTextureRecreations << ",\"update_subresource_calls\":"
+           << summary.desktop.updateSubresourceCalls << ",\"update_subresource_failures\":"
+           << summary.desktop.updateSubresourceFailures << ",\"latest_uploaded_sequence\":"
+           << summary.desktop.latestUploadedSequence << ",\"latest_upload_width\":"
+           << summary.desktop.latestUploadWidth << ",\"latest_upload_height\":"
+           << summary.desktop.latestUploadHeight << ",\"latest_upload_format\":"
+           << summary.desktop.latestUploadFormat << ",\"upload_texture_valid\":"
+           << (summary.desktop.uploadTextureValid ? "true" : "false")
+           << ",\"desktop_srv_creations\":" << summary.desktop.desktopSrvCreations
+           << ",\"desktop_srv_failures\":" << summary.desktop.desktopSrvFailures
+           << ",\"desktop_srv_bind_count\":" << summary.desktop.desktopSrvBindCount
+           << ",\"latest_bound_sequence\":" << summary.desktop.latestBoundSequence
+           << ",\"desktop_srv_valid\":" << (summary.desktop.desktopSrvValid ? "true" : "false")
+           << ",\"panel_content_requested\":\""
+           << capture::panelContentText(summary.desktop.panelContentRequested)
+           << "\",\"panel_content_effective\":\""
+           << capture::desktopPanelEffectiveModeText(summary.desktop.panelContentEffective)
+           << "\",\"desktop_texture_available\":"
+           << (summary.desktop.desktopTextureAvailable ? "true" : "false")
+           << ",\"rendered_desktop_frames\":" << summary.desktop.renderedDesktopFrames
+           << ",\"rendered_unavailable_frames\":" << summary.desktop.renderedUnavailableFrames
+           << ",\"rendered_synthetic_frames\":" << summary.desktop.renderedSyntheticFrames
            << "},\n  \"shutdown\":{\"state\":\""
            << rendererStartupStateText(summary.finalState) << "\",\"reason\":\""
            << escapeJson(summary.shutdownReason) << "\",\"error\":";
