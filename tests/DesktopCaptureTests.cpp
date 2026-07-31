@@ -2,6 +2,9 @@
 #include "capture/DesktopCaptureDiagnostics.hpp"
 #include "capture/DesktopCpuFrame.hpp"
 #include "capture/DesktopCaptureOptions.hpp"
+#include "capture/DesktopCaptureScaler.hpp"
+#include "capture/DesktopCaptureScaling.hpp"
+#include "capture/DesktopFrameRetention.hpp"
 #include "capture/DesktopTextureLayout.hpp"
 #include "capture/DesktopRenderStages.hpp"
 #include "JsonSyntaxParser.hpp"
@@ -13,6 +16,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <thread>
 #include <vector>
@@ -372,6 +376,9 @@ void testUploadDecisionsAndPanelMode()
     expect(effectiveDesktopPanelMode(PanelContent::desktop, true, false)
             == DesktopPanelEffectiveMode::desktop,
         "desktop requested with valid SRV selects the desktop shader path");
+    expect(effectiveDesktopPanelMode(PanelContent::desktop, true, true)
+            == DesktopPanelEffectiveMode::desktop,
+        "stale diagnostic state retains the last valid desktop SRV");
     expect(effectiveDesktopPanelMode(PanelContent::desktop, false, false)
             == DesktopPanelEffectiveMode::unavailable,
         "desktop requested without SRV selects unavailable, never synthetic");
@@ -387,6 +394,167 @@ void testUploadDecisionsAndPanelMode()
         "5120x1440 contain transform into 16:9 remains finite and non-zero");
 }
 
+void testGpuScalePlanning()
+{
+    using namespace xreal::capture;
+    DesktopScaleRequest request;
+    const auto native = resolveDesktopScalePlan(5120U, 1440U, request);
+    expect(native.plan.has_value() && native.plan->targetWidth == 5120U
+            && native.plan->targetHeight == 1440U && !native.plan->gpuScaleRequired,
+        "native 5120x1440 planning preserves the source");
+    expect(native.plan.has_value()
+            && native.plan->sourceBytesPerFrame == 29'491'200U,
+        "native ultrawide byte accounting is exact");
+
+    request.scale = 0.5;
+    const auto half = resolveDesktopScalePlan(5120U, 1440U, request);
+    expect(half.plan.has_value() && half.plan->targetWidth == 2560U
+            && half.plan->targetHeight == 720U && half.plan->gpuScaleRequired,
+        "scale 0.5 resolves to 2560x720 GPU scaling");
+
+    request = {};
+    request.targetWidth = 1920U;
+    const auto widthOnly = resolveDesktopScalePlan(5120U, 1440U, request);
+    expect(widthOnly.plan.has_value() && widthOnly.plan->targetHeight == 540U,
+        "one-dimensional target preserves source aspect ratio");
+
+    request = {};
+    request.cropMode = DesktopCropMode::center16x9;
+    const auto centerCrop = resolveDesktopScalePlan(5120U, 1440U, request);
+    expect(centerCrop.plan.has_value()
+            && centerCrop.plan->crop == DesktopCaptureRegion{1280U, 0U, 2560U, 1440U},
+        "center-16x9 crop is a symmetric 2560x1440 region");
+
+    request.targetWidth = 1920U;
+    request.targetHeight = 1080U;
+    const auto centerScaled = resolveDesktopScalePlan(5120U, 1440U, request);
+    expect(centerScaled.plan.has_value()
+            && centerScaled.plan->targetWidth == 1920U
+            && centerScaled.plan->targetHeight == 1080U
+            && centerScaled.plan->targetBytesPerFrame == 8'294'400U,
+        "center crop scales to exact 1920x1080 readback bytes");
+
+    request = {};
+    request.targetWidth = 1920U;
+    request.targetHeight = 540U;
+    const auto fullUltrawide = resolveDesktopScalePlan(5120U, 1440U, request);
+    expect(fullUltrawide.plan.has_value()
+            && fullUltrawide.plan->targetWidth == 1920U
+            && fullUltrawide.plan->targetHeight == 540U
+            && fullUltrawide.plan->targetBytesPerFrame == 4'147'200U,
+        "full ultrawide downscale preserves 32:9 without distortion");
+
+    request.targetHeight = 1080U;
+    request.fit = DesktopFit::cover;
+    const auto covered = resolveDesktopScalePlan(5120U, 1440U, request);
+    expect(covered.plan.has_value()
+            && covered.plan->crop == DesktopCaptureRegion{1280U, 0U, 2560U, 1440U}
+            && covered.plan->targetWidth == 1920U
+            && covered.plan->targetHeight == 1080U,
+        "cover applies one correctly offset centered crop before exact scaling");
+
+    request = {};
+    request.cropMode = DesktopCropMode::custom;
+    request.customRegion = {5000U, 0U, 200U, 100U};
+    expect(!resolveDesktopScalePlan(5120U, 1440U, request).plan.has_value(),
+        "crop outside the source is rejected");
+    expect(!resolveDesktopScalePlan(0U, 1440U, {}).plan.has_value(),
+        "zero source dimension is rejected");
+
+    request = {};
+    request.targetWidth = 6000U;
+    expect(!resolveDesktopScalePlan(5120U, 1440U, request).plan.has_value(),
+        "upscale is rejected by default");
+    request.allowUpscale = true;
+    expect(resolveDesktopScalePlan(5120U, 1440U, request).plan.has_value(),
+        "upscale is accepted only when explicitly enabled");
+
+    request = {};
+    request.resolutionPolicy = DesktopResolutionPolicy::panelAware;
+    request.projectedWidth = 900U;
+    request.projectedHeight = 500U;
+    const auto panelAware = resolveDesktopScalePlan(5120U, 1440U, request);
+    expect(panelAware.plan.has_value() && panelAware.plan->targetWidth <= 1125U
+            && panelAware.plan->targetHeight <= 625U,
+        "panel-aware planning honors projected coverage and safety factor");
+    if (panelAware.plan.has_value() && half.plan.has_value())
+    {
+        const auto now = std::chrono::steady_clock::now();
+        expect(!shouldTransitionDesktopScalePlan(*half.plan, *panelAware.plan,
+                now, now - std::chrono::milliseconds(100)),
+            "resolution transition rate limit rejects rapid changes");
+        expect(shouldTransitionDesktopScalePlan(*half.plan, *panelAware.plan,
+                now, now - std::chrono::seconds(2)),
+            "large panel-aware change passes hysteresis after the rate limit");
+        expect(!shouldTransitionDesktopScalePlan(*half.plan, *half.plan,
+                now, now - std::chrono::seconds(2)),
+            "static coverage never requests resource recreation");
+    }
+    expect(desktopStagingRingCapacity == 3U,
+        "capture staging ring has fixed capacity three");
+}
+
+void testRetainLastValidFrame()
+{
+    using namespace xreal::capture;
+    DesktopFrameRetention retention;
+    const auto start = std::chrono::steady_clock::now();
+    expect(retention.availability() == DesktopFrameAvailability::noFrameEver
+            && !retention.hasValidFrame(),
+        "no-frame-ever starts unavailable without a retained texture");
+    retention.recordWaitTimeout(start, std::chrono::milliseconds(500));
+    expect(retention.availability() == DesktopFrameAvailability::noFrameEver,
+        "WAIT_TIMEOUT before the first frame remains no-frame-ever");
+    retention.recordValidFrame(start);
+    retention.recordWaitTimeout(start + std::chrono::milliseconds(100),
+        std::chrono::milliseconds(500));
+    expect(retention.availability() == DesktopFrameAvailability::activeUnchanged
+            && retention.hasValidFrame(),
+        "WAIT_TIMEOUT after a valid frame retains active unchanged content");
+    retention.recordWaitTimeout(start + std::chrono::seconds(2),
+        std::chrono::milliseconds(500));
+    expect(retention.availability() == DesktopFrameAvailability::staleButValid
+            && retention.hasValidFrame(),
+        "repeated WAIT_TIMEOUT becomes stale-but-valid without clearing content");
+    retention.recordUnavailable();
+    expect(retention.availability() == DesktopFrameAvailability::staleButValid,
+        "unavailable notification does not discard a retained valid frame");
+    retention.recordAccessLost();
+    expect(retention.availability() == DesktopFrameAvailability::accessLost
+            && retention.hasValidFrame(),
+        "access loss is distinct while retained content remains owned");
+    retention.recordValidFrame(start + std::chrono::seconds(3));
+    expect(retention.availability() == DesktopFrameAvailability::activeUnchanged,
+        "a recovered valid frame resumes the same retention state machine");
+}
+
+void testCaptureTimingHistory()
+{
+    using namespace xreal::capture;
+    DesktopCaptureTimingHistory history;
+    for (int value = 1; value <= 100; ++value)
+    {
+        history.add(static_cast<double>(value));
+    }
+    const auto statistics = history.statistics();
+    expect(statistics.sampleCount == 100U
+            && close(statistics.p50Milliseconds, 50.5)
+            && close(statistics.p95Milliseconds, 95.05)
+            && close(statistics.p99Milliseconds, 99.01),
+        "capture timing history calculates p50/p95/p99 deterministically");
+    history.add(-1.0);
+    history.add(std::numeric_limits<double>::quiet_NaN());
+    expect(history.size() == 100U, "capture timing history rejects invalid samples");
+    for (std::size_t index = 0U;
+         index < desktopCaptureTimingHistoryCapacity + 10U; ++index)
+    {
+        history.add(5.0);
+    }
+    expect(history.size() == desktopCaptureTimingHistoryCapacity
+            && close(history.statistics().p99Milliseconds, 5.0),
+        "capture timing history is a fixed-capacity overwrite ring");
+}
+
 } // namespace
 
 int main()
@@ -399,6 +567,9 @@ int main()
     testCpuLayoutAndOwnership();
     testDiagnosticCheckerboard();
     testUploadDecisionsAndPanelMode();
+    testGpuScalePlanning();
+    testRetainLastValidFrame();
+    testCaptureTimingHistory();
     if (failures != 0)
     {
         std::cerr << failures << " desktop capture test(s) failed.\n";

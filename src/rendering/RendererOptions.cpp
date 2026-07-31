@@ -27,6 +27,13 @@ struct PanelOptionOverrides
     std::optional<unsigned int> sourceWidth;
     std::optional<unsigned int> sourceHeight;
     std::optional<double> sourceScale;
+    std::optional<capture::DesktopResolutionPolicy> resolutionPolicy;
+    std::optional<capture::DesktopCropMode> cropMode;
+    std::optional<capture::DesktopCaptureRegion> cropRegion;
+    std::optional<capture::DesktopFit> sourceFit;
+    std::optional<capture::DesktopFilter> sourceFilter;
+    std::optional<bool> allowUpscale;
+    std::optional<double> uploadFramesPerSecond;
 };
 
 struct IndexedPanelOption
@@ -51,6 +58,26 @@ struct IndexedPanelOption
     }
     return IndexedPanelOption{
         static_cast<std::size_t>(panelNumber - '1'),
+        option.substr(prefix.size() + 2U),
+    };
+}
+
+[[nodiscard]] std::optional<IndexedPanelOption> indexedDesktopSourceOption(
+    std::string_view option) noexcept
+{
+    constexpr std::string_view prefix = "--desktop-source-";
+    if (!option.starts_with(prefix) || option.size() <= prefix.size() + 2U)
+    {
+        return std::nullopt;
+    }
+    const char sourceNumber = option[prefix.size()];
+    if (sourceNumber < '1' || sourceNumber > '3'
+        || option[prefix.size() + 1U] != '-')
+    {
+        return std::nullopt;
+    }
+    return IndexedPanelOption{
+        static_cast<std::size_t>(sourceNumber - '1'),
         option.substr(prefix.size() + 2U),
     };
 }
@@ -218,6 +245,127 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
             options.multiPanelBenchmark = true;
             continue;
         }
+        if (argument == "--capture-benchmark")
+        {
+            options.captureBenchmark = true;
+            options.multiPanelBenchmark = true;
+            continue;
+        }
+
+        if (const auto sourceOption = indexedDesktopSourceOption(argument);
+            sourceOption.has_value())
+        {
+            panelConfigurationExplicit = true;
+            auto& override = panelOverrides[sourceOption->panelIndex];
+            if (sourceOption->property == "allow-upscale")
+            {
+                override.allowUpscale = true;
+                continue;
+            }
+            if (sourceOption->property == "region")
+            {
+                if (index + 4 >= argc)
+                {
+                    return fail(std::string(argument) + " requires x y width height.");
+                }
+                const auto x = parseInteger<unsigned int>(argv[++index]);
+                const auto y = parseInteger<unsigned int>(argv[++index]);
+                const auto width = parseInteger<unsigned int>(argv[++index]);
+                const auto height = parseInteger<unsigned int>(argv[++index]);
+                if (!x.has_value() || !y.has_value() || !width.has_value()
+                    || !height.has_value() || *width == 0U || *height == 0U)
+                {
+                    return fail(std::string(argument)
+                        + " requires non-negative x/y and positive width/height.");
+                }
+                override.cropRegion = capture::DesktopCaptureRegion{
+                    *x, *y, *width, *height};
+                override.cropMode = capture::DesktopCropMode::custom;
+                continue;
+            }
+            if (index + 1 >= argc)
+            {
+                return fail(std::string(argument) + " requires a value.");
+            }
+            const std::string_view value(argv[++index]);
+            if (sourceOption->property == "target-width"
+                || sourceOption->property == "target-height")
+            {
+                const auto parsed = parseInteger<unsigned int>(value);
+                if (!parsed.has_value() || *parsed == 0U)
+                {
+                    return fail(std::string(argument) + " requires a positive integer.");
+                }
+                if (sourceOption->property == "target-width")
+                {
+                    override.sourceWidth = *parsed;
+                }
+                else
+                {
+                    override.sourceHeight = *parsed;
+                }
+                override.resolutionPolicy = capture::DesktopResolutionPolicy::fixed;
+                continue;
+            }
+            if (sourceOption->property == "crop")
+            {
+                override.cropMode = capture::parseDesktopCropMode(value);
+                if (!override.cropMode.has_value())
+                {
+                    return fail(std::string(argument)
+                        + " requires full, center-16x9 or custom.");
+                }
+                continue;
+            }
+            if (sourceOption->property == "fit")
+            {
+                if (value == "contain") { override.sourceFit = capture::DesktopFit::contain; }
+                else if (value == "cover") { override.sourceFit = capture::DesktopFit::cover; }
+                else if (value == "stretch") { override.sourceFit = capture::DesktopFit::stretch; }
+                else { return fail(std::string(argument) + " requires contain, cover or stretch."); }
+                continue;
+            }
+            if (sourceOption->property == "filter")
+            {
+                if (value == "point") { override.sourceFilter = capture::DesktopFilter::point; }
+                else if (value == "linear") { override.sourceFilter = capture::DesktopFilter::linear; }
+                else { return fail(std::string(argument) + " requires point or linear."); }
+                continue;
+            }
+            if (sourceOption->property == "resolution-policy")
+            {
+                override.resolutionPolicy = capture::parseDesktopResolutionPolicy(value);
+                if (!override.resolutionPolicy.has_value())
+                {
+                    return fail(std::string(argument)
+                        + " requires native, panel-aware or fixed.");
+                }
+                continue;
+            }
+            const auto parsed = parseDouble(value);
+            if (!parsed.has_value() || *parsed <= 0.0)
+            {
+                return fail(std::string(argument) + " requires a positive finite number.");
+            }
+            if (sourceOption->property == "scale")
+            {
+                override.sourceScale = *parsed;
+                override.resolutionPolicy = capture::DesktopResolutionPolicy::fixed;
+            }
+            else if (sourceOption->property == "capture-fps")
+            {
+                override.targetFramesPerSecond = *parsed;
+            }
+            else if (sourceOption->property == "upload-fps")
+            {
+                override.uploadFramesPerSecond = *parsed;
+            }
+            else
+            {
+                return fail("Unknown renderer option: " + std::string(argument));
+            }
+            continue;
+        }
 
         if (const auto panelOption = indexedPanelOption(argument); panelOption.has_value())
         {
@@ -302,7 +450,16 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
                 || argument == "--multi-panel-benchmark-panels"
                 || argument == "--multi-panel-benchmark-content"
                 || argument == "--multi-panel-benchmark-json"
-                || argument == "--performance-json-output";
+                || argument == "--performance-json-output"
+                || argument == "--desktop-resolution-policy"
+                || argument == "--desktop-resolution-safety-factor"
+                || argument == "--desktop-bandwidth-warning-mib-s"
+                || argument == "--capture-benchmark-sources"
+                || argument == "--capture-benchmark-seconds"
+                || argument == "--capture-benchmark-target-width"
+                || argument == "--capture-benchmark-target-height"
+                || argument == "--capture-benchmark-fps"
+                || argument == "--capture-benchmark-json";
             if (!multiPanelValue)
             {
                 return fail("Unknown renderer option: " + std::string(argument));
@@ -328,6 +485,38 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
             else { options.multiPanelBenchmarkPanels = *parsed; }
             continue;
         }
+        if (argument == "--capture-benchmark-sources")
+        {
+            const auto parsed = parseInteger<std::size_t>(value);
+            if (!parsed.has_value() || *parsed == 0U || *parsed > maximumPanelCount)
+            {
+                return fail("--capture-benchmark-sources requires 1, 2 or 3.");
+            }
+            options.captureBenchmark = true;
+            options.multiPanelBenchmark = true;
+            options.captureBenchmarkSources = *parsed;
+            continue;
+        }
+        if (argument == "--capture-benchmark-target-width"
+            || argument == "--capture-benchmark-target-height")
+        {
+            const auto parsed = parseInteger<unsigned int>(value);
+            if (!parsed.has_value() || *parsed == 0U)
+            {
+                return fail(std::string(argument) + " requires a positive integer.");
+            }
+            options.captureBenchmark = true;
+            options.multiPanelBenchmark = true;
+            if (argument == "--capture-benchmark-target-width")
+            {
+                options.captureBenchmarkTargetWidth = *parsed;
+            }
+            else
+            {
+                options.captureBenchmarkTargetHeight = *parsed;
+            }
+            continue;
+        }
         if (argument == "--panel-layout")
         {
             const auto parsed = parsePanelLayoutPreset(value);
@@ -350,6 +539,16 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
             options.panelScene.performanceProfile = *parsed;
             continue;
         }
+        if (argument == "--desktop-resolution-policy")
+        {
+            const auto parsed = capture::parseDesktopResolutionPolicy(value);
+            if (!parsed.has_value())
+            {
+                return fail("--desktop-resolution-policy requires native, panel-aware or fixed.");
+            }
+            options.desktopResolutionPolicy = *parsed;
+            continue;
+        }
         if (argument == "--multi-panel-benchmark-content")
         {
             const auto parsed = parsePanelContentKind(value);
@@ -362,7 +561,8 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
         }
         if (argument == "--panel-layout-file" || argument == "--panel-layout-save-file"
             || argument == "--multi-panel-benchmark-json"
-            || argument == "--performance-json-output")
+            || argument == "--performance-json-output"
+            || argument == "--capture-benchmark-json")
         {
             if (value.empty())
             {
@@ -375,6 +575,13 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
             else if (argument == "--panel-layout-save-file")
             {
                 options.panelLayoutSavePath = std::string(value);
+            }
+            else if (argument == "--capture-benchmark-json")
+            {
+                options.captureBenchmark = true;
+                options.multiPanelBenchmark = true;
+                options.captureBenchmarkJsonPath = std::string(value);
+                options.multiPanelBenchmarkJsonPath = std::string(value);
             }
             else
             {
@@ -541,6 +748,26 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
         else if (argument == "--panel-curvature-degrees") { options.panelScene.curvatureDegrees = *parsed; }
         else if (argument == "--multi-panel-benchmark-seconds") { options.multiPanelBenchmarkSeconds = *parsed; }
         else if (argument == "--multi-panel-benchmark-warmup-seconds") { options.multiPanelBenchmarkWarmupSeconds = *parsed; }
+        else if (argument == "--capture-benchmark-seconds")
+        {
+            options.captureBenchmark = true;
+            options.multiPanelBenchmark = true;
+            options.captureBenchmarkSeconds = *parsed;
+        }
+        else if (argument == "--capture-benchmark-fps")
+        {
+            options.captureBenchmark = true;
+            options.multiPanelBenchmark = true;
+            options.captureBenchmarkFramesPerSecond = *parsed;
+        }
+        else if (argument == "--desktop-resolution-safety-factor")
+        {
+            options.desktopResolutionSafetyFactor = *parsed;
+        }
+        else if (argument == "--desktop-bandwidth-warning-mib-s")
+        {
+            options.desktopBandwidthWarningMebibytesPerSecond = *parsed;
+        }
         else if (argument == "--field-of-view-degrees") { options.fieldOfViewDegrees = *parsed; }
         else if (argument == "--near-plane") { options.nearPlane = *parsed; }
         else if (argument == "--far-plane") { options.farPlane = *parsed; }
@@ -606,6 +833,11 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
                 ? PanelFitMode::stretch : PanelFitMode::contain;
         panel.filter = options.desktopCapture.filter == capture::DesktopFilter::point
             ? PanelFilterMode::point : PanelFilterMode::linear;
+        panel.content.scaling.resolutionPolicy = options.desktopResolutionPolicy;
+        panel.content.scaling.panelAwareSafetyFactor =
+            options.desktopResolutionSafetyFactor;
+        panel.content.scaling.fit = options.desktopCapture.fit;
+        panel.content.scaling.filter = options.desktopCapture.filter;
         if (override.content.has_value()) { panel.content.kind = *override.content; }
         if (override.captureMonitorIndex.has_value())
         {
@@ -627,9 +859,53 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
             panel.targetFramesPerSecond = *override.targetFramesPerSecond;
             panel.targetFramesPerSecondExplicit = true;
         }
-        if (override.sourceWidth.has_value()) { panel.content.requestedWidth = *override.sourceWidth; }
-        if (override.sourceHeight.has_value()) { panel.content.requestedHeight = *override.sourceHeight; }
-        if (override.sourceScale.has_value()) { panel.content.requestedScale = *override.sourceScale; }
+        if (override.sourceWidth.has_value())
+        {
+            panel.content.requestedWidth = *override.sourceWidth;
+            panel.content.scaling.targetWidth = *override.sourceWidth;
+            panel.content.scaling.resolutionPolicy = capture::DesktopResolutionPolicy::fixed;
+        }
+        if (override.sourceHeight.has_value())
+        {
+            panel.content.requestedHeight = *override.sourceHeight;
+            panel.content.scaling.targetHeight = *override.sourceHeight;
+            panel.content.scaling.resolutionPolicy = capture::DesktopResolutionPolicy::fixed;
+        }
+        if (override.sourceScale.has_value())
+        {
+            panel.content.requestedScale = *override.sourceScale;
+            panel.content.scaling.scale = *override.sourceScale;
+            panel.content.scaling.resolutionPolicy = capture::DesktopResolutionPolicy::fixed;
+        }
+        if (override.resolutionPolicy.has_value())
+        {
+            panel.content.scaling.resolutionPolicy = *override.resolutionPolicy;
+        }
+        if (override.cropMode.has_value())
+        {
+            panel.content.scaling.cropMode = *override.cropMode;
+        }
+        if (override.cropRegion.has_value())
+        {
+            panel.content.scaling.customRegion = *override.cropRegion;
+        }
+        if (override.sourceFit.has_value())
+        {
+            panel.content.scaling.fit = *override.sourceFit;
+        }
+        if (override.sourceFilter.has_value())
+        {
+            panel.content.scaling.filter = *override.sourceFilter;
+        }
+        if (override.allowUpscale.has_value())
+        {
+            panel.content.scaling.allowUpscale = *override.allowUpscale;
+        }
+        if (override.uploadFramesPerSecond.has_value())
+        {
+            panel.content.requestedUploadFramesPerSecond = *override.uploadFramesPerSecond;
+            panel.content.requestedUploadFramesPerSecondExplicit = true;
+        }
     }
     // Preserve every legacy single-panel command without changing its behavior.
     if (!panelOverrides[0].content.has_value())
@@ -676,6 +952,13 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
     if (options.targetFramesPerSecond.has_value() && *options.targetFramesPerSecond <= 0.0)
     {
         return fail("--target-fps must be positive.");
+    }
+    if (options.desktopResolutionSafetyFactor <= 0.0
+        || options.desktopBandwidthWarningMebibytesPerSecond <= 0.0
+        || options.captureBenchmarkSeconds <= 0.0
+        || options.captureBenchmarkFramesPerSecond <= 0.0)
+    {
+        return fail("Desktop resolution, bandwidth and capture benchmark values must be positive.");
     }
     if (options.smokeTestFrames == 0U)
     {
@@ -756,6 +1039,50 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
     {
         options.orientationDemoMode = true;
     }
+    if (options.captureBenchmark)
+    {
+        options.multiPanelBenchmark = true;
+        options.multiPanelBenchmarkSeconds = options.captureBenchmarkSeconds;
+        if (options.captureBenchmarkJsonPath.has_value())
+        {
+            options.multiPanelBenchmarkJsonPath = options.captureBenchmarkJsonPath;
+        }
+        if (!panelConfigurationExplicit)
+        {
+            options.panelScene = makeDefaultPanelScene(options.captureBenchmarkSources);
+            options.panelScene.performanceProfile = PerformanceProfile::performance;
+            for (std::size_t panelIndex = 0U;
+                 panelIndex < options.panelScene.panelCount; ++panelIndex)
+            {
+                auto& panel = options.panelScene.panels[panelIndex];
+                panel.content.kind = PanelContentKind::desktop;
+                panel.content.captureMonitorIndex = options.desktopCapture.captureMonitor.index;
+                panel.content.captureMonitorDeviceName =
+                    options.desktopCapture.captureMonitor.deviceName;
+                panel.content.transferPolicy = options.desktopCapture.crossAdapterPolicy
+                    == capture::CrossAdapterPolicy::sharedHandle
+                    ? PanelTransferPolicy::sharedHandle
+                    : options.desktopCapture.crossAdapterPolicy
+                        == capture::CrossAdapterPolicy::cpuFallback
+                        ? PanelTransferPolicy::cpuFallback
+                        : options.desktopCapture.crossAdapterPolicy
+                            == capture::CrossAdapterPolicy::reject
+                            ? PanelTransferPolicy::reject
+                            : PanelTransferPolicy::automatic;
+                panel.content.scaling.resolutionPolicy =
+                    capture::DesktopResolutionPolicy::fixed;
+                panel.content.scaling.targetWidth = options.captureBenchmarkTargetWidth;
+                panel.content.scaling.targetHeight = options.captureBenchmarkTargetHeight;
+                panel.content.requestedWidth = options.captureBenchmarkTargetWidth;
+                panel.content.requestedHeight = options.captureBenchmarkTargetHeight;
+                panel.targetFramesPerSecond = options.captureBenchmarkFramesPerSecond;
+                panel.targetFramesPerSecondExplicit = true;
+                panel.content.captureBenchmarkInstance =
+                    static_cast<std::uint8_t>(panelIndex);
+            }
+            refreshPanelWorldTransforms(options.panelScene);
+        }
+    }
     if (options.multiPanelBenchmark)
     {
         if (options.multiPanelBenchmarkContent == PanelContentKind::desktop
@@ -766,12 +1093,12 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
         }
         options.orientationDemoMode = true;
         options.orientationDemoStatic = true;
-        if (!panelConfigurationExplicit)
+        if (!panelConfigurationExplicit && !options.captureBenchmark)
         {
             options.panelScene = makeDefaultPanelScene(options.multiPanelBenchmarkPanels);
         }
         options.panelScene.performanceProfile = PerformanceProfile::performance;
-        if (!panelConfigurationExplicit)
+        if (!panelConfigurationExplicit && !options.captureBenchmark)
         {
             for (std::size_t index = 0; index < options.panelScene.panelCount; ++index)
             {
@@ -854,6 +1181,25 @@ std::string rendererUsage()
            "[--multi-panel-benchmark-content <synthetic|checkerboard|desktop>] "
            "[--multi-panel-benchmark-json <file.json>] "
            "[--performance-json-output <file.json>] "
+           "[--desktop-resolution-policy <native|panel-aware|fixed>] "
+           "[--desktop-resolution-safety-factor <value>] "
+           "[--desktop-bandwidth-warning-mib-s <value>] "
+           "[--desktop-source-N-target-width <pixels>] "
+           "[--desktop-source-N-target-height <pixels>] "
+           "[--desktop-source-N-scale <value>] "
+           "[--desktop-source-N-crop <full|center-16x9|custom>] "
+           "[--desktop-source-N-region <x> <y> <width> <height>] "
+           "[--desktop-source-N-fit <contain|cover|stretch>] "
+           "[--desktop-source-N-filter <point|linear>] "
+           "[--desktop-source-N-allow-upscale] "
+           "[--desktop-source-N-capture-fps <value>] "
+           "[--desktop-source-N-upload-fps <value>] "
+           "[--capture-benchmark] [--capture-benchmark-sources <1|2|3>] "
+           "[--capture-benchmark-seconds <value>] "
+           "[--capture-benchmark-target-width <pixels>] "
+           "[--capture-benchmark-target-height <pixels>] "
+           "[--capture-benchmark-fps <value>] "
+           "[--capture-benchmark-json <file.json>] "
            "[--panel-distance <value>] [--panel-width <value>] [--panel-height <value>] "
            "[--field-of-view-degrees <value>] [--near-plane <value>] [--far-plane <value>] "
            "[--background-grid] [--world-axes] "

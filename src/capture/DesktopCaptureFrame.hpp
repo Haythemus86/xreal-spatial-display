@@ -52,6 +52,12 @@ struct DesktopCaptureFrame
     std::uint32_t accumulatedFrames{};
     std::uint32_t sourceWidth{};
     std::uint32_t sourceHeight{};
+    std::uint32_t originalSourceWidth{};
+    std::uint32_t originalSourceHeight{};
+    std::uint32_t cropX{};
+    std::uint32_t cropY{};
+    std::uint32_t cropWidth{};
+    std::uint32_t cropHeight{};
     std::uint32_t sourceFormat{};
     DesktopRotation rotation{DesktopRotation::identity};
     std::uint32_t dirtyRectCount{};

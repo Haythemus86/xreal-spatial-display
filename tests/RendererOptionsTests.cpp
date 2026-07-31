@@ -1,4 +1,5 @@
 #include "rendering/RendererOptions.hpp"
+#include "rendering/PanelContentRegistry.hpp"
 
 #include <array>
 #include <cmath>
@@ -246,6 +247,62 @@ int main()
             && multi.options->panelScene.panels[0].targetFramesPerSecondExplicit
             && multi.options->panelScene.performanceProfile == PerformanceProfile::performance,
         "multi-panel options preserve independent content, transforms and rate policy");
+    const auto scaledDesktop = parse({"--orientation-demo-static", "--panel-count", "1",
+        "--panel-1-content", "desktop", "--panel-1-capture-monitor-index", "0",
+        "--desktop-source-1-crop", "center-16x9",
+        "--desktop-source-1-target-width", "1920",
+        "--desktop-source-1-target-height", "1080",
+        "--desktop-source-1-fit", "contain",
+        "--desktop-source-1-filter", "linear",
+        "--desktop-source-1-capture-fps", "24",
+        "--desktop-source-1-upload-fps", "20",
+        "--desktop-bandwidth-warning-mib-s", "700"});
+    expect(scaledDesktop.options.has_value()
+            && scaledDesktop.options->panelScene.panels[0].content.scaling.cropMode
+                == xreal::capture::DesktopCropMode::center16x9
+            && scaledDesktop.options->panelScene.panels[0].content.scaling.targetWidth
+                == 1920U
+            && scaledDesktop.options->panelScene.panels[0].content.scaling.targetHeight
+                == 1080U
+            && scaledDesktop.options->panelScene.panels[0].targetFramesPerSecond == 24.0
+            && scaledDesktop.options->panelScene.panels[0].content
+                .requestedUploadFramesPerSecond == 20.0
+            && scaledDesktop.options->desktopBandwidthWarningMebibytesPerSecond == 700.0,
+        "per-source crop, target, capture, upload and bandwidth options resolve");
+    expect(!parse({"--orientation-demo-static", "--panel-1-content", "desktop",
+            "--panel-1-capture-monitor-index", "0",
+            "--desktop-source-1-target-width", "0"}).options.has_value(),
+        "zero source target dimension is rejected");
+    expect(!parse({"--orientation-demo-static", "--panel-1-content", "desktop",
+            "--panel-1-capture-monitor-index", "0",
+            "--desktop-source-1-target-width", "-1"}).options.has_value(),
+        "negative source target dimension is rejected");
+    expect(!parse({"--orientation-demo-static", "--capture-benchmark",
+            "--capture-benchmark-sources", "4"}).options.has_value(),
+        "fourth capture benchmark source is rejected by fixed capacity");
+    const auto captureBenchmark = parse({"--capture-benchmark",
+        "--capture-benchmark-sources", "3", "--capture-monitor-index", "0",
+        "--capture-benchmark-seconds", "2",
+        "--capture-benchmark-target-width", "1920",
+        "--capture-benchmark-target-height", "1080",
+        "--capture-benchmark-fps", "30",
+        "--capture-benchmark-json", "capture-benchmark.json"});
+    expect(captureBenchmark.options.has_value()
+            && captureBenchmark.options->captureBenchmarkSources == 3U
+            && captureBenchmark.options->panelScene.panelCount == 3U
+            && captureBenchmark.options->captureBenchmarkTargetWidth == 1920U
+            && captureBenchmark.options->captureBenchmarkTargetHeight == 1080U
+            && captureBenchmark.options->panelScene.panels[2].content
+                .captureBenchmarkInstance == 2U,
+        "capture benchmark options configure a bounded three-panel run");
+    if (captureBenchmark.options.has_value())
+    {
+        auto benchmarkScene = captureBenchmark.options->panelScene;
+        PanelContentRegistry benchmarkRegistry;
+        expect(benchmarkRegistry.rebuild(benchmarkScene).success
+                && benchmarkRegistry.sourceCount() == 3U,
+            "three-source benchmark keeps three explicitly labelled pipelines");
+    }
     const auto panelPresentation = parse({"--orientation-demo-static",
         "--panel-count", "2", "--desktop-fit", "cover", "--desktop-filter", "point"});
     expect(panelPresentation.options.has_value()

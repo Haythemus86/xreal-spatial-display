@@ -30,6 +30,11 @@ struct DesktopRenderStageStatistics
     std::uint64_t uploadTextureRecreations{};
     std::uint64_t updateSubresourceCalls{};
     std::uint64_t updateSubresourceFailures{};
+    std::uint64_t uploadBytesSubmitted{};
+    std::uint64_t latestUploadBytes{};
+    double uploadFramesPerSecond{};
+    double averageUpdateSubresourceMilliseconds{};
+    double maximumUpdateSubresourceMilliseconds{};
     std::uint64_t latestUploadedSequence{};
     std::uint32_t latestUploadWidth{};
     std::uint32_t latestUploadHeight{};

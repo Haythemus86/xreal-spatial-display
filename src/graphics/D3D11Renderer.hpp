@@ -88,6 +88,12 @@ public:
         capture::DesktopFit fit,
         capture::DesktopFilter filter,
         bool flipY);
+    [[nodiscard]] bool updateDesktopFrame(
+        std::size_t sourceSlot,
+        const capture::DesktopCaptureFrame& frame,
+        capture::DesktopFit fit,
+        capture::DesktopFilter filter,
+        bool flipY);
     [[nodiscard]] bool render(
         const rendering::Matrix4& viewProjection,
         bool backgroundGrid,
@@ -105,6 +111,8 @@ public:
     [[nodiscard]] bool present(bool vsync);
     [[nodiscard]] const D3D11RendererInformation& information() const noexcept;
     [[nodiscard]] capture::DesktopRenderStageStatistics desktopStatistics() const noexcept;
+    [[nodiscard]] capture::DesktopRenderStageStatistics desktopStatistics(
+        std::size_t sourceSlot) const noexcept;
     [[nodiscard]] D3D11SceneStatistics sceneStatistics() const noexcept;
     [[nodiscard]] const std::string& error() const noexcept;
 

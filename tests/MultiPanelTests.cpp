@@ -178,6 +178,22 @@ void testSourceRegistryAndRates()
     scene.panels[1].content.captureMonitorIndex = 1U;
     expect(registry.rebuild(scene).success && registry.sourceCount() == 2U,
         "different capture monitor creates another source");
+    scene.panels[2].content.captureMonitorIndex = 2U;
+    expect(registry.rebuild(scene).success && registry.sourceCount() == 3U,
+        "three unique desktop configurations create three fixed source slots");
+    scene.panels[2].content.captureMonitorIndex = 0U;
+    scene.panels[2].content.scaling.cropMode =
+        xreal::capture::DesktopCropMode::center16x9;
+    expect(registry.rebuild(scene).success && registry.sourceCount() == 3U,
+        "different crop configuration is a distinct source identity");
+    scene.panels[2].content.scaling.cropMode =
+        xreal::capture::DesktopCropMode::full;
+    scene.panels[2].content.requestedWidth = 1920U;
+    scene.panels[2].content.requestedHeight = 540U;
+    expect(registry.rebuild(scene).success && registry.sourceCount() == 3U,
+        "different target dimensions are a distinct source identity");
+    scene.panels[2].content.requestedWidth = 0U;
+    scene.panels[2].content.requestedHeight = 0U;
     scene.panels[2].content.kind = PanelContentKind::checkerboard;
     expect(registry.rebuild(scene).success && registry.sourceCount() == 3U,
         "mixed content uses fixed source slots");
@@ -199,6 +215,22 @@ void testSourceRegistryAndRates()
     expect(defaultPanelSourceRate(
         PerformanceProfile::performance, false, true, 48.0, true) == 48.0,
         "explicit panel rate overrides the selected performance profile");
+    scene = makeDefaultPanelScene(3U);
+    for (auto& panel : scene.panels)
+    {
+        panel.content.kind = PanelContentKind::desktop;
+        panel.content.captureMonitorIndex = 0U;
+        panel.targetFramesPerSecond = 60.0;
+    }
+    scene.panels[0].targetFramesPerSecond = 15.0;
+    scene.panels[0].targetFramesPerSecondExplicit = true;
+    scene.panels[1].targetFramesPerSecond = 24.0;
+    scene.panels[1].targetFramesPerSecondExplicit = true;
+    scene.panels[2].targetFramesPerSecond = 48.0;
+    scene.panels[2].targetFramesPerSecondExplicit = true;
+    expect(registry.rebuild(scene).success
+            && registry.source(0U).requestedFramesPerSecond == 48.0,
+        "shared source arbitration uses the maximum explicit consumer rate");
     expect(defaultPanelSourceRate(true, true,
         std::numeric_limits<double>::quiet_NaN()) == 0.0,
         "non-finite source rate is rejected");
@@ -291,6 +323,11 @@ void testPerformance()
         "performance JSON separates base and overlay draws");
     expect(json.find("\"build\":\"Release\"") != std::string::npos,
         "performance JSON identifies build configuration");
+    expect(json.find("\"average_readback_mib_s\"") != std::string::npos
+            && json.find("\"average_upload_mib_s\"") != std::string::npos
+            && json.find("\"maximum_observed_readback_mib_s\"")
+                != std::string::npos,
+        "performance JSON exposes aggregate readback and upload bandwidth");
     expect(json.find("adapter\\\"name") != std::string::npos
         && json.find("\\\\\\\\.\\\\DISPLAY5") != std::string::npos,
         "performance JSON escapes quotes and Win32 device paths");

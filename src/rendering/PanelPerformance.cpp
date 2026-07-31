@@ -219,6 +219,27 @@ std::string serializeMultiPanelPerformanceJson(
            << ",\n  \"capture_frames\": " << counters.captureFrames
            << ",\n  \"repeated_frames\": " << counters.repeatedFrames
            << ",\n  \"dropped_frames\": " << counters.droppedFrames
+           << ",\n  \"readback_bytes\": " << counters.readbackBytes
+           << ",\n  \"cpu_transfer_bytes\": " << counters.cpuTransferBytes
+           << ",\n  \"upload_bytes\": " << counters.uploadBytes
+           << ",\n  \"average_readback_mib_s\": "
+           << (elapsedSeconds > 0.0
+                   ? static_cast<double>(counters.readbackBytes)
+                       / (1024.0 * 1024.0 * elapsedSeconds) : 0.0)
+           << ",\n  \"average_cpu_transfer_mib_s\": "
+           << (elapsedSeconds > 0.0
+                   ? static_cast<double>(counters.cpuTransferBytes)
+                       / (1024.0 * 1024.0 * elapsedSeconds) : 0.0)
+           << ",\n  \"average_upload_mib_s\": "
+           << (elapsedSeconds > 0.0
+                   ? static_cast<double>(counters.uploadBytes)
+                       / (1024.0 * 1024.0 * elapsedSeconds) : 0.0)
+           << ",\n  \"maximum_observed_readback_mib_s\": "
+           << counters.maximumObservedReadbackMebibytesPerSecond
+           << ",\n  \"maximum_observed_cpu_transfer_mib_s\": "
+           << counters.maximumObservedCpuTransferMebibytesPerSecond
+           << ",\n  \"maximum_observed_upload_mib_s\": "
+           << counters.maximumObservedUploadMebibytesPerSecond
            << ",\n  \"resources_created_at_startup\": "
            << counters.resourcesCreatedAtStartup
            << ",\n  \"resources_created_steady_state\": "

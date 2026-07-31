@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rendering/RenderMath.hpp"
+#include "capture/DesktopCaptureScaling.hpp"
 
 #include <array>
 #include <cstddef>
@@ -92,6 +93,10 @@ struct PanelContentSource
     unsigned int requestedWidth{};
     unsigned int requestedHeight{};
     double requestedScale{1.0};
+    capture::DesktopScaleRequest scaling;
+    double requestedUploadFramesPerSecond{30.0};
+    bool requestedUploadFramesPerSecondExplicit{};
+    std::uint8_t captureBenchmarkInstance{};
     PanelTransferPolicy transferPolicy{PanelTransferPolicy::automatic};
 };
 

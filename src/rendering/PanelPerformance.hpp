@@ -76,6 +76,12 @@ struct MultiPanelPerformanceCounters
     std::uint64_t captureFrames{};
     std::uint64_t repeatedFrames{};
     std::uint64_t droppedFrames{};
+    std::uint64_t readbackBytes{};
+    std::uint64_t cpuTransferBytes{};
+    std::uint64_t uploadBytes{};
+    double maximumObservedReadbackMebibytesPerSecond{};
+    double maximumObservedUploadMebibytesPerSecond{};
+    double maximumObservedCpuTransferMebibytesPerSecond{};
     std::uint64_t resourcesCreatedAtStartup{};
     std::uint64_t resourcesCreatedSteadyState{};
     std::uint64_t flushCalls{};

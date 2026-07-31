@@ -19,6 +19,15 @@ struct PanelSourceKey
     unsigned int requestedWidth{};
     unsigned int requestedHeight{};
     double requestedScale{1.0};
+    capture::DesktopResolutionPolicy resolutionPolicy{
+        capture::DesktopResolutionPolicy::native};
+    capture::DesktopCropMode cropMode{capture::DesktopCropMode::full};
+    capture::DesktopCaptureRegion customRegion;
+    capture::DesktopFit scaleFit{capture::DesktopFit::contain};
+    capture::DesktopFilter scaleFilter{capture::DesktopFilter::linear};
+    bool allowUpscale{};
+    double safetyFactor{1.25};
+    std::uint8_t captureBenchmarkInstance{};
     PanelTransferPolicy transferPolicy{PanelTransferPolicy::automatic};
 
     [[nodiscard]] friend bool operator==(
@@ -32,6 +41,7 @@ struct PanelSourceEntry
     bool active{};
     std::uint8_t consumerMask{};
     double requestedFramesPerSecond{};
+    double requestedUploadFramesPerSecond{};
     std::uint64_t captureFrames{};
     std::uint64_t uploadFrames{};
     std::uint64_t repeatedFrames{};

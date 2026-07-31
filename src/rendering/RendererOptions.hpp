@@ -35,6 +35,10 @@ struct RendererOptions
     double panelWidth{1.6};
     double panelHeight{0.9};
     PanelScene panelScene{makeDefaultPanelScene()};
+    capture::DesktopResolutionPolicy desktopResolutionPolicy{
+        capture::DesktopResolutionPolicy::native};
+    double desktopResolutionSafetyFactor{1.25};
+    double desktopBandwidthWarningMebibytesPerSecond{1000.0};
     std::optional<std::string> panelLayoutFilePath;
     std::optional<std::string> panelLayoutSavePath;
     bool savePanelLayoutOnExit{};
@@ -45,6 +49,13 @@ struct RendererOptions
     std::size_t multiPanelBenchmarkPanels{3U};
     PanelContentKind multiPanelBenchmarkContent{PanelContentKind::synthetic};
     std::optional<std::string> multiPanelBenchmarkJsonPath;
+    bool captureBenchmark{};
+    std::size_t captureBenchmarkSources{1U};
+    double captureBenchmarkSeconds{10.0};
+    unsigned int captureBenchmarkTargetWidth{};
+    unsigned int captureBenchmarkTargetHeight{};
+    double captureBenchmarkFramesPerSecond{30.0};
+    std::optional<std::string> captureBenchmarkJsonPath;
     double fieldOfViewDegrees{60.0};
     double nearPlane{0.05};
     double farPlane{100.0};

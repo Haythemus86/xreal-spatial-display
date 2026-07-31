@@ -33,13 +33,15 @@ DesktopUploadAction decideDesktopUpload(
 DesktopPanelEffectiveMode effectiveDesktopPanelMode(
     PanelContent requested,
     bool desktopSrvValid,
-    bool stale) noexcept
+    bool /*stale*/) noexcept
 {
     if (requested == PanelContent::synthetic)
     {
         return DesktopPanelEffectiveMode::synthetic;
     }
-    return desktopSrvValid && !stale
+    // Staleness is diagnostic metadata. A WAIT_TIMEOUT or a static desktop must
+    // never invalidate the last successfully uploaded texture.
+    return desktopSrvValid
         ? DesktopPanelEffectiveMode::desktop : DesktopPanelEffectiveMode::unavailable;
 }
 

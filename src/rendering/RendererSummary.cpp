@@ -152,7 +152,15 @@ std::string serializeRendererSummaryJson(const RendererSummary& summary)
            << summary.desktop.uploadTextureCreations << ",\"upload_texture_recreations\":"
            << summary.desktop.uploadTextureRecreations << ",\"update_subresource_calls\":"
            << summary.desktop.updateSubresourceCalls << ",\"update_subresource_failures\":"
-           << summary.desktop.updateSubresourceFailures << ",\"latest_uploaded_sequence\":"
+           << summary.desktop.updateSubresourceFailures << ",\"upload_bytes_submitted\":"
+           << summary.desktop.uploadBytesSubmitted << ",\"latest_upload_bytes\":"
+           << summary.desktop.latestUploadBytes << ",\"upload_fps\":"
+           << summary.desktop.uploadFramesPerSecond
+           << ",\"average_update_subresource_ms\":"
+           << summary.desktop.averageUpdateSubresourceMilliseconds
+           << ",\"maximum_update_subresource_ms\":"
+           << summary.desktop.maximumUpdateSubresourceMilliseconds
+           << ",\"latest_uploaded_sequence\":"
            << summary.desktop.latestUploadedSequence << ",\"latest_upload_width\":"
            << summary.desktop.latestUploadWidth << ",\"latest_upload_height\":"
            << summary.desktop.latestUploadHeight << ",\"latest_upload_format\":"

@@ -163,10 +163,15 @@ add_library(
     src/capture/DesktopCaptureBridge.cpp
     src/capture/DesktopCaptureDiagnostics.cpp
     src/capture/DesktopCaptureFrame.cpp
+    src/capture/DesktopCaptureManager.cpp
     src/capture/DesktopCaptureOptions.cpp
+    src/capture/DesktopCaptureScaler.cpp
+    src/capture/DesktopCaptureScaling.cpp
+    src/capture/DesktopSyntheticCapture.cpp
     src/capture/DesktopCaptureStatistics.cpp
     src/capture/DesktopDuplicationCapture.cpp
     src/capture/DesktopCpuFrame.cpp
+    src/capture/DesktopFrameRetention.cpp
     src/capture/DesktopRenderStages.cpp
     src/capture/DesktopTextureLayout.cpp
 )
@@ -183,6 +188,7 @@ target_link_libraries(
         xreal-platform-windows
     PRIVATE
         d3d11
+        d3dcompiler
         dxgi
 )
 
@@ -268,10 +274,15 @@ add_executable(
     xreal-spatial-renderer
     src/rendering/RendererApplication.cpp
     src/rendering/RendererMain.cpp
+    shaders/DesktopScale.hlsl
     shaders/Panel.hlsl
 )
 
-set_source_files_properties(shaders/Panel.hlsl PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties(
+    shaders/DesktopScale.hlsl
+    shaders/Panel.hlsl
+    PROPERTIES HEADER_FILE_ONLY TRUE
+)
 
 target_link_libraries(
     xreal-sensor-diagnostic
@@ -351,6 +362,9 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_CURRENT_SOURCE_DIR}/shaders/Panel.hlsl
         $<TARGET_FILE_DIR:xreal-spatial-renderer>/Panel.hlsl
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/shaders/DesktopScale.hlsl
+        $<TARGET_FILE_DIR:xreal-spatial-renderer>/DesktopScale.hlsl
 )
 
 set(xreal_project_targets

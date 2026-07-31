@@ -38,6 +38,13 @@ PanelSourceRegistryResult PanelContentRegistry::rebuild(PanelScene& scene)
                 panelIndex == scene.selectedPanel, true,
                 panel.targetFramesPerSecond,
                 panel.targetFramesPerSecondExplicit));
+        sourceEntry.requestedUploadFramesPerSecond = std::max(
+            sourceEntry.requestedUploadFramesPerSecond,
+            panel.content.requestedUploadFramesPerSecondExplicit
+                ? panel.content.requestedUploadFramesPerSecond
+                : defaultPanelSourceRate(scene.performanceProfile,
+                    panelIndex == scene.selectedPanel, true,
+                    panel.content.requestedUploadFramesPerSecond, false));
         scene.runtime[panelIndex].sourceSlot = *slot;
     }
     return {true, {}};
@@ -84,6 +91,14 @@ PanelSourceKey makePanelSourceKey(const PanelDefinition& panel)
     result.requestedWidth = panel.content.requestedWidth;
     result.requestedHeight = panel.content.requestedHeight;
     result.requestedScale = panel.content.requestedScale;
+    result.resolutionPolicy = panel.content.scaling.resolutionPolicy;
+    result.cropMode = panel.content.scaling.cropMode;
+    result.customRegion = panel.content.scaling.customRegion;
+    result.scaleFit = panel.content.scaling.fit;
+    result.scaleFilter = panel.content.scaling.filter;
+    result.allowUpscale = panel.content.scaling.allowUpscale;
+    result.safetyFactor = panel.content.scaling.panelAwareSafetyFactor;
+    result.captureBenchmarkInstance = panel.content.captureBenchmarkInstance;
     result.transferPolicy = panel.content.transferPolicy;
     if (panel.content.captureMonitorDeviceName.has_value())
     {
@@ -97,6 +112,14 @@ PanelSourceKey makePanelSourceKey(const PanelDefinition& panel)
         result.requestedWidth = 0U;
         result.requestedHeight = 0U;
         result.requestedScale = 1.0;
+        result.resolutionPolicy = capture::DesktopResolutionPolicy::native;
+        result.cropMode = capture::DesktopCropMode::full;
+        result.customRegion = {};
+        result.scaleFit = capture::DesktopFit::contain;
+        result.scaleFilter = capture::DesktopFilter::linear;
+        result.allowUpscale = false;
+        result.safetyFactor = 1.25;
+        result.captureBenchmarkInstance = 0U;
         result.transferPolicy = PanelTransferPolicy::automatic;
     }
     return result;
@@ -117,7 +140,8 @@ double defaultPanelSourceRate(
     {
         return configuredRate;
     }
-    const double policyRate = selected ? 30.0
+    const double policyRate = selected
+        ? (profile == PerformanceProfile::quality ? 60.0 : 30.0)
         : profile == PerformanceProfile::quality ? 30.0
         : profile == PerformanceProfile::performance ? 15.0 : 20.0;
     return std::min(configuredRate, policyRate);

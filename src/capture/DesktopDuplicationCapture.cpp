@@ -1,5 +1,7 @@
 #include "capture/DesktopDuplicationCapture.hpp"
+#include "capture/DesktopCaptureScaler.hpp"
 #include "capture/DesktopCpuFrame.hpp"
+#include "capture/DesktopFrameRetention.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -136,6 +138,12 @@ public:
         return tracker_.snapshot();
     }
 
+    [[nodiscard]] DesktopCaptureStatistics detailedStatistics() const
+    {
+        std::scoped_lock lock(mutex_);
+        return tracker_.detailedSnapshot();
+    }
+
     [[nodiscard]] std::string error() const
     {
         std::scoped_lock lock(mutex_);
@@ -162,11 +170,11 @@ private:
     {
         duplication_.Reset();
         output_.Reset();
+        scaler_.reset();
         device_.Reset();
         context_.Reset();
         sharedSurface_.reset();
         sharedMutex_.Reset();
-        stagingTexture_.Reset();
     }
 
     [[nodiscard]] bool initializeDuplication(bool recreation)
@@ -271,6 +279,11 @@ private:
                 + " failed: " + hresultText(result));
             return false;
         }
+        if (cpuFallback_ && !scaler_.initialize(device_.Get(), context_.Get()))
+        {
+            setError("Initializing capture-adapter GPU scaler failed: " + scaler_.error());
+            return false;
+        }
         ComPtr<IDXGIOutput1> output1;
         result = output_.As(&output1);
         if (FAILED(result))
@@ -362,97 +375,45 @@ private:
         return true;
     }
 
-    [[nodiscard]] bool ensureCpuBuffers(const D3D11_TEXTURE2D_DESC& source)
-    {
-        if (!supportedFormat(source.Format))
-        {
-            setError("CPU fallback received unsupported DXGI format "
-                + std::to_string(static_cast<unsigned int>(source.Format)) + ".");
-            return false;
-        }
-        if (stagingTexture_ && source.Width == sharedWidth_ && source.Height == sharedHeight_
-            && source.Format == sharedFormat_)
-        {
-            return true;
-        }
-        D3D11_TEXTURE2D_DESC description{};
-        description.Width = source.Width;
-        description.Height = source.Height;
-        description.MipLevels = 1;
-        description.ArraySize = 1;
-        description.Format = source.Format;
-        description.SampleDesc.Count = 1;
-        description.Usage = D3D11_USAGE_STAGING;
-        description.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-        const HRESULT result = device_->CreateTexture2D(&description, nullptr, &stagingTexture_);
-        if (FAILED(result))
-        {
-            setError("Creating bounded CPU staging texture failed: " + hresultText(result));
-            return false;
-        }
-        const auto packed = calculatePackedBgraLayout(source.Width, source.Height);
-        if (!packed.has_value())
-        {
-            setError("CPU fallback BGRA dimensions overflow the bounded buffer size.");
-            return false;
-        }
-        for (auto& buffer : cpuBuffers_)
-        {
-            buffer = std::make_shared<std::vector<std::byte>>(packed->bufferSize);
-        }
-        {
-            std::scoped_lock lock(mutex_);
-            tracker_.values.cpuBuffersCreated += cpuBuffers_.size();
-        }
-        nextCpuBuffer_ = 0U;
-        sharedWidth_ = source.Width;
-        sharedHeight_ = source.Height;
-        sharedFormat_ = source.Format;
-        return true;
-    }
-
     [[nodiscard]] bool copyThroughCpu(
         ID3D11Texture2D* source,
         const D3D11_TEXTURE2D_DESC& description,
         DesktopCaptureFrame& frame)
     {
-        if (!ensureCpuBuffers(description))
+        const auto resolved = resolveDesktopScalePlan(
+            description.Width, description.Height, config_.scaling);
+        if (!resolved.plan.has_value())
         {
+            setError("Resolving capture-side GPU scale failed: " + resolved.error);
             return false;
         }
-        std::shared_ptr<std::vector<std::byte>> buffer;
-        for (std::size_t attempt = 0; attempt < cpuBuffers_.size(); ++attempt)
+        const auto readback = scaler_.process(source, *resolved.plan, config_.scaling.filter);
+        if (!readback.success)
         {
-            const std::size_t index = (nextCpuBuffer_ + attempt) % cpuBuffers_.size();
-            if (cpuBuffers_[index].use_count() == 1)
+            setError("Capture-side GPU scale/readback failed: " + readback.error);
+            return false;
+        }
+        const auto scalerStatistics = scaler_.statistics();
+        {
+            std::scoped_lock lock(mutex_);
+            tracker_.values.stagingCopies = scalerStatistics.stagingCopies;
+            tracker_.values.stagingMaps = scalerStatistics.stagingMaps;
+            tracker_.values.stagingMapSuccesses = scalerStatistics.stagingMaps;
+            tracker_.values.cpuBuffersCreated = desktopStagingRingCapacity;
+            tracker_.values.gpuScaleDraws = scalerStatistics.gpuScaleDraws;
+            tracker_.values.scalerResourceRecreations =
+                scalerStatistics.resourceRecreations;
+            tracker_.values.stagingRingContentions = scalerStatistics.ringContentions;
+            if (readback.frameReady)
             {
-                buffer = cpuBuffers_[index];
-                nextCpuBuffer_ = (index + 1U) % cpuBuffers_.size();
-                break;
+                tracker_.recordScaleSubmission(readback.gpuSubmissionMilliseconds);
+                tracker_.recordMapWait(readback.mapWaitMilliseconds);
+                tracker_.recordCpuRepack(readback.cpuRepackMilliseconds);
             }
         }
-        if (!buffer)
+        if (!readback.frameReady)
         {
             return true;
-        }
-        context_->CopyResource(stagingTexture_.Get(), source);
-        {
-            std::scoped_lock lock(mutex_);
-            ++tracker_.values.stagingCopies;
-            ++tracker_.values.stagingMaps;
-        }
-        D3D11_MAPPED_SUBRESOURCE mapped{};
-        const HRESULT result = context_->Map(
-            stagingTexture_.Get(), 0U, D3D11_MAP_READ, 0U, &mapped);
-        if (FAILED(result))
-        {
-            setError("Mapping the explicitly enabled CPU staging texture failed: "
-                + hresultText(result));
-            return false;
-        }
-        {
-            std::scoped_lock lock(mutex_);
-            ++tracker_.values.stagingMapSuccesses;
         }
         if (!firstStagingMapTraced_)
         {
@@ -460,20 +421,31 @@ private:
                       << " capture_candidate=" << tracker_.values.acquiredFrames + 1U << '\n';
             firstStagingMapTraced_ = true;
         }
-        const auto packed = calculatePackedBgraLayout(description.Width, description.Height);
-        const std::size_t mappedSize = static_cast<std::size_t>(mapped.RowPitch)
-            * description.Height;
-        const bool copied = packed.has_value() && repackBgraRows(
-            static_cast<const std::byte*>(mapped.pData), mappedSize, mapped.RowPitch,
-            *buffer, description.Width, description.Height);
-        context_->Unmap(stagingTexture_.Get(), 0U);
-        if (!copied)
+        frame.sourceWidth = readback.width;
+        frame.sourceHeight = readback.height;
+        frame.sourceFormat = readback.format;
+        frame.cpuPixels = readback.pixels;
+        frame.cpuRowPitch = readback.rowPitch;
+        frame.originalSourceWidth = description.Width;
+        frame.originalSourceHeight = description.Height;
+        frame.cropX = resolved.plan->crop.x;
+        frame.cropY = resolved.plan->crop.y;
+        frame.cropWidth = resolved.plan->crop.width;
+        frame.cropHeight = resolved.plan->crop.height;
         {
-            setError("Failed to repack mapped BGRA rows into the bounded tightly packed CPU buffer.");
-            return false;
+            std::scoped_lock lock(mutex_);
+            tracker_.values.originalSourceBytes += resolved.plan->sourceBytesPerFrame;
+            tracker_.values.cropBytes += resolved.plan->cropBytesPerFrame;
+            tracker_.values.scaledTargetBytes += resolved.plan->targetBytesPerFrame;
+            tracker_.values.stagingBytesMapped += readback.mappedBytes;
+            tracker_.values.cpuBytesCopied += readback.mappedBytes;
+            tracker_.values.cropX = resolved.plan->crop.x;
+            tracker_.values.cropY = resolved.plan->crop.y;
+            tracker_.values.cropWidth = resolved.plan->crop.width;
+            tracker_.values.cropHeight = resolved.plan->crop.height;
+            tracker_.values.transferWidth = readback.width;
+            tracker_.values.transferHeight = readback.height;
         }
-        frame.cpuPixels = std::move(buffer);
-        frame.cpuRowPitch = packed->stride;
         return true;
     }
 
@@ -533,13 +505,24 @@ private:
                 std::scoped_lock lock(mutex_);
                 ++tracker_.values.captureAttempts;
             }
+            const auto acquireStart = std::chrono::steady_clock::now();
+            retention_.recordCaptureAttempt(acquireStart);
             const HRESULT acquired = duplication_->AcquireNextFrame(
                 config_.options.timeoutMilliseconds, &information, &resource);
+            const auto acquireEnd = std::chrono::steady_clock::now();
+            {
+                std::scoped_lock lock(mutex_);
+                tracker_.recordAcquireDuration(std::chrono::duration<double, std::milli>(
+                    acquireEnd - acquireStart).count());
+            }
             if (acquired == DXGI_ERROR_WAIT_TIMEOUT)
             {
                 std::scoped_lock lock(mutex_);
                 ++tracker_.values.waitTimeouts;
                 tracker_.values.state = DesktopCaptureStatus::waitTimeout;
+                retention_.recordWaitTimeout(acquireEnd,
+                    std::chrono::milliseconds(config_.options.staleThresholdMilliseconds));
+                tracker_.values.availability = retention_.availability();
                 continue;
             }
             if (acquired == DXGI_ERROR_ACCESS_LOST
@@ -550,6 +533,8 @@ private:
                     std::scoped_lock lock(mutex_);
                     ++tracker_.values.accessLossEvents;
                     tracker_.values.state = DesktopCaptureStatus::accessLost;
+                    retention_.recordAccessLost();
+                    tracker_.values.availability = retention_.availability();
                 }
                 if (stopToken.stop_requested())
                 {
@@ -678,6 +663,8 @@ private:
                 std::scoped_lock lock(mutex_);
                 tracker_.recordAcquired(frame.captureHostTimestamp);
                 tracker_.values.state = DesktopCaptureStatus::active;
+                retention_.recordValidFrame(frame.captureHostTimestamp);
+                tracker_.values.availability = retention_.availability();
                 if (cpuFallback_)
                 {
                     ++tracker_.values.cpuFallbackCopies;
@@ -741,6 +728,8 @@ private:
     ComPtr<IDXGIOutput> output_;
     DXGI_OUTPUT_DESC outputDescription_{};
     ComPtr<IDXGIOutputDuplication> duplication_;
+    DesktopCaptureScaler scaler_;
+    DesktopFrameRetention retention_;
     std::shared_ptr<DesktopCaptureSurface> sharedSurface_;
     ComPtr<IDXGIKeyedMutex> sharedMutex_;
     std::uint32_t sharedWidth_{};
@@ -748,9 +737,6 @@ private:
     DXGI_FORMAT sharedFormat_{DXGI_FORMAT_UNKNOWN};
     std::vector<std::byte> metadata_;
     bool cpuFallback_{};
-    ComPtr<ID3D11Texture2D> stagingTexture_;
-    std::array<std::shared_ptr<std::vector<std::byte>>, 3> cpuBuffers_;
-    std::size_t nextCpuBuffer_{};
     bool firstAcquiredTraced_{};
     bool firstStagingMapTraced_{};
     bool firstPublishedTraced_{};
@@ -779,6 +765,11 @@ void DesktopDuplicationCapture::stop() { implementation_->stop(); }
 DesktopCaptureStatistics DesktopDuplicationCapture::statistics() const
 {
     return implementation_->statistics();
+}
+
+DesktopCaptureStatistics DesktopDuplicationCapture::detailedStatistics() const
+{
+    return implementation_->detailedStatistics();
 }
 
 std::string DesktopDuplicationCapture::error() const { return implementation_->error(); }

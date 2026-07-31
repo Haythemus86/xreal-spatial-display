@@ -3,6 +3,7 @@
 #include "capture/DesktopCaptureBridge.hpp"
 #include "capture/DesktopCaptureOptions.hpp"
 #include "capture/DesktopCaptureStatistics.hpp"
+#include "capture/DesktopCaptureScaling.hpp"
 
 #include <memory>
 #include <mutex>
@@ -17,6 +18,7 @@ struct DesktopDuplicationConfig
     platform::windows::MonitorInformation captureMonitor;
     platform::windows::DxgiAdapterLuid renderAdapterLuid;
     DesktopCaptureOptions options;
+    DesktopScaleRequest scaling;
     double maximumFramesPerSecond{30.0};
 };
 
@@ -32,6 +34,7 @@ public:
     void setMaximumFramesPerSecond(double value) noexcept;
     void stop();
     [[nodiscard]] DesktopCaptureStatistics statistics() const;
+    [[nodiscard]] DesktopCaptureStatistics detailedStatistics() const;
     [[nodiscard]] std::string error() const;
 
 private:

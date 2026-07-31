@@ -1262,14 +1262,34 @@ public:
                 continue;
             }
             ++sceneStatistics_.visiblePanels;
+            if (panel.sourceSlot >= rendering::maximumPanelCount)
+            {
+                error_ = "Panel references a desktop source slot outside fixed capacity.";
+                return false;
+            }
+            const bool primarySource = panel.sourceSlot == 0U;
+            auto& additionalSource = additionalDesktopSources_[panel.sourceSlot];
+            ID3D11ShaderResourceView* sourceShaderResource = primarySource
+                ? desktopShaderResource_.Get() : additionalSource.shaderResource.Get();
+            const std::uint32_t sourceWidth = primarySource
+                ? desktopWidth_ : additionalSource.width;
+            const std::uint32_t sourceHeight = primarySource
+                ? desktopHeight_ : additionalSource.height;
+            const std::uint64_t sourceSequence = primarySource
+                ? desktopFrameSequence_ : additionalSource.sequence;
+            const capture::DesktopTextureLayout sourceLayout = primarySource
+                ? desktopLayout_ : additionalSource.layout;
+            const bool sourceValid = primarySource
+                ? desktopStatistics_.desktopSrvValid
+                : additionalSource.statistics.desktopSrvValid;
             const capture::DesktopTextureLayout panelDesktopLayout =
-                desktopWidth_ > 0U && desktopHeight_ > 0U
+                sourceWidth > 0U && sourceHeight > 0U
                 ? capture::calculateDesktopTextureLayout(
-                    desktopWidth_, desktopHeight_,
+                    sourceWidth, sourceHeight,
                     panel.dimensions.width / panel.dimensions.height,
-                    captureFit(panel.fit), desktopLayout_.rotation,
-                    desktopLayout_.flipY)
-                : desktopLayout_;
+                    captureFit(panel.fit), sourceLayout.rotation,
+                    sourceLayout.flipY)
+                : sourceLayout;
             rendering::PanelShaderConstants constants;
             for (std::size_t index = 0; index < constants.viewProjection.size(); ++index)
             {
@@ -1292,8 +1312,20 @@ public:
                 panelDesktopLayout.rotation);
             constants.desktopFlipY = panelDesktopLayout.flipY ? 1U : 0U;
             const bool desktopRequested = panel.content == rendering::PanelContentKind::desktop;
-            const bool desktopAvailable = desktopRequested && desktopShaderResource_ != nullptr
-                && desktopStatistics_.desktopSrvValid && !panel.stale;
+            // Stale is diagnostic metadata. A WAIT_TIMEOUT must retain the last valid SRV.
+            const bool desktopAvailable = desktopRequested
+                && sourceShaderResource != nullptr && sourceValid;
+            auto& sourceStatistics = primarySource
+                ? desktopStatistics_ : additionalSource.statistics;
+            if (desktopRequested)
+            {
+                sourceStatistics.panelContentRequested = capture::PanelContent::desktop;
+                sourceStatistics.desktopTextureAvailable =
+                    sourceShaderResource != nullptr;
+                sourceStatistics.panelContentEffective =
+                    capture::effectiveDesktopPanelMode(capture::PanelContent::desktop,
+                        sourceValid, panel.stale);
+            }
             constants.desktopEnabled = desktopRequested ? 1U : 0U;
             constants.desktopUnavailable = desktopRequested && !desktopAvailable ? 1U : 0U;
             constants.desktopBackgroundGrid = desktopBackground
@@ -1321,7 +1353,7 @@ public:
             ++sceneStatistics_.constantBufferUpdates;
 
             ID3D11ShaderResourceView* desktopView = desktopAvailable
-                ? desktopShaderResource_.Get() : nullptr;
+                ? sourceShaderResource : nullptr;
             context_->PSSetShaderResources(
                 rendering::desktopTextureShaderRegister, 1, &desktopView);
             ++sceneStatistics_.shaderResourceBindCalls;
@@ -1344,23 +1376,33 @@ public:
             {
                 ++desktopStatistics_.desktopSrvBindCount;
                 ++desktopStatistics_.renderedDesktopFrames;
-                desktopStatistics_.latestBoundSequence = desktopFrameSequence_;
+                desktopStatistics_.latestBoundSequence = sourceSequence;
+                if (!primarySource)
+                {
+                    ++additionalSource.statistics.desktopSrvBindCount;
+                    ++additionalSource.statistics.renderedDesktopFrames;
+                    additionalSource.statistics.latestBoundSequence = sourceSequence;
+                }
                 if (!firstSrvBindTraced_)
                 {
                     std::cout << "desktop-first-frame stage=desktop_srv_bound sequence="
-                              << desktopFrameSequence_ << '\n';
+                              << sourceSequence << '\n';
                     firstSrvBindTraced_ = true;
                 }
                 if (!firstDesktopRenderedTraced_)
                 {
                     std::cout << "desktop-first-frame stage=desktop_frame_rendered sequence="
-                              << desktopFrameSequence_ << '\n';
+                              << sourceSequence << '\n';
                     firstDesktopRenderedTraced_ = true;
                 }
             }
             else if (desktopRequested)
             {
                 ++desktopStatistics_.renderedUnavailableFrames;
+                if (!primarySource)
+                {
+                    ++additionalSource.statistics.renderedUnavailableFrames;
+                }
             }
             else
             {
@@ -1526,9 +1568,32 @@ public:
                     desktopDescriptorsTraced_ = true;
                 }
             }
-            ++desktopStatistics_.updateSubresourceCalls;
+            const auto updateStart = std::chrono::steady_clock::now();
             context_->UpdateSubresource(desktopLocalTexture_.Get(), 0U, nullptr,
                 frame.cpuPixels->data(), frame.cpuRowPitch, 0U);
+            const auto updateEnd = std::chrono::steady_clock::now();
+            const double updateMilliseconds = std::chrono::duration<double, std::milli>(
+                updateEnd - updateStart).count();
+            ++desktopStatistics_.updateSubresourceCalls;
+            desktopStatistics_.uploadBytesSubmitted += packed->bufferSize;
+            desktopStatistics_.latestUploadBytes = packed->bufferSize;
+            desktopStatistics_.averageUpdateSubresourceMilliseconds +=
+                (updateMilliseconds
+                    - desktopStatistics_.averageUpdateSubresourceMilliseconds)
+                / static_cast<double>(desktopStatistics_.updateSubresourceCalls);
+            desktopStatistics_.maximumUpdateSubresourceMilliseconds = std::max(
+                desktopStatistics_.maximumUpdateSubresourceMilliseconds,
+                updateMilliseconds);
+            if (desktopFirstUploadTimestamp_
+                == std::chrono::steady_clock::time_point{})
+            {
+                desktopFirstUploadTimestamp_ = updateEnd;
+            }
+            const double uploadSeconds = std::chrono::duration<double>(
+                updateEnd - desktopFirstUploadTimestamp_).count();
+            desktopStatistics_.uploadFramesPerSecond = uploadSeconds > 0.0
+                ? static_cast<double>(desktopStatistics_.updateSubresourceCalls - 1U)
+                    / uploadSeconds : 0.0;
             ++sceneStatistics_.textureUploads;
             if (!firstUpdateTraced_)
             {
@@ -1700,6 +1765,267 @@ public:
         return true;
     }
 
+    [[nodiscard]] bool updateDesktopFrame(
+        std::size_t sourceSlot,
+        const capture::DesktopCaptureFrame& frame,
+        capture::DesktopFit fit,
+        capture::DesktopFilter filter,
+        bool flipY)
+    {
+        if (sourceSlot >= rendering::maximumPanelCount)
+        {
+            error_ = "Desktop upload source slot exceeds the fixed capacity of three.";
+            return false;
+        }
+        if (sourceSlot == 0U)
+        {
+            return updateDesktopFrame(frame, fit, filter, flipY);
+        }
+        auto& resource = additionalDesktopSources_[sourceSlot];
+        if (!frame.valid || (!frame.cpuPixels
+                && (!frame.surface || frame.surface->sharedHandle() == nullptr)))
+        {
+            ++resource.statistics.updateSubresourceFailures;
+            error_ = "Desktop source frame has neither a CPU buffer nor a shared surface.";
+            return false;
+        }
+        if (!frame.cpuPixels)
+        {
+            if (frame.sequence == resource.sequence)
+            {
+                return true;
+            }
+            const bool resourceChanged =
+                frame.surface->sharedHandle() != resource.sharedHandle
+                || frame.recoveryGeneration != resource.recoveryGeneration
+                || frame.sourceWidth != resource.width
+                || frame.sourceHeight != resource.height
+                || frame.sourceFormat != resource.format;
+            if (resourceChanged)
+            {
+                const bool replacingResource = resource.texture != nullptr;
+                ComPtr<ID3D11Device1> device1;
+                HRESULT result = device_.As(&device1);
+                if (FAILED(result))
+                {
+                    error_ = "Render device does not expose ID3D11Device1 for a per-source shared handle: "
+                        + hresultText(result);
+                    return false;
+                }
+                ComPtr<ID3D11Texture2D> sharedTexture;
+                result = device1->OpenSharedResource1(
+                    static_cast<HANDLE>(frame.surface->sharedHandle()),
+                    IID_PPV_ARGS(&sharedTexture));
+                if (FAILED(result))
+                {
+                    error_ = "Opening per-source shared desktop texture failed: "
+                        + hresultText(result);
+                    return false;
+                }
+                ComPtr<IDXGIKeyedMutex> keyedMutex;
+                result = sharedTexture.As(&keyedMutex);
+                if (FAILED(result))
+                {
+                    error_ = "Per-source shared desktop texture has no keyed mutex: "
+                        + hresultText(result);
+                    return false;
+                }
+                D3D11_TEXTURE2D_DESC description{};
+                sharedTexture->GetDesc(&description);
+                description.MiscFlags = 0U;
+                description.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+                description.CPUAccessFlags = 0U;
+                description.Usage = D3D11_USAGE_DEFAULT;
+                ComPtr<ID3D11Texture2D> localTexture;
+                result = device_->CreateTexture2D(
+                    &description, nullptr, &localTexture);
+                if (FAILED(result))
+                {
+                    error_ = "Creating per-source render-owned shared texture failed: "
+                        + hresultText(result);
+                    return false;
+                }
+                ComPtr<ID3D11ShaderResourceView> shaderResource;
+                result = device_->CreateShaderResourceView(
+                    localTexture.Get(), nullptr, &shaderResource);
+                if (FAILED(result))
+                {
+                    ++resource.statistics.desktopSrvFailures;
+                    error_ = "Creating per-source shared desktop SRV failed: "
+                        + hresultText(result);
+                    return false;
+                }
+                resource.sharedTexture = std::move(sharedTexture);
+                resource.keyedMutex = std::move(keyedMutex);
+                resource.texture = std::move(localTexture);
+                resource.shaderResource = std::move(shaderResource);
+                resource.surfaceIdentity = frame.surface.get();
+                resource.sharedHandle = frame.surface->sharedHandle();
+                resource.recoveryGeneration = frame.recoveryGeneration;
+                resource.width = frame.sourceWidth;
+                resource.height = frame.sourceHeight;
+                resource.format = frame.sourceFormat;
+                if (replacingResource)
+                {
+                    ++resource.statistics.uploadTextureRecreations;
+                    sceneStatistics_.resourcesCreatedSteadyState += 2U;
+                }
+                else
+                {
+                    ++resource.statistics.uploadTextureCreations;
+                    sceneStatistics_.resourcesCreatedAtStartup += 2U;
+                }
+                ++resource.statistics.desktopSrvCreations;
+                resource.statistics.desktopSrvValid = true;
+            }
+            const HRESULT acquired = resource.keyedMutex->AcquireSync(1U, 0U);
+            if (acquired == WAIT_TIMEOUT)
+            {
+                return true;
+            }
+            if (FAILED(acquired))
+            {
+                error_ = "Per-source render keyed-mutex AcquireSync failed: "
+                    + hresultText(acquired);
+                return false;
+            }
+            context_->CopyResource(resource.texture.Get(), resource.sharedTexture.Get());
+            const HRESULT released = resource.keyedMutex->ReleaseSync(0U);
+            if (FAILED(released))
+            {
+                error_ = "Per-source render keyed-mutex ReleaseSync failed: "
+                    + hresultText(released);
+                return false;
+            }
+            ++sceneStatistics_.textureUploads;
+            resource.sequence = frame.sequence;
+            resource.filter = filter;
+            resource.layout = capture::calculateDesktopTextureLayout(
+                frame.sourceWidth, frame.sourceHeight, panelWidth_ / panelHeight_,
+                fit, frame.rotation, flipY);
+            resource.statistics.latestUploadedSequence = frame.sequence;
+            resource.statistics.latestUploadWidth = frame.sourceWidth;
+            resource.statistics.latestUploadHeight = frame.sourceHeight;
+            resource.statistics.latestUploadFormat = frame.sourceFormat;
+            resource.statistics.uploadTextureValid = resource.texture != nullptr;
+            return true;
+        }
+        ++resource.statistics.cpuFramesSeen;
+        const auto packed = capture::calculatePackedBgraLayout(
+            frame.sourceWidth, frame.sourceHeight);
+        const bool bufferValid = packed.has_value()
+            && frame.cpuRowPitch >= packed->stride
+            && frame.cpuPixels->size() >= static_cast<std::size_t>(frame.cpuRowPitch)
+                * frame.sourceHeight;
+        capture::DesktopUploadState state{
+            resource.sequence, resource.width, resource.height, resource.format,
+            resource.texture != nullptr};
+        const auto action = capture::decideDesktopUpload(state, frame.sequence,
+            frame.sourceWidth, frame.sourceHeight, frame.sourceFormat,
+            frame.valid && bufferValid);
+        if (action == capture::DesktopUploadAction::skipSameSequence)
+        {
+            ++resource.statistics.cpuFramesSkippedSameSequence;
+            return true;
+        }
+        if (action == capture::DesktopUploadAction::invalid)
+        {
+            ++resource.statistics.updateSubresourceFailures;
+            error_ = "Desktop source frame violates the upload texture contract.";
+            return false;
+        }
+        ++resource.statistics.cpuFramesConsumed;
+        resource.statistics.latestConsumedSequence = frame.sequence;
+        if (action == capture::DesktopUploadAction::create
+            || action == capture::DesktopUploadAction::recreate)
+        {
+            resource.sharedTexture.Reset();
+            resource.keyedMutex.Reset();
+            resource.surfaceIdentity = nullptr;
+            resource.sharedHandle = nullptr;
+            resource.recoveryGeneration = 0U;
+            resource.shaderResource.Reset();
+            resource.texture.Reset();
+            D3D11_TEXTURE2D_DESC description{};
+            description.Width = frame.sourceWidth;
+            description.Height = frame.sourceHeight;
+            description.MipLevels = 1U;
+            description.ArraySize = 1U;
+            description.Format = static_cast<DXGI_FORMAT>(frame.sourceFormat);
+            description.SampleDesc.Count = 1U;
+            description.Usage = D3D11_USAGE_DEFAULT;
+            description.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+            HRESULT result = device_->CreateTexture2D(
+                &description, nullptr, &resource.texture);
+            if (FAILED(result))
+            {
+                error_ = "Creating per-source render upload texture failed: "
+                    + hresultText(result);
+                return false;
+            }
+            result = device_->CreateShaderResourceView(
+                resource.texture.Get(), nullptr, &resource.shaderResource);
+            if (FAILED(result))
+            {
+                ++resource.statistics.desktopSrvFailures;
+                error_ = "Creating per-source desktop SRV failed: " + hresultText(result);
+                return false;
+            }
+            if (action == capture::DesktopUploadAction::create)
+            {
+                ++resource.statistics.uploadTextureCreations;
+                sceneStatistics_.resourcesCreatedAtStartup += 2U;
+            }
+            else
+            {
+                ++resource.statistics.uploadTextureRecreations;
+                sceneStatistics_.resourcesCreatedSteadyState += 2U;
+            }
+            ++resource.statistics.desktopSrvCreations;
+            resource.statistics.desktopSrvValid = true;
+            resource.width = frame.sourceWidth;
+            resource.height = frame.sourceHeight;
+            resource.format = frame.sourceFormat;
+        }
+        const auto updateStart = std::chrono::steady_clock::now();
+        context_->UpdateSubresource(resource.texture.Get(), 0U, nullptr,
+            frame.cpuPixels->data(), frame.cpuRowPitch, 0U);
+        resource.lastUploadMilliseconds = std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - updateStart).count();
+        ++resource.statistics.updateSubresourceCalls;
+        resource.statistics.uploadBytesSubmitted += packed->bufferSize;
+        resource.statistics.latestUploadBytes = packed->bufferSize;
+        resource.statistics.averageUpdateSubresourceMilliseconds +=
+            (resource.lastUploadMilliseconds
+                - resource.statistics.averageUpdateSubresourceMilliseconds)
+            / static_cast<double>(resource.statistics.updateSubresourceCalls);
+        resource.statistics.maximumUpdateSubresourceMilliseconds = std::max(
+            resource.statistics.maximumUpdateSubresourceMilliseconds,
+            resource.lastUploadMilliseconds);
+        const auto uploadEnd = std::chrono::steady_clock::now();
+        if (resource.firstUploadTimestamp == std::chrono::steady_clock::time_point{})
+        {
+            resource.firstUploadTimestamp = uploadEnd;
+        }
+        const double uploadSeconds = std::chrono::duration<double>(
+            uploadEnd - resource.firstUploadTimestamp).count();
+        resource.statistics.uploadFramesPerSecond = uploadSeconds > 0.0
+            ? static_cast<double>(resource.statistics.updateSubresourceCalls - 1U)
+                / uploadSeconds : 0.0;
+        ++sceneStatistics_.textureUploads;
+        resource.sequence = frame.sequence;
+        resource.filter = filter;
+        resource.layout = capture::calculateDesktopTextureLayout(
+            frame.sourceWidth, frame.sourceHeight, panelWidth_ / panelHeight_,
+            fit, frame.rotation, flipY);
+        resource.statistics.latestUploadedSequence = frame.sequence;
+        resource.statistics.latestUploadWidth = frame.sourceWidth;
+        resource.statistics.latestUploadHeight = frame.sourceHeight;
+        resource.statistics.latestUploadFormat = frame.sourceFormat;
+        resource.statistics.uploadTextureValid = resource.texture != nullptr;
+        return true;
+    }
+
     [[nodiscard]] bool present(bool vsync)
     {
         if (!vsync && frameLatencyWaitableObject_ != nullptr)
@@ -1792,6 +2118,28 @@ public:
     capture::DesktopFilter desktopFilter_{capture::DesktopFilter::linear};
     capture::DesktopTextureLayout desktopLayout_;
     capture::DesktopRenderStageStatistics desktopStatistics_;
+    std::chrono::steady_clock::time_point desktopFirstUploadTimestamp_{};
+    struct AdditionalDesktopSource
+    {
+        ComPtr<ID3D11Texture2D> texture;
+        ComPtr<ID3D11ShaderResourceView> shaderResource;
+        ComPtr<ID3D11Texture2D> sharedTexture;
+        ComPtr<IDXGIKeyedMutex> keyedMutex;
+        const capture::DesktopCaptureSurface* surfaceIdentity{};
+        void* sharedHandle{};
+        std::uint64_t recoveryGeneration{};
+        std::uint64_t sequence{};
+        std::uint32_t width{};
+        std::uint32_t height{};
+        std::uint32_t format{};
+        capture::DesktopFilter filter{capture::DesktopFilter::linear};
+        capture::DesktopTextureLayout layout;
+        capture::DesktopRenderStageStatistics statistics;
+        double lastUploadMilliseconds{};
+        std::chrono::steady_clock::time_point firstUploadTimestamp{};
+    };
+    std::array<AdditionalDesktopSource, rendering::maximumPanelCount>
+        additionalDesktopSources_{};
     D3D11SceneStatistics sceneStatistics_;
     std::uint64_t desktopUploadSourceChecksum_{};
     std::uint64_t uploadReadbackChecksum_{};
@@ -1846,6 +2194,16 @@ bool D3D11Renderer::updateDesktopFrame(
     return implementation_->updateDesktopFrame(frame, fit, filter, flipY);
 }
 
+bool D3D11Renderer::updateDesktopFrame(
+    std::size_t sourceSlot,
+    const capture::DesktopCaptureFrame& frame,
+    capture::DesktopFit fit,
+    capture::DesktopFilter filter,
+    bool flipY)
+{
+    return implementation_->updateDesktopFrame(sourceSlot, frame, fit, filter, flipY);
+}
+
 bool D3D11Renderer::render(
     const rendering::Matrix4& matrix,
     bool grid,
@@ -1879,6 +2237,20 @@ const D3D11RendererInformation& D3D11Renderer::information() const noexcept
 capture::DesktopRenderStageStatistics D3D11Renderer::desktopStatistics() const noexcept
 {
     return implementation_->desktopStatistics_;
+}
+
+capture::DesktopRenderStageStatistics D3D11Renderer::desktopStatistics(
+    std::size_t sourceSlot) const noexcept
+{
+    if (sourceSlot == 0U)
+    {
+        return implementation_->desktopStatistics_;
+    }
+    if (sourceSlot < rendering::maximumPanelCount)
+    {
+        return implementation_->additionalDesktopSources_[sourceSlot].statistics;
+    }
+    return {};
 }
 
 D3D11SceneStatistics D3D11Renderer::sceneStatistics() const noexcept
