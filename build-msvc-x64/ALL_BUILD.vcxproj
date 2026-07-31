@@ -1,0 +1,369 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ResolveNugetPackages>false</ResolveNugetPackages>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{37DFBA04-B54B-3EAD-8A18-D6E1F8389D28}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>ALL_BUILD</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/i-tem/Documents/dev/xreal-spatial-display/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/i-tem/Documents/dev/xreal-spatial-display -BC:/Users/i-tem/Documents/dev/xreal-spatial-display/build-msvc-x64 --check-stamp-file C:/Users/i-tem/Documents/dev/xreal-spatial-display/build-msvc-x64/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeInitializeConfigs.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeLanguageInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CTest.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CTestTargets.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CTestUseLaunchers.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Compiler\MSVC-C.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Compiler\MSVC.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\DartConfiguration.tcl.in;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Internal\CMakeCXXLinkerInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Linker\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows-Initialize.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\WindowsPaths.cmake;C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\3.31.6-msvc6\CMakeCCompiler.cmake;C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\3.31.6-msvc6\CMakeCXXCompiler.cmake;C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\3.31.6-msvc6\CMakeRCCompiler.cmake;C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\3.31.6-msvc6\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/i-tem/Documents/dev/xreal-spatial-display/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/i-tem/Documents/dev/xreal-spatial-display -BC:/Users/i-tem/Documents/dev/xreal-spatial-display/build-msvc-x64 --check-stamp-file C:/Users/i-tem/Documents/dev/xreal-spatial-display/build-msvc-x64/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeInitializeConfigs.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeLanguageInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CTest.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CTestTargets.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CTestUseLaunchers.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Compiler\MSVC-C.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Compiler\MSVC.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\DartConfiguration.tcl.in;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Internal\CMakeCXXLinkerInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Linker\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows-Initialize.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\WindowsPaths.cmake;C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\3.31.6-msvc6\CMakeCCompiler.cmake;C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\3.31.6-msvc6\CMakeCXXCompiler.cmake;C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\3.31.6-msvc6\CMakeRCCompiler.cmake;C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\3.31.6-msvc6\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/Users/i-tem/Documents/dev/xreal-spatial-display/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/i-tem/Documents/dev/xreal-spatial-display -BC:/Users/i-tem/Documents/dev/xreal-spatial-display/build-msvc-x64 --check-stamp-file C:/Users/i-tem/Documents/dev/xreal-spatial-display/build-msvc-x64/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeInitializeConfigs.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeLanguageInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CTest.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CTestTargets.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CTestUseLaunchers.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Compiler\MSVC-C.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Compiler\MSVC.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\DartConfiguration.tcl.in;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Internal\CMakeCXXLinkerInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Linker\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows-Initialize.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\WindowsPaths.cmake;C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\3.31.6-msvc6\CMakeCCompiler.cmake;C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\3.31.6-msvc6\CMakeCXXCompiler.cmake;C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\3.31.6-msvc6\CMakeRCCompiler.cmake;C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\3.31.6-msvc6\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/Users/i-tem/Documents/dev/xreal-spatial-display/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/i-tem/Documents/dev/xreal-spatial-display -BC:/Users/i-tem/Documents/dev/xreal-spatial-display/build-msvc-x64 --check-stamp-file C:/Users/i-tem/Documents/dev/xreal-spatial-display/build-msvc-x64/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeInitializeConfigs.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeLanguageInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CTest.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CTestTargets.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\CTestUseLaunchers.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Compiler\MSVC-C.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Compiler\MSVC.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\DartConfiguration.tcl.in;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Internal\CMakeCXXLinkerInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Linker\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows-Initialize.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\Windows.cmake;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\share\cmake-3.31\Modules\Platform\WindowsPaths.cmake;C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\3.31.6-msvc6\CMakeCCompiler.cmake;C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\3.31.6-msvc6\CMakeCXXCompiler.cmake;C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\3.31.6-msvc6\CMakeRCCompiler.cmake;C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\3.31.6-msvc6\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\ZERO_CHECK.vcxproj">
+      <Project>{D410CD78-CF30-33F6-98BF-96B58C2D9E84}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\third_party\hidapi\src\windows\hidapi_winapi.vcxproj">
+      <Project>{82593A34-BE54-3E91-9D13-31ED1E637948}</Project>
+      <Name>hidapi_winapi</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-accelerometer-calibration-tests.vcxproj">
+      <Project>{75095A9D-520D-3139-96DC-A15794D79DAC}</Project>
+      <Name>xreal-accelerometer-calibration-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-calibration-analyzer.vcxproj">
+      <Project>{6599476E-A42F-3167-9A83-410DE705D5CD}</Project>
+      <Name>xreal-calibration-analyzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-desktop-capture.vcxproj">
+      <Project>{177CBDE7-8AB9-3AE5-AFC8-9552F1B7D526}</Project>
+      <Name>xreal-desktop-capture</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-desktop-capture-tests.vcxproj">
+      <Project>{C2D43D7F-B802-3F3B-A000-5BB4A7380617}</Project>
+      <Name>xreal-desktop-capture-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-display-topology-tests.vcxproj">
+      <Project>{54CDED8F-1D95-30D4-A05C-623F279CF714}</Project>
+      <Name>xreal-display-topology-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-graphics-d3d11.vcxproj">
+      <Project>{0CD8E27F-D88B-3042-A126-BAA4E539955A}</Project>
+      <Name>xreal-graphics-d3d11</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-gyro-recording-analyzer.vcxproj">
+      <Project>{6941E6C6-5576-3F5A-AA1E-949FDF5F0D8C}</Project>
+      <Name>xreal-gyro-recording-analyzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-gyro-recording-analyzer-options-tests.vcxproj">
+      <Project>{F85CBD0D-627B-3418-BBE5-61AA47DD447A}</Project>
+      <Name>xreal-gyro-recording-analyzer-options-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-gyro-recording-analyzer-support.vcxproj">
+      <Project>{8561A1DB-CB13-33C3-A47D-22B7B368FF17}</Project>
+      <Name>xreal-gyro-recording-analyzer-support</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-gyro-scale-calibration.vcxproj">
+      <Project>{54289A99-B9B7-356E-AF5A-E13CC42F6FEA}</Project>
+      <Name>xreal-gyro-scale-calibration</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-gyro-scale-calibration-options-tests.vcxproj">
+      <Project>{97FD46C6-0197-3FDE-982D-B1BAAA816A0C}</Project>
+      <Name>xreal-gyro-scale-calibration-options-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-gyro-scale-calibration-support.vcxproj">
+      <Project>{1652733B-ABA5-360F-83A9-7DC462CC3030}</Project>
+      <Name>xreal-gyro-scale-calibration-support</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-gyro-scale-profile.vcxproj">
+      <Project>{53D427E2-0401-3DE1-A557-B5D4247B4D2A}</Project>
+      <Name>xreal-gyro-scale-profile</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-gyroscope-bias-calibration-tests.vcxproj">
+      <Project>{B3840513-9A7D-3FF5-9644-BF555DD8818B}</Project>
+      <Name>xreal-gyroscope-bias-calibration-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-gyroscope-offline-analysis-tests.vcxproj">
+      <Project>{A69FED4A-444A-35B7-BEDD-DA242909406C}</Project>
+      <Name>xreal-gyroscope-offline-analysis-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-gyroscope-orientation-tests.vcxproj">
+      <Project>{B78B01ED-FEEC-340A-9211-DD8FF3BA4A2C}</Project>
+      <Name>xreal-gyroscope-orientation-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-gyroscope-physical-units-tests.vcxproj">
+      <Project>{FE9205D7-4A60-3D63-A78D-AAE3C6DDECB3}</Project>
+      <Name>xreal-gyroscope-physical-units-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-gyroscope-recording-analysis-tests.vcxproj">
+      <Project>{0BEF279C-9980-39CC-A4EE-9AEB789AFD79}</Project>
+      <Name>xreal-gyroscope-recording-analysis-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-gyroscope-scale-calibration-tests.vcxproj">
+      <Project>{84765270-3183-331A-A9B7-D3536623512E}</Project>
+      <Name>xreal-gyroscope-scale-calibration-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-imu-calibration-tests.vcxproj">
+      <Project>{539563AB-749A-3017-BA8B-3C3A37DDDEB3}</Project>
+      <Name>xreal-imu-calibration-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-imu-diagnostic.vcxproj">
+      <Project>{77DA1D71-8DF7-324D-9D56-210A51837A58}</Project>
+      <Name>xreal-imu-diagnostic</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-imu-diagnostic-options-tests.vcxproj">
+      <Project>{B6B5B2E1-B90D-321B-B1B9-A30FED892D08}</Project>
+      <Name>xreal-imu-diagnostic-options-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-imu-diagnostic-support.vcxproj">
+      <Project>{5FCDC855-12D6-39EB-A5E3-75E964816954}</Project>
+      <Name>xreal-imu-diagnostic-support</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-imu-packet-decoder-tests.vcxproj">
+      <Project>{51297A42-DD48-3DE6-936A-BC8848BD3F66}</Project>
+      <Name>xreal-imu-packet-decoder-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-interface-probe.vcxproj">
+      <Project>{8C40B45F-B5EA-359F-9E52-15AF6B6B19F9}</Project>
+      <Name>xreal-interface-probe</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-interface-probe-support.vcxproj">
+      <Project>{EFBAD9E3-1349-3711-BA7B-707E032A4C8F}</Project>
+      <Name>xreal-interface-probe-support</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-interface-probe-tests.vcxproj">
+      <Project>{E6BD1681-C4A9-39CE-90E0-C94A75E25F47}</Project>
+      <Name>xreal-interface-probe-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-multi-panel-tests.vcxproj">
+      <Project>{748A58AE-61F7-3A51-9EA3-93E6D8EC07E0}</Project>
+      <Name>xreal-multi-panel-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-orientation-analyzer.vcxproj">
+      <Project>{29D7F143-A2CC-3D2F-B74D-F6BD4C2A7470}</Project>
+      <Name>xreal-orientation-analyzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-orientation-comparison-tests.vcxproj">
+      <Project>{51D5C9B8-1EA9-328D-B221-22B462FF8478}</Project>
+      <Name>xreal-orientation-comparison-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-orientation-fusion-tests.vcxproj">
+      <Project>{21787B56-0E83-3B6B-9107-072CDDB4BC05}</Project>
+      <Name>xreal-orientation-fusion-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-orientation-prediction-analysis-tests.vcxproj">
+      <Project>{8867F572-2450-3061-BC0F-7A2F846CEB2F}</Project>
+      <Name>xreal-orientation-prediction-analysis-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-orientation-prediction-tests.vcxproj">
+      <Project>{79EBC546-06F7-36BC-8432-2DF7A40EFCBD}</Project>
+      <Name>xreal-orientation-prediction-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-platform-windows.vcxproj">
+      <Project>{06424B32-9D52-3774-8DC9-CC1019728BA5}</Project>
+      <Name>xreal-platform-windows</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-render-diagnostics-tests.vcxproj">
+      <Project>{263C5C2C-AC55-30B7-86E7-33F7244BAE1B}</Project>
+      <Name>xreal-render-diagnostics-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-renderer-options-tests.vcxproj">
+      <Project>{AB6E5A77-0EF2-3F54-8A88-9D38C6130A7F}</Project>
+      <Name>xreal-renderer-options-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-rendering-core.vcxproj">
+      <Project>{0DB3063F-9A61-3764-A96F-42DF6FCF9DFD}</Project>
+      <Name>xreal-rendering-core</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-rendering-math-tests.vcxproj">
+      <Project>{514C7894-71B5-352E-B227-97AA2275AD6B}</Project>
+      <Name>xreal-rendering-math-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-sensor-diagnostic.vcxproj">
+      <Project>{3F211CCA-CE59-355B-AB87-344297ACFFDB}</Project>
+      <Name>xreal-sensor-diagnostic</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-sensors.vcxproj">
+      <Project>{64374691-4383-3380-B79F-67CB97059C0A}</Project>
+      <Name>xreal-sensors</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-spatial-renderer.vcxproj">
+      <Project>{F2B87DB7-0A56-3EC6-8B06-B18C4E359FE8}</Project>
+      <Name>xreal-spatial-renderer</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-virtual-display-control.vcxproj">
+      <Project>{452FC2C6-A939-3069-9F9F-9FA460BB7229}</Project>
+      <Name>xreal-virtual-display-control</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-virtual-display-driver-model-tests.vcxproj">
+      <Project>{454FAEA3-EAA8-35F1-9DE4-B86D4404B53C}</Project>
+      <Name>xreal-virtual-display-driver-model-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-virtual-display-protocol.vcxproj">
+      <Project>{39AA4899-2835-35E7-8DBB-5A441DE1A767}</Project>
+      <Name>xreal-virtual-display-protocol</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-virtual-display-service.vcxproj">
+      <Project>{54D48366-3C18-32B7-A9BF-88112B82CCB7}</Project>
+      <Name>xreal-virtual-display-service</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\xreal-virtual-display-tests.vcxproj">
+      <Project>{3C8E8877-1BCE-313F-9C29-4E7739C0FB24}</Project>
+      <Name>xreal-virtual-display-tests</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

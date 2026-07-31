@@ -1,0 +1,2192 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.24"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22,
+						23,
+						24,
+						25,
+						26,
+						27,
+						28,
+						29,
+						30,
+						31,
+						32,
+						33,
+						34,
+						35,
+						36,
+						37,
+						38,
+						39,
+						40,
+						41,
+						42,
+						43,
+						44,
+						45,
+						46,
+						47,
+						48
+					]
+				},
+				{
+					"build" : "third_party/hidapi",
+					"childIndexes" : 
+					[
+						2
+					],
+					"jsonFile" : "directory-third_party.hidapi-Debug-eb1f356cebdd67611bca.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.3"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "third_party/hidapi"
+				},
+				{
+					"build" : "third_party/hidapi/src",
+					"childIndexes" : 
+					[
+						3
+					],
+					"jsonFile" : "directory-third_party.hidapi.src-Debug-e0d471c957e2aa1b4213.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.3"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "third_party/hidapi/src",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "third_party/hidapi/src/windows",
+					"jsonFile" : "directory-third_party.hidapi.src.windows-Debug-08c5b6beae9ba78567bf.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.3"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 1,
+					"source" : "third_party/hidapi/windows",
+					"targetIndexes" : 
+					[
+						7
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						1
+					],
+					"name" : "XrealSpatialDisplay",
+					"targetIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22,
+						23,
+						24,
+						25,
+						26,
+						27,
+						28,
+						29,
+						30,
+						31,
+						32,
+						33,
+						34,
+						35,
+						36,
+						37,
+						38,
+						39,
+						40,
+						41,
+						42,
+						43,
+						44,
+						45,
+						46,
+						47,
+						48
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2,
+						3
+					],
+					"name" : "hidapi",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						0,
+						7
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 2,
+					"id" : "ALL_BUILD::@fdc8d58613ab6b0fb189",
+					"jsonFile" : "target-ALL_BUILD-Debug-a630bcb3163c8b412c4e.json",
+					"name" : "ALL_BUILD",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ALL_BUILD::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ALL_BUILD-Debug-d7d4f6dfa5357c3d30d7.json",
+					"name" : "ALL_BUILD",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Continuous::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Continuous-Debug-93c34d607c5a21a30a98.json",
+					"name" : "Continuous",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Experimental::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Experimental-Debug-4b06bb39c9c8cddaad08.json",
+					"name" : "Experimental",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Nightly::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Nightly-Debug-2afa913f50eccb2225c6.json",
+					"name" : "Nightly",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "NightlyMemoryCheck::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-NightlyMemoryCheck-Debug-0cb3dd972be930cd4a5f.json",
+					"name" : "NightlyMemoryCheck",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ZERO_CHECK-Debug-735ff1aa3c4e2e541c84.json",
+					"name" : "ZERO_CHECK",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "hidapi_winapi::@0070ffda23339cec89fa",
+					"jsonFile" : "target-hidapi_winapi-Debug-8a57b89dc35f6670e619.json",
+					"name" : "hidapi_winapi",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-accelerometer-calibration-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-accelerometer-calibration-tests-Debug-e1a4f8f23e9cf6de7fcf.json",
+					"name" : "xreal-accelerometer-calibration-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-calibration-analyzer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-calibration-analyzer-Debug-53723fe6b6a43d135fd1.json",
+					"name" : "xreal-calibration-analyzer",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-desktop-capture::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-desktop-capture-Debug-8673abe01ef033a071fa.json",
+					"name" : "xreal-desktop-capture",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-desktop-capture-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-desktop-capture-tests-Debug-91d4d8571b7d7e667b7d.json",
+					"name" : "xreal-desktop-capture-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-display-topology-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-display-topology-tests-Debug-7e415ba6683657aba193.json",
+					"name" : "xreal-display-topology-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-graphics-d3d11::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-graphics-d3d11-Debug-6a5d8216a7639b6706ab.json",
+					"name" : "xreal-graphics-d3d11",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-recording-analyzer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-recording-analyzer-Debug-f75e20557c7086aaab89.json",
+					"name" : "xreal-gyro-recording-analyzer",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-recording-analyzer-options-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-recording-analyzer-options-tests-Debug-ebe78b7cc5af6b66071c.json",
+					"name" : "xreal-gyro-recording-analyzer-options-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-recording-analyzer-support::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-recording-analyzer-support-Debug-3dc75cedf3c979f6f33f.json",
+					"name" : "xreal-gyro-recording-analyzer-support",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-scale-calibration::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-scale-calibration-Debug-8cb5fb59580ba963e7df.json",
+					"name" : "xreal-gyro-scale-calibration",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-scale-calibration-options-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-scale-calibration-options-tests-Debug-b2295d2260125720ae11.json",
+					"name" : "xreal-gyro-scale-calibration-options-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-scale-calibration-support::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-scale-calibration-support-Debug-d6d80537fdcda9eda52a.json",
+					"name" : "xreal-gyro-scale-calibration-support",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-scale-profile::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-scale-profile-Debug-d5342169561f217751b0.json",
+					"name" : "xreal-gyro-scale-profile",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-bias-calibration-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-bias-calibration-tests-Debug-d6b4a07b8b4645477870.json",
+					"name" : "xreal-gyroscope-bias-calibration-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-offline-analysis-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-offline-analysis-tests-Debug-b599a43abacf0702778b.json",
+					"name" : "xreal-gyroscope-offline-analysis-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-orientation-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-orientation-tests-Debug-9810cbedd0749bd0fb9c.json",
+					"name" : "xreal-gyroscope-orientation-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-physical-units-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-physical-units-tests-Debug-e7a5ca95ab6b0e0b6195.json",
+					"name" : "xreal-gyroscope-physical-units-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-recording-analysis-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-recording-analysis-tests-Debug-8d089f1dcd652dc6ca5d.json",
+					"name" : "xreal-gyroscope-recording-analysis-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-scale-calibration-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-scale-calibration-tests-Debug-1f23235fa1f3521851fa.json",
+					"name" : "xreal-gyroscope-scale-calibration-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-calibration-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-calibration-tests-Debug-b9a06bb858f4addb8263.json",
+					"name" : "xreal-imu-calibration-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-diagnostic::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-diagnostic-Debug-7dc2a4c075f9a5d69148.json",
+					"name" : "xreal-imu-diagnostic",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-diagnostic-options-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-diagnostic-options-tests-Debug-91f256d12dc340e1cd07.json",
+					"name" : "xreal-imu-diagnostic-options-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-diagnostic-support::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-diagnostic-support-Debug-414b704d2758a517d3c3.json",
+					"name" : "xreal-imu-diagnostic-support",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-packet-decoder-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-packet-decoder-tests-Debug-7d105b0849492b88c8cf.json",
+					"name" : "xreal-imu-packet-decoder-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-interface-probe::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-interface-probe-Debug-264ee49b7c97d9cc5a9e.json",
+					"name" : "xreal-interface-probe",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-interface-probe-support::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-interface-probe-support-Debug-2cbb18c121af013992ee.json",
+					"name" : "xreal-interface-probe-support",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-interface-probe-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-interface-probe-tests-Debug-ad9a116daeda56c658ab.json",
+					"name" : "xreal-interface-probe-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-multi-panel-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-multi-panel-tests-Debug-e69dfd3898c4fb2506f6.json",
+					"name" : "xreal-multi-panel-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-analyzer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-analyzer-Debug-09728e8d4127b56a9014.json",
+					"name" : "xreal-orientation-analyzer",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-comparison-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-comparison-tests-Debug-9231db57079ede51419d.json",
+					"name" : "xreal-orientation-comparison-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-fusion-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-fusion-tests-Debug-c774221c9f71360a1160.json",
+					"name" : "xreal-orientation-fusion-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-prediction-analysis-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-prediction-analysis-tests-Debug-7740d323c823908eaf4b.json",
+					"name" : "xreal-orientation-prediction-analysis-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-prediction-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-prediction-tests-Debug-e3d01ab6b4b1c9767ec0.json",
+					"name" : "xreal-orientation-prediction-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-platform-windows::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-platform-windows-Debug-4d72f6404a585aea9a38.json",
+					"name" : "xreal-platform-windows",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-render-diagnostics-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-render-diagnostics-tests-Debug-3eb15ad5705f11ed882a.json",
+					"name" : "xreal-render-diagnostics-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-renderer-options-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-renderer-options-tests-Debug-374c5c52e66fb0026a82.json",
+					"name" : "xreal-renderer-options-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-rendering-core::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-rendering-core-Debug-7f6445c76e03de5863eb.json",
+					"name" : "xreal-rendering-core",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-rendering-math-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-rendering-math-tests-Debug-917388cd27316f41d7cf.json",
+					"name" : "xreal-rendering-math-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-sensor-diagnostic::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-sensor-diagnostic-Debug-c58ac4d80cc7d2335213.json",
+					"name" : "xreal-sensor-diagnostic",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-sensors::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-sensors-Debug-573793a2ca60dc87f35a.json",
+					"name" : "xreal-sensors",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-spatial-renderer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-spatial-renderer-Debug-4f63753c18c0b2b095a0.json",
+					"name" : "xreal-spatial-renderer",
+					"projectIndex" : 0
+				}
+			]
+		},
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"jsonFile" : "directory-.-Release-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.24"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22,
+						23,
+						24,
+						25,
+						26,
+						27,
+						28,
+						29,
+						30,
+						31,
+						32,
+						33,
+						34,
+						35,
+						36,
+						37,
+						38,
+						39,
+						40,
+						41,
+						42,
+						43,
+						44,
+						45,
+						46,
+						47,
+						48
+					]
+				},
+				{
+					"build" : "third_party/hidapi",
+					"childIndexes" : 
+					[
+						2
+					],
+					"jsonFile" : "directory-third_party.hidapi-Release-eb1f356cebdd67611bca.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.3"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "third_party/hidapi"
+				},
+				{
+					"build" : "third_party/hidapi/src",
+					"childIndexes" : 
+					[
+						3
+					],
+					"jsonFile" : "directory-third_party.hidapi.src-Release-e0d471c957e2aa1b4213.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.3"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "third_party/hidapi/src",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "third_party/hidapi/src/windows",
+					"jsonFile" : "directory-third_party.hidapi.src.windows-Release-08c5b6beae9ba78567bf.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.3"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 1,
+					"source" : "third_party/hidapi/windows",
+					"targetIndexes" : 
+					[
+						7
+					]
+				}
+			],
+			"name" : "Release",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						1
+					],
+					"name" : "XrealSpatialDisplay",
+					"targetIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22,
+						23,
+						24,
+						25,
+						26,
+						27,
+						28,
+						29,
+						30,
+						31,
+						32,
+						33,
+						34,
+						35,
+						36,
+						37,
+						38,
+						39,
+						40,
+						41,
+						42,
+						43,
+						44,
+						45,
+						46,
+						47,
+						48
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2,
+						3
+					],
+					"name" : "hidapi",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						0,
+						7
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 2,
+					"id" : "ALL_BUILD::@fdc8d58613ab6b0fb189",
+					"jsonFile" : "target-ALL_BUILD-Release-a630bcb3163c8b412c4e.json",
+					"name" : "ALL_BUILD",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ALL_BUILD::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ALL_BUILD-Release-d7d4f6dfa5357c3d30d7.json",
+					"name" : "ALL_BUILD",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Continuous::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Continuous-Release-93c34d607c5a21a30a98.json",
+					"name" : "Continuous",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Experimental::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Experimental-Release-4b06bb39c9c8cddaad08.json",
+					"name" : "Experimental",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Nightly::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Nightly-Release-2afa913f50eccb2225c6.json",
+					"name" : "Nightly",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "NightlyMemoryCheck::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-NightlyMemoryCheck-Release-0cb3dd972be930cd4a5f.json",
+					"name" : "NightlyMemoryCheck",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ZERO_CHECK-Release-735ff1aa3c4e2e541c84.json",
+					"name" : "ZERO_CHECK",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "hidapi_winapi::@0070ffda23339cec89fa",
+					"jsonFile" : "target-hidapi_winapi-Release-c21f0ff9db37ead5febc.json",
+					"name" : "hidapi_winapi",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-accelerometer-calibration-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-accelerometer-calibration-tests-Release-e02c7f2903c8ec6af2b5.json",
+					"name" : "xreal-accelerometer-calibration-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-calibration-analyzer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-calibration-analyzer-Release-069def9fd6c28ec069b6.json",
+					"name" : "xreal-calibration-analyzer",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-desktop-capture::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-desktop-capture-Release-55e45e4c0e9ea93aa916.json",
+					"name" : "xreal-desktop-capture",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-desktop-capture-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-desktop-capture-tests-Release-e16a5cf3920380feb0e1.json",
+					"name" : "xreal-desktop-capture-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-display-topology-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-display-topology-tests-Release-a1247dde253e2ce7993b.json",
+					"name" : "xreal-display-topology-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-graphics-d3d11::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-graphics-d3d11-Release-032fa9af18ccbc82aca9.json",
+					"name" : "xreal-graphics-d3d11",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-recording-analyzer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-recording-analyzer-Release-12dfe7b3d30f08443787.json",
+					"name" : "xreal-gyro-recording-analyzer",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-recording-analyzer-options-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-recording-analyzer-options-tests-Release-1d4d5bbb297498d273f3.json",
+					"name" : "xreal-gyro-recording-analyzer-options-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-recording-analyzer-support::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-recording-analyzer-support-Release-2db3682a179f38cf372f.json",
+					"name" : "xreal-gyro-recording-analyzer-support",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-scale-calibration::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-scale-calibration-Release-b0d8a0daa455e60501df.json",
+					"name" : "xreal-gyro-scale-calibration",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-scale-calibration-options-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-scale-calibration-options-tests-Release-8ec6fa7a0ba104627531.json",
+					"name" : "xreal-gyro-scale-calibration-options-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-scale-calibration-support::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-scale-calibration-support-Release-976c168c7887deeff1c2.json",
+					"name" : "xreal-gyro-scale-calibration-support",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-scale-profile::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-scale-profile-Release-bbb6456d5f117c9d8970.json",
+					"name" : "xreal-gyro-scale-profile",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-bias-calibration-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-bias-calibration-tests-Release-117807038e7a17c5f0dc.json",
+					"name" : "xreal-gyroscope-bias-calibration-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-offline-analysis-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-offline-analysis-tests-Release-7cd14139f2ca5211ac61.json",
+					"name" : "xreal-gyroscope-offline-analysis-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-orientation-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-orientation-tests-Release-42f2658604784b4858ba.json",
+					"name" : "xreal-gyroscope-orientation-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-physical-units-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-physical-units-tests-Release-0ba3c1c6294195c3fe82.json",
+					"name" : "xreal-gyroscope-physical-units-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-recording-analysis-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-recording-analysis-tests-Release-261d02dbdde3a50fd392.json",
+					"name" : "xreal-gyroscope-recording-analysis-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-scale-calibration-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-scale-calibration-tests-Release-29410c954520c1abd184.json",
+					"name" : "xreal-gyroscope-scale-calibration-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-calibration-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-calibration-tests-Release-e478a7126a83a4c6e7b8.json",
+					"name" : "xreal-imu-calibration-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-diagnostic::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-diagnostic-Release-27fc930b54a3cae78494.json",
+					"name" : "xreal-imu-diagnostic",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-diagnostic-options-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-diagnostic-options-tests-Release-3d910b12099d5b4513a1.json",
+					"name" : "xreal-imu-diagnostic-options-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-diagnostic-support::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-diagnostic-support-Release-6c96ec654fdf9a886d05.json",
+					"name" : "xreal-imu-diagnostic-support",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-packet-decoder-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-packet-decoder-tests-Release-a01dcb13c1041965b63e.json",
+					"name" : "xreal-imu-packet-decoder-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-interface-probe::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-interface-probe-Release-fae387da771666546366.json",
+					"name" : "xreal-interface-probe",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-interface-probe-support::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-interface-probe-support-Release-cc869fbf605af68eb109.json",
+					"name" : "xreal-interface-probe-support",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-interface-probe-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-interface-probe-tests-Release-000f7bef4770257e110e.json",
+					"name" : "xreal-interface-probe-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-multi-panel-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-multi-panel-tests-Release-dcdbfba945d7781d6fc6.json",
+					"name" : "xreal-multi-panel-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-analyzer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-analyzer-Release-0b5609901736ca52692c.json",
+					"name" : "xreal-orientation-analyzer",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-comparison-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-comparison-tests-Release-284611b90ab78f3340c7.json",
+					"name" : "xreal-orientation-comparison-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-fusion-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-fusion-tests-Release-4ff2a9dad79d4ee2ecec.json",
+					"name" : "xreal-orientation-fusion-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-prediction-analysis-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-prediction-analysis-tests-Release-3b2ee62cfd9380704a8b.json",
+					"name" : "xreal-orientation-prediction-analysis-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-prediction-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-prediction-tests-Release-ce9fa52b72cfa1a32508.json",
+					"name" : "xreal-orientation-prediction-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-platform-windows::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-platform-windows-Release-9f6029a7e7659db0bfff.json",
+					"name" : "xreal-platform-windows",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-render-diagnostics-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-render-diagnostics-tests-Release-560b5f280cd63f2094b5.json",
+					"name" : "xreal-render-diagnostics-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-renderer-options-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-renderer-options-tests-Release-3146e390e8a11b6a3e9d.json",
+					"name" : "xreal-renderer-options-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-rendering-core::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-rendering-core-Release-f9f93639fb59aa4d0a5f.json",
+					"name" : "xreal-rendering-core",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-rendering-math-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-rendering-math-tests-Release-75fd7b67f4d57ebcf36b.json",
+					"name" : "xreal-rendering-math-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-sensor-diagnostic::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-sensor-diagnostic-Release-d4d00f02a56c57d9d064.json",
+					"name" : "xreal-sensor-diagnostic",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-sensors::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-sensors-Release-725bf973b567cbc96fd6.json",
+					"name" : "xreal-sensors",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-spatial-renderer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-spatial-renderer-Release-73441f3f580150b8d30f.json",
+					"name" : "xreal-spatial-renderer",
+					"projectIndex" : 0
+				}
+			]
+		},
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"jsonFile" : "directory-.-MinSizeRel-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.24"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22,
+						23,
+						24,
+						25,
+						26,
+						27,
+						28,
+						29,
+						30,
+						31,
+						32,
+						33,
+						34,
+						35,
+						36,
+						37,
+						38,
+						39,
+						40,
+						41,
+						42,
+						43,
+						44,
+						45,
+						46,
+						47,
+						48
+					]
+				},
+				{
+					"build" : "third_party/hidapi",
+					"childIndexes" : 
+					[
+						2
+					],
+					"jsonFile" : "directory-third_party.hidapi-MinSizeRel-eb1f356cebdd67611bca.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.3"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "third_party/hidapi"
+				},
+				{
+					"build" : "third_party/hidapi/src",
+					"childIndexes" : 
+					[
+						3
+					],
+					"jsonFile" : "directory-third_party.hidapi.src-MinSizeRel-e0d471c957e2aa1b4213.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.3"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "third_party/hidapi/src",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "third_party/hidapi/src/windows",
+					"jsonFile" : "directory-third_party.hidapi.src.windows-MinSizeRel-08c5b6beae9ba78567bf.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.3"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 1,
+					"source" : "third_party/hidapi/windows",
+					"targetIndexes" : 
+					[
+						7
+					]
+				}
+			],
+			"name" : "MinSizeRel",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						1
+					],
+					"name" : "XrealSpatialDisplay",
+					"targetIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22,
+						23,
+						24,
+						25,
+						26,
+						27,
+						28,
+						29,
+						30,
+						31,
+						32,
+						33,
+						34,
+						35,
+						36,
+						37,
+						38,
+						39,
+						40,
+						41,
+						42,
+						43,
+						44,
+						45,
+						46,
+						47,
+						48
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2,
+						3
+					],
+					"name" : "hidapi",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						0,
+						7
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 2,
+					"id" : "ALL_BUILD::@fdc8d58613ab6b0fb189",
+					"jsonFile" : "target-ALL_BUILD-MinSizeRel-a630bcb3163c8b412c4e.json",
+					"name" : "ALL_BUILD",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ALL_BUILD::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ALL_BUILD-MinSizeRel-d7d4f6dfa5357c3d30d7.json",
+					"name" : "ALL_BUILD",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Continuous::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Continuous-MinSizeRel-93c34d607c5a21a30a98.json",
+					"name" : "Continuous",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Experimental::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Experimental-MinSizeRel-4b06bb39c9c8cddaad08.json",
+					"name" : "Experimental",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Nightly::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Nightly-MinSizeRel-2afa913f50eccb2225c6.json",
+					"name" : "Nightly",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "NightlyMemoryCheck::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-NightlyMemoryCheck-MinSizeRel-0cb3dd972be930cd4a5f.json",
+					"name" : "NightlyMemoryCheck",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ZERO_CHECK-MinSizeRel-735ff1aa3c4e2e541c84.json",
+					"name" : "ZERO_CHECK",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "hidapi_winapi::@0070ffda23339cec89fa",
+					"jsonFile" : "target-hidapi_winapi-MinSizeRel-bd1fef50def699c8a189.json",
+					"name" : "hidapi_winapi",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-accelerometer-calibration-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-accelerometer-calibration-tests-MinSizeRel-f703c409f47ecdfa6a1b.json",
+					"name" : "xreal-accelerometer-calibration-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-calibration-analyzer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-calibration-analyzer-MinSizeRel-91e39b5ce87db355b9ee.json",
+					"name" : "xreal-calibration-analyzer",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-desktop-capture::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-desktop-capture-MinSizeRel-ad44a862fc6c5c675459.json",
+					"name" : "xreal-desktop-capture",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-desktop-capture-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-desktop-capture-tests-MinSizeRel-c9e908de1f9da188527b.json",
+					"name" : "xreal-desktop-capture-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-display-topology-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-display-topology-tests-MinSizeRel-356999b82f3b12c0c90b.json",
+					"name" : "xreal-display-topology-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-graphics-d3d11::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-graphics-d3d11-MinSizeRel-a535c0fb17e25173f3f0.json",
+					"name" : "xreal-graphics-d3d11",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-recording-analyzer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-recording-analyzer-MinSizeRel-5175d5a84c6d4d860872.json",
+					"name" : "xreal-gyro-recording-analyzer",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-recording-analyzer-options-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-recording-analyzer-options-tests-MinSizeRel-18a83087057b74cdd61a.json",
+					"name" : "xreal-gyro-recording-analyzer-options-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-recording-analyzer-support::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-recording-analyzer-support-MinSizeRel-1a7b3b741279f205cc2b.json",
+					"name" : "xreal-gyro-recording-analyzer-support",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-scale-calibration::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-scale-calibration-MinSizeRel-d138dea9e78f706e94cc.json",
+					"name" : "xreal-gyro-scale-calibration",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-scale-calibration-options-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-scale-calibration-options-tests-MinSizeRel-ab7e8469c6e1bcc0cf74.json",
+					"name" : "xreal-gyro-scale-calibration-options-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-scale-calibration-support::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-scale-calibration-support-MinSizeRel-f8765a0e73199cea70be.json",
+					"name" : "xreal-gyro-scale-calibration-support",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-scale-profile::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-scale-profile-MinSizeRel-522ecffbe08e1c584b50.json",
+					"name" : "xreal-gyro-scale-profile",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-bias-calibration-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-bias-calibration-tests-MinSizeRel-68c037e78ce587cd3694.json",
+					"name" : "xreal-gyroscope-bias-calibration-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-offline-analysis-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-offline-analysis-tests-MinSizeRel-4e3bfcf005e263b03a4a.json",
+					"name" : "xreal-gyroscope-offline-analysis-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-orientation-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-orientation-tests-MinSizeRel-931cf65c101a6967305c.json",
+					"name" : "xreal-gyroscope-orientation-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-physical-units-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-physical-units-tests-MinSizeRel-591733492af35a5aad66.json",
+					"name" : "xreal-gyroscope-physical-units-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-recording-analysis-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-recording-analysis-tests-MinSizeRel-56a2c74df28bacccb008.json",
+					"name" : "xreal-gyroscope-recording-analysis-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-scale-calibration-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-scale-calibration-tests-MinSizeRel-cc264d678075b7247f8d.json",
+					"name" : "xreal-gyroscope-scale-calibration-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-calibration-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-calibration-tests-MinSizeRel-d50e8933ca3425c507b8.json",
+					"name" : "xreal-imu-calibration-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-diagnostic::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-diagnostic-MinSizeRel-3e6bd0b0c66362d99d52.json",
+					"name" : "xreal-imu-diagnostic",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-diagnostic-options-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-diagnostic-options-tests-MinSizeRel-a58a8ba50f218fd568bc.json",
+					"name" : "xreal-imu-diagnostic-options-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-diagnostic-support::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-diagnostic-support-MinSizeRel-5cc43a900f808fe5efaa.json",
+					"name" : "xreal-imu-diagnostic-support",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-packet-decoder-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-packet-decoder-tests-MinSizeRel-a9c282b745012046084b.json",
+					"name" : "xreal-imu-packet-decoder-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-interface-probe::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-interface-probe-MinSizeRel-b6d0ff600245ad1764b8.json",
+					"name" : "xreal-interface-probe",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-interface-probe-support::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-interface-probe-support-MinSizeRel-5e9efe0aecc471b381c9.json",
+					"name" : "xreal-interface-probe-support",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-interface-probe-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-interface-probe-tests-MinSizeRel-b33e44ab5b5cc0deab77.json",
+					"name" : "xreal-interface-probe-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-multi-panel-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-multi-panel-tests-MinSizeRel-46fc9693025a90931a62.json",
+					"name" : "xreal-multi-panel-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-analyzer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-analyzer-MinSizeRel-e0dfde454b95608b4e1c.json",
+					"name" : "xreal-orientation-analyzer",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-comparison-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-comparison-tests-MinSizeRel-47276f8a4464fd33a850.json",
+					"name" : "xreal-orientation-comparison-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-fusion-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-fusion-tests-MinSizeRel-2ea9859903d2ab0a7514.json",
+					"name" : "xreal-orientation-fusion-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-prediction-analysis-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-prediction-analysis-tests-MinSizeRel-944a5415ef4fe3542430.json",
+					"name" : "xreal-orientation-prediction-analysis-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-prediction-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-prediction-tests-MinSizeRel-f78b7ca165200862809c.json",
+					"name" : "xreal-orientation-prediction-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-platform-windows::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-platform-windows-MinSizeRel-67d9fdca2b9f22579504.json",
+					"name" : "xreal-platform-windows",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-render-diagnostics-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-render-diagnostics-tests-MinSizeRel-cab668a30ad408032713.json",
+					"name" : "xreal-render-diagnostics-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-renderer-options-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-renderer-options-tests-MinSizeRel-47cd08b52aca4e1fa4f9.json",
+					"name" : "xreal-renderer-options-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-rendering-core::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-rendering-core-MinSizeRel-e335a4d4f5e6df597ef3.json",
+					"name" : "xreal-rendering-core",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-rendering-math-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-rendering-math-tests-MinSizeRel-1c94a9349dad659fc241.json",
+					"name" : "xreal-rendering-math-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-sensor-diagnostic::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-sensor-diagnostic-MinSizeRel-c844cfacb6bfaaad2584.json",
+					"name" : "xreal-sensor-diagnostic",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-sensors::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-sensors-MinSizeRel-6af6cfc7fdf14717b1ac.json",
+					"name" : "xreal-sensors",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-spatial-renderer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-spatial-renderer-MinSizeRel-17561c934f5d4de3ea72.json",
+					"name" : "xreal-spatial-renderer",
+					"projectIndex" : 0
+				}
+			]
+		},
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"jsonFile" : "directory-.-RelWithDebInfo-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.24"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22,
+						23,
+						24,
+						25,
+						26,
+						27,
+						28,
+						29,
+						30,
+						31,
+						32,
+						33,
+						34,
+						35,
+						36,
+						37,
+						38,
+						39,
+						40,
+						41,
+						42,
+						43,
+						44,
+						45,
+						46,
+						47,
+						48
+					]
+				},
+				{
+					"build" : "third_party/hidapi",
+					"childIndexes" : 
+					[
+						2
+					],
+					"jsonFile" : "directory-third_party.hidapi-RelWithDebInfo-eb1f356cebdd67611bca.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.3"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "third_party/hidapi"
+				},
+				{
+					"build" : "third_party/hidapi/src",
+					"childIndexes" : 
+					[
+						3
+					],
+					"jsonFile" : "directory-third_party.hidapi.src-RelWithDebInfo-e0d471c957e2aa1b4213.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.3"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "third_party/hidapi/src",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "third_party/hidapi/src/windows",
+					"jsonFile" : "directory-third_party.hidapi.src.windows-RelWithDebInfo-08c5b6beae9ba78567bf.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.3"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 1,
+					"source" : "third_party/hidapi/windows",
+					"targetIndexes" : 
+					[
+						7
+					]
+				}
+			],
+			"name" : "RelWithDebInfo",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						1
+					],
+					"name" : "XrealSpatialDisplay",
+					"targetIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22,
+						23,
+						24,
+						25,
+						26,
+						27,
+						28,
+						29,
+						30,
+						31,
+						32,
+						33,
+						34,
+						35,
+						36,
+						37,
+						38,
+						39,
+						40,
+						41,
+						42,
+						43,
+						44,
+						45,
+						46,
+						47,
+						48
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2,
+						3
+					],
+					"name" : "hidapi",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						0,
+						7
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 2,
+					"id" : "ALL_BUILD::@fdc8d58613ab6b0fb189",
+					"jsonFile" : "target-ALL_BUILD-RelWithDebInfo-a630bcb3163c8b412c4e.json",
+					"name" : "ALL_BUILD",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ALL_BUILD::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ALL_BUILD-RelWithDebInfo-d7d4f6dfa5357c3d30d7.json",
+					"name" : "ALL_BUILD",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Continuous::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Continuous-RelWithDebInfo-93c34d607c5a21a30a98.json",
+					"name" : "Continuous",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Experimental::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Experimental-RelWithDebInfo-4b06bb39c9c8cddaad08.json",
+					"name" : "Experimental",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Nightly::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Nightly-RelWithDebInfo-2afa913f50eccb2225c6.json",
+					"name" : "Nightly",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "NightlyMemoryCheck::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-NightlyMemoryCheck-RelWithDebInfo-0cb3dd972be930cd4a5f.json",
+					"name" : "NightlyMemoryCheck",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ZERO_CHECK-RelWithDebInfo-735ff1aa3c4e2e541c84.json",
+					"name" : "ZERO_CHECK",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "hidapi_winapi::@0070ffda23339cec89fa",
+					"jsonFile" : "target-hidapi_winapi-RelWithDebInfo-4a7408b7511364b99be9.json",
+					"name" : "hidapi_winapi",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-accelerometer-calibration-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-accelerometer-calibration-tests-RelWithDebInfo-783d7cad7196d4cd8291.json",
+					"name" : "xreal-accelerometer-calibration-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-calibration-analyzer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-calibration-analyzer-RelWithDebInfo-b7f6f97b653f454e13ac.json",
+					"name" : "xreal-calibration-analyzer",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-desktop-capture::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-desktop-capture-RelWithDebInfo-508d073f7cdf01b6f1cd.json",
+					"name" : "xreal-desktop-capture",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-desktop-capture-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-desktop-capture-tests-RelWithDebInfo-9d0f2fcf016476e7cd8a.json",
+					"name" : "xreal-desktop-capture-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-display-topology-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-display-topology-tests-RelWithDebInfo-9c124d79471c2bf669e9.json",
+					"name" : "xreal-display-topology-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-graphics-d3d11::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-graphics-d3d11-RelWithDebInfo-0452185f8f6724ebb37d.json",
+					"name" : "xreal-graphics-d3d11",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-recording-analyzer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-recording-analyzer-RelWithDebInfo-0c61a92f88ecfcc2451c.json",
+					"name" : "xreal-gyro-recording-analyzer",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-recording-analyzer-options-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-recording-analyzer-options-tests-RelWithDebInfo-d19b107070b5d6b571aa.json",
+					"name" : "xreal-gyro-recording-analyzer-options-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-recording-analyzer-support::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-recording-analyzer-support-RelWithDebInfo-653c60f8173515805768.json",
+					"name" : "xreal-gyro-recording-analyzer-support",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-scale-calibration::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-scale-calibration-RelWithDebInfo-b940e118e6b0fef7ebe2.json",
+					"name" : "xreal-gyro-scale-calibration",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-scale-calibration-options-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-scale-calibration-options-tests-RelWithDebInfo-b9704e40501f1bb414bb.json",
+					"name" : "xreal-gyro-scale-calibration-options-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-scale-calibration-support::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-scale-calibration-support-RelWithDebInfo-093860e9466ebb2a419e.json",
+					"name" : "xreal-gyro-scale-calibration-support",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyro-scale-profile::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyro-scale-profile-RelWithDebInfo-f614683dafdd61f61cdf.json",
+					"name" : "xreal-gyro-scale-profile",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-bias-calibration-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-bias-calibration-tests-RelWithDebInfo-487e4ac9e18064eaa507.json",
+					"name" : "xreal-gyroscope-bias-calibration-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-offline-analysis-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-offline-analysis-tests-RelWithDebInfo-0c2f4eb4e8018e986eaa.json",
+					"name" : "xreal-gyroscope-offline-analysis-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-orientation-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-orientation-tests-RelWithDebInfo-361e50c32a45d882b130.json",
+					"name" : "xreal-gyroscope-orientation-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-physical-units-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-physical-units-tests-RelWithDebInfo-c6f63bf57c1b8658586b.json",
+					"name" : "xreal-gyroscope-physical-units-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-recording-analysis-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-recording-analysis-tests-RelWithDebInfo-652c8b47a4973eeb60a2.json",
+					"name" : "xreal-gyroscope-recording-analysis-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-gyroscope-scale-calibration-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-gyroscope-scale-calibration-tests-RelWithDebInfo-ecdc687b2ee7309c2c37.json",
+					"name" : "xreal-gyroscope-scale-calibration-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-calibration-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-calibration-tests-RelWithDebInfo-7037c253df3382252380.json",
+					"name" : "xreal-imu-calibration-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-diagnostic::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-diagnostic-RelWithDebInfo-91fc6da435ac166aa8d8.json",
+					"name" : "xreal-imu-diagnostic",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-diagnostic-options-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-diagnostic-options-tests-RelWithDebInfo-1afae489bcf5b7f52f9c.json",
+					"name" : "xreal-imu-diagnostic-options-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-diagnostic-support::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-diagnostic-support-RelWithDebInfo-a07c01159be77293e802.json",
+					"name" : "xreal-imu-diagnostic-support",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-imu-packet-decoder-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-imu-packet-decoder-tests-RelWithDebInfo-73f77332bf80956426b8.json",
+					"name" : "xreal-imu-packet-decoder-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-interface-probe::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-interface-probe-RelWithDebInfo-3dd20e61c59ce8bfddef.json",
+					"name" : "xreal-interface-probe",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-interface-probe-support::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-interface-probe-support-RelWithDebInfo-17c4784490f541091e84.json",
+					"name" : "xreal-interface-probe-support",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-interface-probe-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-interface-probe-tests-RelWithDebInfo-09c4460b0e87f70077e0.json",
+					"name" : "xreal-interface-probe-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-multi-panel-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-multi-panel-tests-RelWithDebInfo-e9994847d1813f4f757b.json",
+					"name" : "xreal-multi-panel-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-analyzer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-analyzer-RelWithDebInfo-88b39af90367b7f893e4.json",
+					"name" : "xreal-orientation-analyzer",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-comparison-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-comparison-tests-RelWithDebInfo-35c7c753fc9acf54a665.json",
+					"name" : "xreal-orientation-comparison-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-fusion-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-fusion-tests-RelWithDebInfo-e90a5f21678f809fc36f.json",
+					"name" : "xreal-orientation-fusion-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-prediction-analysis-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-prediction-analysis-tests-RelWithDebInfo-a8b4ab64a22f9130af0e.json",
+					"name" : "xreal-orientation-prediction-analysis-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-orientation-prediction-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-orientation-prediction-tests-RelWithDebInfo-3a658b66f8f9ec72ae09.json",
+					"name" : "xreal-orientation-prediction-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-platform-windows::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-platform-windows-RelWithDebInfo-49116599cbf0de3e8ab5.json",
+					"name" : "xreal-platform-windows",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-render-diagnostics-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-render-diagnostics-tests-RelWithDebInfo-d1295fe165e112b63fbd.json",
+					"name" : "xreal-render-diagnostics-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-renderer-options-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-renderer-options-tests-RelWithDebInfo-f7293793fb3076c23c9b.json",
+					"name" : "xreal-renderer-options-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-rendering-core::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-rendering-core-RelWithDebInfo-deac891e7816b5bc3345.json",
+					"name" : "xreal-rendering-core",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-rendering-math-tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-rendering-math-tests-RelWithDebInfo-73d538695ea0bba069fc.json",
+					"name" : "xreal-rendering-math-tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-sensor-diagnostic::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-sensor-diagnostic-RelWithDebInfo-08e26390cea9972e9dc6.json",
+					"name" : "xreal-sensor-diagnostic",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-sensors::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-sensors-RelWithDebInfo-231ba36530c021f92262.json",
+					"name" : "xreal-sensors",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xreal-spatial-renderer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xreal-spatial-renderer-RelWithDebInfo-a59831ee643d6605daf9.json",
+					"name" : "xreal-spatial-renderer",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/Users/i-tem/Documents/dev/xreal-spatial-display/build",
+		"source" : "C:/Users/i-tem/Documents/dev/xreal-spatial-display"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 8
+	}
+}

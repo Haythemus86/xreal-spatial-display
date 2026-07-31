@@ -21,6 +21,18 @@ set(HIDAPI_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 add_subdirectory(third_party/hidapi)
 
 add_library(
+    xreal-virtual-display-protocol
+    virtual-display/protocol/VirtualDisplayProtocol.cpp
+    virtual-display/protocol/VirtualDisplayTypes.cpp
+)
+
+target_include_directories(
+    xreal-virtual-display-protocol
+    PUBLIC
+        virtual-display
+)
+
+add_library(
     xreal-sensors
     src/sensors/AccelerometerCalibration.cpp
     src/sensors/AccelerometerPhysicalUnits.cpp
@@ -164,6 +176,7 @@ add_library(
     src/capture/DesktopCaptureDiagnostics.cpp
     src/capture/DesktopCaptureFrame.cpp
     src/capture/DesktopCaptureManager.cpp
+    src/capture/DesktopCaptureManagerFrameSource.cpp
     src/capture/DesktopCaptureOptions.cpp
     src/capture/DesktopCaptureScaler.cpp
     src/capture/DesktopCaptureScaling.cpp
@@ -203,6 +216,40 @@ target_link_libraries(
     PUBLIC
         xreal-sensors
         xreal-desktop-capture
+)
+
+add_library(
+    xreal-virtual-display-service
+    virtual-display/service/VirtualDisplayControlOptions.cpp
+    virtual-display/service/VirtualDisplayService.cpp
+    virtual-display/service/VirtualDisplayTopology.cpp
+    virtual-display/service/VirtualDisplayViewModel.cpp
+    virtual-display/service/WindowsVirtualDisplayTransport.cpp
+)
+
+target_include_directories(
+    xreal-virtual-display-service
+    PUBLIC
+        src
+        virtual-display
+)
+
+target_link_libraries(
+    xreal-virtual-display-service
+    PUBLIC
+        xreal-virtual-display-protocol
+        xreal-rendering-core
+)
+
+add_executable(
+    xreal-virtual-display-control
+    virtual-display/service/VirtualDisplayControlMain.cpp
+)
+
+target_link_libraries(
+    xreal-virtual-display-control
+    PRIVATE
+        xreal-virtual-display-service
 )
 
 add_library(
@@ -368,6 +415,8 @@ add_custom_command(
 )
 
 set(xreal_project_targets
+    xreal-virtual-display-protocol
+    xreal-virtual-display-service
     xreal-sensors
     xreal-interface-probe-support
     xreal-imu-diagnostic-support
@@ -386,6 +435,7 @@ set(xreal_project_targets
     xreal-gyro-scale-profile
     xreal-orientation-analyzer
     xreal-spatial-renderer
+    xreal-virtual-display-control
 )
 
 foreach(target IN LISTS xreal_project_targets)
@@ -916,4 +966,41 @@ if(BUILD_TESTING)
             $<$<CXX_COMPILER_ID:MSVC>:/permissive->
     )
     add_test(NAME xreal-multi-panel-tests COMMAND xreal-multi-panel-tests)
+
+    add_executable(
+        xreal-virtual-display-tests
+        tests/VirtualDisplayTests.cpp
+    )
+    target_link_libraries(
+        xreal-virtual-display-tests
+        PRIVATE
+            xreal-virtual-display-service
+    )
+    target_compile_options(
+        xreal-virtual-display-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+    add_test(NAME xreal-virtual-display-tests COMMAND xreal-virtual-display-tests)
+
+    add_executable(
+        xreal-virtual-display-driver-model-tests
+        tests/VirtualDisplayDriverModelTests.cpp
+    )
+    target_link_libraries(
+        xreal-virtual-display-driver-model-tests
+        PRIVATE
+            xreal-virtual-display-service
+    )
+    target_compile_options(
+        xreal-virtual-display-driver-model-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+    add_test(
+        NAME xreal-virtual-display-driver-model-tests
+        COMMAND xreal-virtual-display-driver-model-tests
+    )
 endif()

@@ -1,0 +1,15 @@
+{
+  "schema_version":1,
+  "mode":"gyroscope-recording-batch",
+  "accepted":false,
+  "rejection_reason":"no recordings produced an eligible estimate",
+  "accepted_recordings":0,
+  "rejected_recordings":4,
+  "statistics":{"median":0,"mean":0,"standard_deviation":0,"coefficient_of_variation":0,"minimum":0,"maximum":0,"direction_disagreement_percent":0},
+  "recordings":[
+    {"input":"gyro-recording.csv","accepted":false,"rejection_reason":"no recommended scale estimate","scale":0,"direction":"auto","dominant_axis":"z","selected_duration_seconds":0,"cross_axis_ratio":0,"confidence":0},
+    {"input":"gyro-recording-02.csv","accepted":false,"rejection_reason":"no recommended scale estimate","scale":0,"direction":"auto","dominant_axis":"z","selected_duration_seconds":0,"cross_axis_ratio":0,"confidence":0},
+    {"input":"gyro-recording-03.csv","accepted":false,"rejection_reason":"no recommended scale estimate","scale":0,"direction":"auto","dominant_axis":"z","selected_duration_seconds":0,"cross_axis_ratio":0,"confidence":0},
+    {"input":"gyro-recording-04.csv","accepted":false,"rejection_reason":"no recommended scale estimate","scale":0,"direction":"auto","dominant_axis":"z","selected_duration_seconds":0,"cross_axis_ratio":0,"confidence":0}
+  ]
+}

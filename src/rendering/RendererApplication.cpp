@@ -152,6 +152,13 @@ void printMonitors(const std::vector<platform::windows::MonitorInformation>& mon
                   << monitor.workLeft << ',' << monitor.workTop << ','
                   << monitor.workRight << ',' << monitor.workBottom << "] primary="
                   << (monitor.primary ? "yes" : "no") << '\n';
+        std::cout << "      stable_identity="
+                  << (monitor.stableIdentity.empty()
+                          ? "unavailable" : monitor.stableIdentity)
+                  << " friendly_name=\""
+                  << (monitor.friendlyName.empty()
+                          ? "unavailable" : monitor.friendlyName)
+                  << "\"\n";
         if (monitor.dxgiOutput.has_value())
         {
             const auto& output = *monitor.dxgiOutput;
@@ -572,6 +579,10 @@ int RendererApplication::run()
                     && source.key.captureBenchmarkInstance > 0U;
                 capture::MonitorSelector selectorForSource;
                 selectorForSource.index = source.key.monitorIndex;
+                if (!source.key.monitorStableId.empty())
+                {
+                    selectorForSource.stableIdentity = source.key.monitorStableId;
+                }
                 if (!source.key.monitorDeviceName.empty())
                 {
                     selectorForSource.deviceName = source.key.monitorDeviceName;

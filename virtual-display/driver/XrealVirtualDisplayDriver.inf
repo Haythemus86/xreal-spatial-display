@@ -1,0 +1,63 @@
+[Version]
+Signature="$WINDOWS NT$"
+Class=Display
+ClassGuid={4d36e968-e325-11ce-bfc1-08002be10318}
+Provider=%ManufacturerName%
+DriverVer=07/31/2026,0.1.0.0
+CatalogFile=XrealVirtualDisplayDriver.cat
+PnpLockdown=1
+
+[Manufacturer]
+%ManufacturerName%=Standard,NTamd64.10.0...22000
+
+[Standard.NTamd64.10.0...22000]
+%DeviceName%=Device,Root\XrealVirtualDisplay
+
+[SourceDisksFiles]
+XrealVirtualDisplayDriver.dll=1
+
+[SourceDisksNames]
+1=%DiskName%
+
+[DestinationDirs]
+DefaultDestDir=13
+UMDriverCopy=13
+
+[Device.NT]
+CopyFiles=UMDriverCopy
+
+[UMDriverCopy]
+XrealVirtualDisplayDriver.dll
+
+[Device.NT.Services]
+AddService=WUDFRd,0x000001fa,WUDFRD_ServiceInstall
+
+[WUDFRD_ServiceInstall]
+DisplayName=%WudfRdDisplayName%
+ServiceType=1
+StartType=3
+ErrorControl=1
+ServiceBinary=%12%\WUDFRd.sys
+
+[Device.NT.Wdf]
+UmdfService=XrealVirtualDisplayDriver,XrealVirtualDisplayDriver_Install
+UmdfServiceOrder=XrealVirtualDisplayDriver
+
+[XrealVirtualDisplayDriver_Install]
+UmdfLibraryVersion=$UMDFVERSION$
+ServiceBinary=%13%\XrealVirtualDisplayDriver.dll
+UmdfExtensions=IddCx0102
+
+[Device.NT.HW]
+AddReg=Device_AddReg
+
+[Device_AddReg]
+HKR,,DeviceGroupId,0x00000000,"XrealVirtualDisplayDeviceGroup"
+
+[Device.NT.CoInstallers]
+
+[Strings]
+ManufacturerName="xreal-spatial-display contributors"
+DeviceName="XREAL Virtual Display Prototype Adapter"
+DiskName="XREAL Virtual Display Prototype Installation Media"
+WudfRdDisplayName="Windows Driver Foundation - User-mode Driver Framework Reflector"

@@ -1,0 +1,18 @@
+{
+  "schema_version":1,
+  "type":"orientation-driven-d3d11-render",
+  "experimental":true,
+  "motion_to_photon_latency":"not_measured",
+  "adapter":{"name":"Intel(R) Graphics","feature_level":"11.1","device_type":"hardware","debug_layer":false,"luid":"0x00000000:00013BB3","selected_monitor_match":true,"output":"\\\\.\\DISPLAY5"},
+  "swap_chain":{"format":"DXGI_FORMAT_B8G8R8A8_UNORM","effect":"flip-discard","maximum_frame_latency":1,"waitable_object":false,"vsync":true},
+  "window":{"width":1280,"height":720,"monitor_index":1,"monitor_device":"\\\\.\\DISPLAY5","monitor_bounds":[5120,0,7040,1080],"dxgi_output_matched":true},
+  "orientation":{"source":"predicted","frame":"relative","demo_mode":false,"calibration_accepted":true,"recenter_generation":1},
+  "fusion":{"mode":"complementary","startup":"gravity","experimental":true},
+  "prediction":{"enabled":true,"horizon_ms":15,"experimental":true},
+  "render_mapping":{"sensor_x":"+X","sensor_y":"-Z","sensor_z":"+Y","handedness":"right-handed","experimental":true,"verified":true},
+  "frame_statistics":{"render_frames":1394,"presents":1394,"elapsed_seconds":23.271982099999999,"average_fps":59.900355457904894,"minimum_fps":30.532113677165643,"maximum_fps":259.40337224383916,"average_frame_time_ms":15.338103730272566,"maximum_frame_time_ms":30.751200000000001,"slow_frames":1},
+  "orientation_snapshot_statistics":{"repeated":0,"invalid":181,"prediction_fallbacks":0,"sensor_publish_rate":868.08248275508947,"average_snapshot_age_ms":1.4439034624896945,"maximum_snapshot_age_ms":3.9523999999999999,"average_approximate_effective_lead_ms":13.556096537510301,"latest_device_timestamp":91376868108155},
+  "device_counters":{"received":23216,"dropped":0,"invalid":0,"out_of_sequence":0},
+  "desktop_frame_path":{"frames_acquired":592,"staging_copies":592,"staging_maps":592,"staging_map_successes":592,"cpu_buffers_created":3,"cpu_frames_published":592,"latest_published_sequence":592,"cpu_frames_seen":1389,"cpu_frames_consumed":551,"cpu_frames_skipped_same_sequence":838,"latest_consumed_sequence":591,"upload_texture_creations":1,"upload_texture_recreations":0,"update_subresource_calls":551,"update_subresource_failures":0,"latest_uploaded_sequence":591,"latest_upload_width":5120,"latest_upload_height":1440,"latest_upload_format":87,"upload_texture_valid":true,"desktop_srv_creations":1,"desktop_srv_failures":0,"desktop_srv_bind_count":1389,"latest_bound_sequence":591,"desktop_srv_valid":true,"panel_content_requested":"desktop","panel_content_effective":"desktop","desktop_texture_available":true,"rendered_desktop_frames":1389,"rendered_unavailable_frames":5,"rendered_synthetic_frames":0},
+  "shutdown":{"state":"shutting_down","reason":"escape_key","error":null}
+}

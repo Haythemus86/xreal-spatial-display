@@ -1,0 +1,4 @@
+{
+  "schema_version":1,
+  "orientation":{"type":"gyro-only-quaternion","valid":true,"experimental":true,"quaternion_convention":{"component_order":"wxyz","frame":"body-to-world","multiplication_order":"current_times_body_delta","handedness":"right-handed"},"axis_mapping":{"source":"provisional-flat-chair-observation","notes":"Sensor Z was dominant during a flat chair rotation; yaw correspondence remains provisional.","experimental":true,"verified":false,"sensor_x_target":"x","sensor_x_sign":1,"sensor_y_target":"y","sensor_y_sign":1,"sensor_z_target":"z","sensor_z_sign":1},"scale_profile":{"source":"experimental-manual-calibration","experimental":true,"verified":false},"final_quaternion":{"w":1,"x":0,"y":0,"z":0},"final_euler_degrees":{"yaw":0,"pitch":0,"roll":0},"statistics":{"applied_samples":0,"skipped_samples":0,"rejected_samples":0,"integration_duration_seconds":0}}
+}

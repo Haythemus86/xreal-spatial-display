@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\capture\DesktopCaptureBridge.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\capture\DesktopCaptureDiagnostics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\capture\DesktopCaptureFrame.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\capture\DesktopCaptureManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\capture\DesktopCaptureOptions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\capture\DesktopCaptureScaler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\capture\DesktopCaptureScaling.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\capture\DesktopSyntheticCapture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\capture\DesktopCaptureStatistics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\capture\DesktopDuplicationCapture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\capture\DesktopCpuFrame.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\capture\DesktopFrameRetention.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\capture\DesktopRenderStages.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\capture\DesktopTextureLayout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{8B6CDA0E-965A-3B2D-BD04-F8A7D16181DD}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

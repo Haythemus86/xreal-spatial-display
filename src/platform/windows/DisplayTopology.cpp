@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cctype>
 #include <sstream>
+#include <unordered_map>
 #include <utility>
 
 namespace xreal::platform::windows
@@ -89,6 +90,65 @@ BOOL CALLBACK collectMonitor(HMONITOR handle, HDC, LPRECT, LPARAM context)
         result[index].index = static_cast<unsigned int>(index);
     }
     return result;
+}
+
+void attachStableMonitorIdentities(std::span<MonitorInformation> monitors)
+{
+    UINT32 pathCount{};
+    UINT32 modeCount{};
+    LONG status = GetDisplayConfigBufferSizes(
+        QDC_ONLY_ACTIVE_PATHS, &pathCount, &modeCount);
+    if (status != ERROR_SUCCESS || pathCount == 0U)
+    {
+        return;
+    }
+    std::vector<DISPLAYCONFIG_PATH_INFO> paths(pathCount);
+    std::vector<DISPLAYCONFIG_MODE_INFO> modes(modeCount);
+    status = QueryDisplayConfig(
+        QDC_ONLY_ACTIVE_PATHS,
+        &pathCount,
+        paths.data(),
+        &modeCount,
+        modes.data(),
+        nullptr);
+    if (status != ERROR_SUCCESS)
+    {
+        return;
+    }
+    std::unordered_map<std::string, std::pair<std::string, std::string>> identities;
+    for (UINT32 index = 0U; index < pathCount; ++index)
+    {
+        const auto& path = paths[index];
+        DISPLAYCONFIG_SOURCE_DEVICE_NAME source{};
+        source.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
+        source.header.size = sizeof(source);
+        source.header.adapterId = path.sourceInfo.adapterId;
+        source.header.id = path.sourceInfo.id;
+        DISPLAYCONFIG_TARGET_DEVICE_NAME target{};
+        target.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
+        target.header.size = sizeof(target);
+        target.header.adapterId = path.targetInfo.adapterId;
+        target.header.id = path.targetInfo.id;
+        if (DisplayConfigGetDeviceInfo(&source.header) != ERROR_SUCCESS
+            || DisplayConfigGetDeviceInfo(&target.header) != ERROR_SUCCESS)
+        {
+            continue;
+        }
+        const std::string sourceName = normalizedDeviceName(utf8(source.viewGdiDeviceName));
+        identities[sourceName] = {
+            utf8(target.monitorDevicePath),
+            utf8(target.monitorFriendlyDeviceName),
+        };
+    }
+    for (auto& monitor : monitors)
+    {
+        const auto found = identities.find(normalizedDeviceName(monitor.deviceName));
+        if (found != identities.end())
+        {
+            monitor.stableIdentity = found->second.first;
+            monitor.friendlyName = found->second.second;
+        }
+    }
 }
 
 [[nodiscard]] std::vector<DxgiOutputInformation> activeDxgiOutputs(std::string& error)
@@ -239,9 +299,24 @@ DisplayTopologyResult enumerateDisplayTopology()
 {
     DisplayTopologyResult result;
     result.monitors = activeMonitors();
+    attachStableMonitorIdentities(result.monitors);
     const auto outputs = activeDxgiOutputs(result.error);
     associateDxgiOutputs(result.monitors, outputs);
     return result;
+}
+
+const MonitorInformation* findMonitorByStableIdentity(
+    std::span<const MonitorInformation> monitors,
+    std::string_view stableIdentity) noexcept
+{
+    if (stableIdentity.empty())
+    {
+        return nullptr;
+    }
+    const auto found = std::find_if(monitors.begin(), monitors.end(), [&](const auto& monitor) {
+        return monitor.stableIdentity == stableIdentity;
+    });
+    return found == monitors.end() ? nullptr : &*found;
 }
 
 } // namespace xreal::platform::windows

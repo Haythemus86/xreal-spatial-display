@@ -1,0 +1,62 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ALL_BUILD", "ALL_BUILD.vcxproj", "{841728F9-75A0-316A-896A-62AEFE88697F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3CFCC6DB-45A2-348C-B8B9-4D583751FAA8} = {3CFCC6DB-45A2-348C-B8B9-4D583751FAA8}
+		{1C3CA1A8-606E-3D56-A62D-B7D28CC613B1} = {1C3CA1A8-606E-3D56-A62D-B7D28CC613B1}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RUN_TESTS", "RUN_TESTS.vcxproj", "{76EECC1F-949B-38AF-9CF4-DB26CB68BA66}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3CFCC6DB-45A2-348C-B8B9-4D583751FAA8} = {3CFCC6DB-45A2-348C-B8B9-4D583751FAA8}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZERO_CHECK", "..\..\..\\ZERO_CHECK.vcxproj", "{3CFCC6DB-45A2-348C-B8B9-4D583751FAA8}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hidapi_winapi", "windows\hidapi_winapi.vcxproj", "{1C3CA1A8-606E-3D56-A62D-B7D28CC613B1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3CFCC6DB-45A2-348C-B8B9-4D583751FAA8} = {3CFCC6DB-45A2-348C-B8B9-4D583751FAA8}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+		MinSizeRel|x64 = MinSizeRel|x64
+		RelWithDebInfo|x64 = RelWithDebInfo|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{841728F9-75A0-316A-896A-62AEFE88697F}.Debug|x64.ActiveCfg = Debug|x64
+		{841728F9-75A0-316A-896A-62AEFE88697F}.Release|x64.ActiveCfg = Release|x64
+		{841728F9-75A0-316A-896A-62AEFE88697F}.MinSizeRel|x64.ActiveCfg = MinSizeRel|x64
+		{841728F9-75A0-316A-896A-62AEFE88697F}.RelWithDebInfo|x64.ActiveCfg = RelWithDebInfo|x64
+		{76EECC1F-949B-38AF-9CF4-DB26CB68BA66}.Debug|x64.ActiveCfg = Debug|x64
+		{76EECC1F-949B-38AF-9CF4-DB26CB68BA66}.Release|x64.ActiveCfg = Release|x64
+		{76EECC1F-949B-38AF-9CF4-DB26CB68BA66}.MinSizeRel|x64.ActiveCfg = MinSizeRel|x64
+		{76EECC1F-949B-38AF-9CF4-DB26CB68BA66}.RelWithDebInfo|x64.ActiveCfg = RelWithDebInfo|x64
+		{3CFCC6DB-45A2-348C-B8B9-4D583751FAA8}.Debug|x64.ActiveCfg = Debug|x64
+		{3CFCC6DB-45A2-348C-B8B9-4D583751FAA8}.Debug|x64.Build.0 = Debug|x64
+		{3CFCC6DB-45A2-348C-B8B9-4D583751FAA8}.Release|x64.ActiveCfg = Release|x64
+		{3CFCC6DB-45A2-348C-B8B9-4D583751FAA8}.Release|x64.Build.0 = Release|x64
+		{3CFCC6DB-45A2-348C-B8B9-4D583751FAA8}.MinSizeRel|x64.ActiveCfg = MinSizeRel|x64
+		{3CFCC6DB-45A2-348C-B8B9-4D583751FAA8}.MinSizeRel|x64.Build.0 = MinSizeRel|x64
+		{3CFCC6DB-45A2-348C-B8B9-4D583751FAA8}.RelWithDebInfo|x64.ActiveCfg = RelWithDebInfo|x64
+		{3CFCC6DB-45A2-348C-B8B9-4D583751FAA8}.RelWithDebInfo|x64.Build.0 = RelWithDebInfo|x64
+		{1C3CA1A8-606E-3D56-A62D-B7D28CC613B1}.Debug|x64.ActiveCfg = Debug|x64
+		{1C3CA1A8-606E-3D56-A62D-B7D28CC613B1}.Debug|x64.Build.0 = Debug|x64
+		{1C3CA1A8-606E-3D56-A62D-B7D28CC613B1}.Release|x64.ActiveCfg = Release|x64
+		{1C3CA1A8-606E-3D56-A62D-B7D28CC613B1}.Release|x64.Build.0 = Release|x64
+		{1C3CA1A8-606E-3D56-A62D-B7D28CC613B1}.MinSizeRel|x64.ActiveCfg = MinSizeRel|x64
+		{1C3CA1A8-606E-3D56-A62D-B7D28CC613B1}.MinSizeRel|x64.Build.0 = MinSizeRel|x64
+		{1C3CA1A8-606E-3D56-A62D-B7D28CC613B1}.RelWithDebInfo|x64.ActiveCfg = RelWithDebInfo|x64
+		{1C3CA1A8-606E-3D56-A62D-B7D28CC613B1}.RelWithDebInfo|x64.Build.0 = RelWithDebInfo|x64
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7043FD18-94F5-3413-8D6B-DBF372EFD959}
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal
