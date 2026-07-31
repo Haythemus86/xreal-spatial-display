@@ -228,6 +228,56 @@ int main()
     const auto smoke = parse({"--smoke-test", "--smoke-test-frames", "3"});
     expect(smoke.options.has_value() && smoke.options->orientationDemoMode,
            "explicit smoke test uses demo mode without HID");
+    const auto multi = parse({"--orientation-demo-static", "--panel-count", "3",
+        "--panel-layout", "triple-angled", "--panel-width-m", "1.7",
+        "--panel-gap-m", "0.2", "--panel-1-content", "desktop",
+        "--panel-1-capture-monitor-index", "0", "--panel-2-content", "checkerboard",
+        "--panel-3-content", "synthetic", "--panel-2-position-y-m", "0.1",
+        "--panel-3-yaw-degrees", "-20", "--panel-1-target-fps", "30",
+        "--panel-1-source-target-width", "1920", "--panel-1-source-scale", "0.5",
+        "--performance-profile", "performance"});
+    expect(multi.options.has_value() && multi.options->panelScene.panelCount == 3U
+            && multi.options->panelScene.panels[0].content.kind == PanelContentKind::desktop
+            && multi.options->panelScene.panels[1].content.kind == PanelContentKind::checkerboard
+            && multi.options->panelScene.panels[1].transform.position.y == 0.1
+            && multi.options->panelScene.panels[2].transform.yawDegrees == -20.0
+            && multi.options->panelScene.panels[0].content.requestedWidth == 1920U
+            && multi.options->panelScene.panels[0].content.requestedScale == 0.5
+            && multi.options->panelScene.panels[0].targetFramesPerSecondExplicit
+            && multi.options->panelScene.performanceProfile == PerformanceProfile::performance,
+        "multi-panel options preserve independent content, transforms and rate policy");
+    const auto panelPresentation = parse({"--orientation-demo-static",
+        "--panel-count", "2", "--desktop-fit", "cover", "--desktop-filter", "point"});
+    expect(panelPresentation.options.has_value()
+            && panelPresentation.options->panelScene.panels[0].fit == PanelFitMode::cover
+            && panelPresentation.options->panelScene.panels[1].filter
+                == PanelFilterMode::point,
+        "global presentation options resolve into every panel definition");
+    expect(!parse({"--orientation-demo-static", "--panel-count", "4"}).options.has_value(),
+        "panel count above fixed capacity is rejected");
+    expect(!parse({"--orientation-demo-static", "--panel-count", "2",
+            "--panel-2-content", "desktop"}).options.has_value(),
+        "desktop panel requires an explicit monitor selector");
+    expect(!parse({"--orientation-demo-static", "--panel-1-width-m", "nan"})
+            .options.has_value(),
+        "non-finite per-panel geometry is rejected");
+    expect(!parse({"--orientation-demo-static", "--save-panel-layout-on-exit"})
+            .options.has_value(),
+        "save-on-exit requires an explicit destination");
+    const auto benchmark = parse({"--multi-panel-benchmark",
+        "--multi-panel-benchmark-seconds", "1", "--multi-panel-benchmark-panels", "3",
+        "--multi-panel-benchmark-content", "checkerboard",
+        "--multi-panel-benchmark-json", "benchmark.json"});
+    expect(benchmark.options.has_value() && benchmark.options->orientationDemoMode
+            && benchmark.options->panelScene.panelCount == 3U
+            && benchmark.options->renderDurationSeconds.has_value(),
+        "benchmark mode configures deterministic demo duration and scene");
+    const auto genericPerformance = parse({"--orientation-demo-static",
+        "--performance-json-output", "performance.json"});
+    expect(genericPerformance.options.has_value()
+            && genericPerformance.options->multiPanelBenchmarkJsonPath
+                == "performance.json",
+        "generic performance JSON output works outside benchmark mode");
     if (failures != 0) { return 1; }
     std::cout << "All renderer option tests passed.\n";
     return 0;

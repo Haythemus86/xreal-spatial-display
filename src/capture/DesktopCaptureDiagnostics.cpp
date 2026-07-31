@@ -113,6 +113,8 @@ std::string serializeDesktopCaptureSummaryJson(const DesktopCaptureSummary& summ
     finiteNumber(output, summary.render.maximumSourceFrameAgeMilliseconds);
     output << ",\n  \"repeated_frame_count\":" << summary.render.repeatedCaptureFrames
            << ",\n  \"dropped_publication_count\":" << summary.bridge.droppedPublications
+           << ",\n  \"render_bridge_contended_read_count\":"
+           << summary.bridge.contendedReads
            << ",\n  \"gpu_copy_count\":" << summary.capture.gpuCopies
            << ",\n  \"cpu_fallback_copy_count\":" << summary.capture.cpuFallbackCopies
            << ",\n  \"cpu_fallback_bytes\":" << summary.capture.cpuFallbackBytes

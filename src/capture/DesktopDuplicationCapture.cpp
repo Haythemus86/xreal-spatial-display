@@ -10,8 +10,11 @@
 #include <wrl/client.h>
 
 #include <algorithm>
+#include <atomic>
 #include <array>
 #include <chrono>
+#include <cmath>
+#include <condition_variable>
 #include <cstring>
 #include <sstream>
 #include <iostream>
@@ -71,6 +74,12 @@ public:
             setError("The capture monitor has no matching DXGI output.");
             return false;
         }
+        if (!std::isfinite(config.maximumFramesPerSecond)
+            || config.maximumFramesPerSecond < 0.0)
+        {
+            setError("Desktop capture maximum frame rate must be finite and non-negative.");
+            return false;
+        }
         const bool crossAdapter = config.captureMonitor.dxgiOutput->adapterLuid
             != config.renderAdapterLuid;
         if (crossAdapter && config.options.crossAdapterPolicy == CrossAdapterPolicy::reject)
@@ -85,6 +94,8 @@ public:
             return false;
         }
         config_ = std::move(config);
+        maximumFramesPerSecond_.store(config_.maximumFramesPerSecond,
+            std::memory_order_release);
         cpuFallback_ = config_.options.crossAdapterPolicy == CrossAdapterPolicy::cpuFallback;
         {
             std::scoped_lock lock(mutex_);
@@ -104,8 +115,19 @@ public:
         if (worker_.joinable())
         {
             worker_.request_stop();
+            cadenceCondition_.notify_all();
             worker_.join();
         }
+    }
+
+    void setMaximumFramesPerSecond(double value) noexcept
+    {
+        if (!std::isfinite(value) || value < 0.0)
+        {
+            return;
+        }
+        maximumFramesPerSecond_.store(value, std::memory_order_release);
+        cadenceCondition_.notify_all();
     }
 
     [[nodiscard]] DesktopCaptureStatistics statistics() const
@@ -492,8 +514,19 @@ private:
         {
             return;
         }
+        auto nextCapture = std::chrono::steady_clock::now();
         while (!stopToken.stop_requested())
         {
+            double cadence = maximumFramesPerSecond_.load(std::memory_order_acquire);
+            if (cadence <= 0.0)
+            {
+                std::unique_lock cadenceLock(cadenceMutex_);
+                (void)cadenceCondition_.wait(cadenceLock, stopToken, [this] {
+                    return maximumFramesPerSecond_.load(std::memory_order_acquire) > 0.0;
+                });
+                nextCapture = std::chrono::steady_clock::now();
+                continue;
+            }
             DXGI_OUTDUPL_FRAME_INFO information{};
             ComPtr<IDXGIResource> resource;
             {
@@ -667,6 +700,24 @@ private:
                     ++tracker_.values.captureErrors;
                 }
             }
+            const auto capturePeriod = std::chrono::duration_cast<
+                std::chrono::steady_clock::duration>(std::chrono::duration<double>(
+                    1.0 / cadence));
+            nextCapture += capturePeriod;
+            const auto cadenceNow = std::chrono::steady_clock::now();
+            if (nextCapture > cadenceNow)
+            {
+                std::unique_lock cadenceLock(cadenceMutex_);
+                (void)cadenceCondition_.wait_until(
+                    cadenceLock, stopToken, nextCapture, [this, cadence] {
+                        return maximumFramesPerSecond_.load(std::memory_order_acquire)
+                            != cadence;
+                    });
+            }
+            else
+            {
+                nextCapture = cadenceNow;
+            }
         }
         {
             std::scoped_lock lock(mutex_);
@@ -682,6 +733,9 @@ private:
     DesktopCaptureStatisticsTracker tracker_;
     std::string error_;
     std::jthread worker_;
+    std::atomic<double> maximumFramesPerSecond_{30.0};
+    std::mutex cadenceMutex_;
+    std::condition_variable_any cadenceCondition_;
     ComPtr<ID3D11Device> device_;
     ComPtr<ID3D11DeviceContext> context_;
     ComPtr<IDXGIOutput> output_;
@@ -713,6 +767,11 @@ DesktopDuplicationCapture::~DesktopDuplicationCapture() = default;
 bool DesktopDuplicationCapture::start(DesktopDuplicationConfig config)
 {
     return implementation_->start(std::move(config));
+}
+
+void DesktopDuplicationCapture::setMaximumFramesPerSecond(double value) noexcept
+{
+    implementation_->setMaximumFramesPerSecond(value);
 }
 
 void DesktopDuplicationCapture::stop() { implementation_->stop(); }

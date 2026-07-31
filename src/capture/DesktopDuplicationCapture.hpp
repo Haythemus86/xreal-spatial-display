@@ -17,6 +17,7 @@ struct DesktopDuplicationConfig
     platform::windows::MonitorInformation captureMonitor;
     platform::windows::DxgiAdapterLuid renderAdapterLuid;
     DesktopCaptureOptions options;
+    double maximumFramesPerSecond{30.0};
 };
 
 class DesktopDuplicationCapture
@@ -28,6 +29,7 @@ public:
     DesktopDuplicationCapture& operator=(const DesktopDuplicationCapture&) = delete;
 
     [[nodiscard]] bool start(DesktopDuplicationConfig config);
+    void setMaximumFramesPerSecond(double value) noexcept;
     void stop();
     [[nodiscard]] DesktopCaptureStatistics statistics() const;
     [[nodiscard]] std::string error() const;

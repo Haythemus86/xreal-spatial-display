@@ -8,7 +8,9 @@ cbuffer CameraConstants : register(b0)
     uint desktopEnabled;
     uint desktopUnavailable;
     uint desktopBackgroundGrid;
-    uint3 desktopPadding;
+    uint panelContentKind;
+    uint panelIdentity;
+    uint panelSelected;
     uint desktopDebugMode;
     uint3 desktopDebugPadding;
 };
@@ -52,6 +54,22 @@ float4 PSMain(PixelInput input) : SV_TARGET
     if (desktopDebugMode == 3 || desktopDebugMode == 4)
     {
         return float4(desktopTexture.Sample(desktopSampler, input.texcoord).rgb, 1.0);
+    }
+    if (panelContentKind == 1)
+    {
+        const float checker = fmod(floor(input.texcoord.x * 16.0)
+            + floor(input.texcoord.y * 10.0), 2.0);
+        const float3 identityTint = panelIdentity == 0 ? float3(0.85, 0.25, 0.20)
+            : panelIdentity == 1 ? float3(0.20, 0.75, 0.35)
+            : float3(0.20, 0.40, 0.90);
+        return float4(lerp(identityTint * 0.18, identityTint, checker), 1.0);
+    }
+    if (panelContentKind == 3)
+    {
+        const float stripe = fmod(floor(input.texcoord.x * 24.0)
+            + floor(input.texcoord.y * 14.0), 2.0);
+        return lerp(float4(0.12, 0.015, 0.02, 1.0),
+                    float4(0.28, 0.035, 0.04, 1.0), stripe);
     }
     if (desktopEnabled != 0)
     {
@@ -103,7 +121,11 @@ float4 PSMain(PixelInput input) : SV_TARGET
         desktopColor.a = 1.0;
         return desktopColor;
     }
-    return input.color;
+    const float3 syntheticTint = panelIdentity == 0 ? float3(1.0, 0.75, 0.70)
+        : panelIdentity == 1 ? float3(0.70, 1.0, 0.75)
+        : float3(0.70, 0.80, 1.0);
+    return float4(input.color.rgb * syntheticTint,
+        panelSelected != 0 ? 1.0 : input.color.a);
 }
 
 float4 PSOverlay(PixelInput input) : SV_TARGET

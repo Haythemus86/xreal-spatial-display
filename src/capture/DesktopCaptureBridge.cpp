@@ -38,10 +38,32 @@ std::optional<DesktopCaptureFrame> DesktopCaptureBridge::latest()
     return current_;
 }
 
+std::optional<DesktopCaptureFrame> DesktopCaptureBridge::tryLatest()
+{
+    std::unique_lock lock(mutex_, std::try_to_lock);
+    if (!lock.owns_lock())
+    {
+        contendedReads_.fetch_add(1U, std::memory_order_relaxed);
+        return std::nullopt;
+    }
+    if (!current_.has_value())
+    {
+        return std::nullopt;
+    }
+    if (current_->sequence == lastReadSequence_)
+    {
+        ++statistics_.repeatedReads;
+    }
+    lastReadSequence_ = current_->sequence;
+    return current_;
+}
+
 DesktopCaptureBridgeStatistics DesktopCaptureBridge::statistics() const
 {
     std::scoped_lock lock(mutex_);
-    return statistics_;
+    auto result = statistics_;
+    result.contendedReads = contendedReads_.load(std::memory_order_relaxed);
+    return result;
 }
 
 } // namespace xreal::capture

@@ -28,6 +28,18 @@ namespace
 
 using Microsoft::WRL::ComPtr;
 
+[[nodiscard]] capture::DesktopFit captureFit(
+    rendering::PanelFitMode value) noexcept
+{
+    switch (value)
+    {
+    case rendering::PanelFitMode::contain: return capture::DesktopFit::contain;
+    case rendering::PanelFitMode::cover: return capture::DesktopFit::cover;
+    case rendering::PanelFitMode::stretch: return capture::DesktopFit::stretch;
+    }
+    return capture::DesktopFit::contain;
+}
+
 struct Vertex
 {
     float x{};
@@ -190,6 +202,10 @@ public:
         {
             return false;
         }
+        // Core D3D resources tracked explicitly: swap chain, render/depth
+        // targets, three shaders, input layout, constant/VB/IB/line buffers,
+        // rasterizer, two blend states, depth state and two samplers.
+        sceneStatistics_.resourcesCreatedAtStartup = 18U;
         return true;
     }
 
@@ -686,9 +702,11 @@ public:
 
     [[nodiscard]] bool createScene()
     {
-        const float halfWidth = static_cast<float>(panelWidth_ * 0.5);
-        const float halfHeight = static_cast<float>(panelHeight_ * 0.5);
-        const float z = static_cast<float>(-panelDistance_);
+        // One immutable unit quad is shared by every panel. Panel dimensions,
+        // placement and curvature are supplied by the per-panel matrix.
+        constexpr float halfWidth = 0.5F;
+        constexpr float halfHeight = 0.5F;
+        constexpr float z = 0.0F;
         panelVertices_ = {
             {-halfWidth, -halfHeight, z, 0.04F, 0.08F, 0.16F, 0.88F, 0.0F, 1.0F},
             {-halfWidth, halfHeight, z, 0.04F, 0.08F, 0.16F, 0.88F, 0.0F, 0.0F},
@@ -725,7 +743,7 @@ public:
             return false;
         }
 
-        const float front = z + 0.002F;
+        constexpr float front = 0.002F;
         const auto line = [this](float x1, float y1, float z1, float x2, float y2, float z2,
                                  float r, float g, float b) {
             lineVertices_.push_back({x1, y1, z1, r, g, b, 1.0F});
@@ -934,6 +952,11 @@ public:
             error_ = "Refusing to render a non-finite view-projection matrix.";
             return false;
         }
+        rendering::PanelDefinition legacyPanel;
+        legacyPanel.transform.position = {0.0, 0.0, -panelDistance_};
+        legacyPanel.dimensions = {panelWidth_, panelHeight_};
+        const rendering::Matrix4 legacyWorldViewProjection = viewProjection
+            * rendering::panelWorldMatrix(legacyPanel);
         D3D11_MAPPED_SUBRESOURCE mapped{};
         HRESULT result = context_->Map(constantBuffer_.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
         if (FAILED(result))
@@ -944,7 +967,8 @@ public:
         rendering::PanelShaderConstants constants;
         for (std::size_t index = 0; index < constants.viewProjection.size(); ++index)
         {
-            constants.viewProjection[index] = static_cast<float>(viewProjection.values[index]);
+            constants.viewProjection[index] = static_cast<float>(
+                legacyWorldViewProjection.values[index]);
         }
         constants.desktopContentBounds = {
             static_cast<float>(desktopLayout_.contentMinimum[0]),
@@ -1167,6 +1191,220 @@ public:
         return true;
     }
 
+    [[nodiscard]] bool renderScene(
+        std::span<const rendering::PanelRenderInstance> panels,
+        bool backgroundGrid,
+        bool worldAxes,
+        bool ready,
+        capture::DesktopBackground desktopBackground)
+    {
+        if (panels.empty() || panels.size() > rendering::maximumPanelCount)
+        {
+            error_ = "D3D11 multi-panel rendering requires between one and three panels.";
+            return false;
+        }
+        for (const auto& panel : panels)
+        {
+            if (panel.visible && !panel.worldViewProjection.finite())
+            {
+                error_ = "Refusing to render a non-finite panel matrix.";
+                return false;
+            }
+        }
+
+        const std::array clearColor = ready
+            ? std::array{0.005F, 0.008F, 0.018F, 1.0F}
+            : std::array{0.16F, 0.07F, 0.01F, 1.0F};
+        context_->ClearRenderTargetView(renderTarget_.Get(), clearColor.data());
+        context_->ClearDepthStencilView(depthView_.Get(),
+            D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0F, 0);
+        ID3D11RenderTargetView* target = renderTarget_.Get();
+        context_->OMSetRenderTargets(1, &target, depthView_.Get());
+        context_->IASetInputLayout(inputLayout_.Get());
+        constexpr UINT stride = sizeof(Vertex);
+        constexpr UINT offset = 0U;
+        ID3D11Buffer* panelBuffer = panelBuffer_.Get();
+        context_->IASetVertexBuffers(0, 1, &panelBuffer, &stride, &offset);
+        context_->IASetIndexBuffer(panelIndexBuffer_.Get(), DXGI_FORMAT_R16_UINT, 0);
+        context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        context_->VSSetShader(vertexShader_.Get(), nullptr, 0);
+        context_->PSSetShader(pixelShader_.Get(), nullptr, 0);
+        ID3D11Buffer* constant = constantBuffer_.Get();
+        context_->VSSetConstantBuffers(rendering::panelConstantBufferShaderRegister, 1, &constant);
+        context_->PSSetConstantBuffers(rendering::panelConstantBufferShaderRegister, 1, &constant);
+        context_->RSSetState(rasterizerState_.Get());
+        context_->OMSetDepthStencilState(depthStencilState_.Get(), 0);
+        sceneStatistics_.stateSetCalls += 11U;
+        const std::array blendFactor{0.0F, 0.0F, 0.0F, 0.0F};
+
+        ++sceneStatistics_.frames;
+        bool desktopRequestedByScene{};
+        bool desktopStaleInScene{};
+        for (const auto& panel : panels)
+        {
+            desktopRequestedByScene = desktopRequestedByScene
+                || (panel.visible && panel.content == rendering::PanelContentKind::desktop);
+            desktopStaleInScene = desktopStaleInScene
+                || (panel.visible && panel.content == rendering::PanelContentKind::desktop
+                    && panel.stale);
+        }
+        desktopStatistics_.panelContentRequested = desktopRequestedByScene
+            ? capture::PanelContent::desktop : capture::PanelContent::synthetic;
+        desktopStatistics_.desktopTextureAvailable = desktopShaderResource_ != nullptr;
+        desktopStatistics_.panelContentEffective = capture::effectiveDesktopPanelMode(
+            desktopStatistics_.panelContentRequested,
+            desktopStatistics_.desktopSrvValid, desktopStaleInScene);
+        for (const auto& panel : panels)
+        {
+            if (!panel.visible)
+            {
+                ++sceneStatistics_.culledPanels;
+                continue;
+            }
+            ++sceneStatistics_.visiblePanels;
+            const capture::DesktopTextureLayout panelDesktopLayout =
+                desktopWidth_ > 0U && desktopHeight_ > 0U
+                ? capture::calculateDesktopTextureLayout(
+                    desktopWidth_, desktopHeight_,
+                    panel.dimensions.width / panel.dimensions.height,
+                    captureFit(panel.fit), desktopLayout_.rotation,
+                    desktopLayout_.flipY)
+                : desktopLayout_;
+            rendering::PanelShaderConstants constants;
+            for (std::size_t index = 0; index < constants.viewProjection.size(); ++index)
+            {
+                constants.viewProjection[index] = static_cast<float>(
+                    panel.worldViewProjection.values[index]);
+            }
+            constants.desktopContentBounds = {
+                static_cast<float>(panelDesktopLayout.contentMinimum[0]),
+                static_cast<float>(panelDesktopLayout.contentMinimum[1]),
+                static_cast<float>(panelDesktopLayout.contentMaximum[0]),
+                static_cast<float>(panelDesktopLayout.contentMaximum[1]),
+            };
+            constants.desktopCrop = {
+                static_cast<float>(panelDesktopLayout.cropLeft),
+                static_cast<float>(panelDesktopLayout.cropTop),
+                static_cast<float>(panelDesktopLayout.cropWidth),
+                static_cast<float>(panelDesktopLayout.cropHeight),
+            };
+            constants.desktopRotation = static_cast<std::uint32_t>(
+                panelDesktopLayout.rotation);
+            constants.desktopFlipY = panelDesktopLayout.flipY ? 1U : 0U;
+            const bool desktopRequested = panel.content == rendering::PanelContentKind::desktop;
+            const bool desktopAvailable = desktopRequested && desktopShaderResource_ != nullptr
+                && desktopStatistics_.desktopSrvValid && !panel.stale;
+            constants.desktopEnabled = desktopRequested ? 1U : 0U;
+            constants.desktopUnavailable = desktopRequested && !desktopAvailable ? 1U : 0U;
+            constants.desktopBackgroundGrid = desktopBackground
+                == capture::DesktopBackground::grid ? 1U : 0U;
+            constants.desktopPadding[0] = static_cast<std::uint32_t>(panel.content);
+            constants.desktopPadding[1] = panel.id.value;
+            constants.desktopPadding[2] = panel.selected ? 1U : 0U;
+            constants.desktopDebugMode = static_cast<std::uint32_t>(desktopShaderDebugMode_);
+            if (!rendering::panelUvConstantsFinite(constants))
+            {
+                error_ = "Panel desktop UV constants are non-finite or degenerate.";
+                return false;
+            }
+            D3D11_MAPPED_SUBRESOURCE mapped{};
+            const HRESULT mapResult = context_->Map(
+                constantBuffer_.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+            if (FAILED(mapResult))
+            {
+                error_ = "ID3D11DeviceContext::Map(per-panel constants) failed: "
+                    + hresultText(mapResult);
+                return false;
+            }
+            *static_cast<rendering::PanelShaderConstants*>(mapped.pData) = constants;
+            context_->Unmap(constantBuffer_.Get(), 0);
+            ++sceneStatistics_.constantBufferUpdates;
+
+            ID3D11ShaderResourceView* desktopView = desktopAvailable
+                ? desktopShaderResource_.Get() : nullptr;
+            context_->PSSetShaderResources(
+                rendering::desktopTextureShaderRegister, 1, &desktopView);
+            ++sceneStatistics_.shaderResourceBindCalls;
+            ID3D11SamplerState* panelSampler = panel.filter == rendering::PanelFilterMode::point
+                ? pointSampler_.Get() : linearSampler_.Get();
+            context_->PSSetSamplers(
+                rendering::desktopSamplerShaderRegister, 1, &panelSampler);
+            ++sceneStatistics_.samplerBindCalls;
+            const bool opaqueBase = rendering::desktopBaseBlendMode(
+                desktopRequested, desktopDebugOpaqueBase_)
+                == rendering::DesktopPanelBlendMode::opaque;
+            context_->OMSetBlendState(
+                opaqueBase ? opaqueBlendState_.Get() : blendState_.Get(),
+                blendFactor.data(), 0xFFFFFFFFU);
+            context_->DrawIndexed(6, 0, 0);
+            ++sceneStatistics_.drawCalls;
+            ++sceneStatistics_.baseDrawCalls;
+            sceneStatistics_.stateSetCalls += 3U;
+            if (desktopAvailable)
+            {
+                ++desktopStatistics_.desktopSrvBindCount;
+                ++desktopStatistics_.renderedDesktopFrames;
+                desktopStatistics_.latestBoundSequence = desktopFrameSequence_;
+                if (!firstSrvBindTraced_)
+                {
+                    std::cout << "desktop-first-frame stage=desktop_srv_bound sequence="
+                              << desktopFrameSequence_ << '\n';
+                    firstSrvBindTraced_ = true;
+                }
+                if (!firstDesktopRenderedTraced_)
+                {
+                    std::cout << "desktop-first-frame stage=desktop_frame_rendered sequence="
+                              << desktopFrameSequence_ << '\n';
+                    firstDesktopRenderedTraced_ = true;
+                }
+            }
+            else if (desktopRequested)
+            {
+                ++desktopStatistics_.renderedUnavailableFrames;
+            }
+            else
+            {
+                ++desktopStatistics_.renderedSyntheticFrames;
+            }
+
+            if (panel.overlay.enabled
+                && rendering::desktopOverlayEnabled(desktopShaderDebugMode_))
+            {
+                ID3D11Buffer* lines = lineBuffer_.Get();
+                context_->IASetVertexBuffers(0, 1, &lines, &stride, &offset);
+                context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+                context_->PSSetShader(overlayPixelShader_.Get(), nullptr, 0);
+                context_->OMSetBlendState(blendState_.Get(), blendFactor.data(), 0xFFFFFFFFU);
+                context_->Draw(baseLineVertexCount_, 0);
+                ++sceneStatistics_.drawCalls;
+                ++sceneStatistics_.overlayDrawCalls;
+                sceneStatistics_.stateSetCalls += 4U;
+                if (backgroundGrid)
+                {
+                    context_->Draw(gridVertexCount_, gridStartVertex_);
+                    ++sceneStatistics_.drawCalls;
+                    ++sceneStatistics_.auxiliaryDrawCalls;
+                }
+                if (worldAxes)
+                {
+                    context_->Draw(axesVertexCount_, axesStartVertex_);
+                    ++sceneStatistics_.drawCalls;
+                    ++sceneStatistics_.auxiliaryDrawCalls;
+                }
+                context_->IASetVertexBuffers(0, 1, &panelBuffer, &stride, &offset);
+                context_->IASetIndexBuffer(panelIndexBuffer_.Get(), DXGI_FORMAT_R16_UINT, 0);
+                context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+                context_->PSSetShader(pixelShader_.Get(), nullptr, 0);
+                sceneStatistics_.stateSetCalls += 4U;
+            }
+            ID3D11ShaderResourceView* nullView{};
+            context_->PSSetShaderResources(
+                rendering::desktopTextureShaderRegister, 1, &nullView);
+            ++sceneStatistics_.shaderResourceBindCalls;
+        }
+        return true;
+    }
+
     [[nodiscard]] bool updateDesktopFrame(
         const capture::DesktopCaptureFrame& frame,
         capture::DesktopFit fit,
@@ -1244,10 +1482,12 @@ public:
                 if (action == capture::DesktopUploadAction::create)
                 {
                     ++desktopStatistics_.uploadTextureCreations;
+                    sceneStatistics_.resourcesCreatedAtStartup += 2U;
                 }
                 else
                 {
                     ++desktopStatistics_.uploadTextureRecreations;
+                    sceneStatistics_.resourcesCreatedSteadyState += 2U;
                 }
                 if (!firstUploadTextureTraced_)
                 {
@@ -1289,6 +1529,7 @@ public:
             ++desktopStatistics_.updateSubresourceCalls;
             context_->UpdateSubresource(desktopLocalTexture_.Get(), 0U, nullptr,
                 frame.cpuPixels->data(), frame.cpuRowPitch, 0U);
+            ++sceneStatistics_.textureUploads;
             if (!firstUpdateTraced_)
             {
                 std::cout << "desktop-first-frame stage=update_subresource_completed sequence="
@@ -1439,6 +1680,7 @@ public:
             return false;
         }
         context_->CopyResource(desktopLocalTexture_.Get(), desktopSharedTexture_.Get());
+        ++sceneStatistics_.textureUploads;
         if (desktopDrawEvents_.empty())
         {
             desktopDrawEvents_.push_back(rendering::DesktopDrawEvent::textureUpdated);
@@ -1476,6 +1718,7 @@ public:
             error_ = "IDXGISwapChain::Present failed: " + hresultText(result);
             return false;
         }
+        ++sceneStatistics_.presents;
         if (!desktopDrawEventLogPrinted_ && !desktopDrawEvents_.empty()
             && desktopDrawEvents_.back() == rendering::DesktopDrawEvent::shaderResourceUnbound)
         {
@@ -1549,6 +1792,7 @@ public:
     capture::DesktopFilter desktopFilter_{capture::DesktopFilter::linear};
     capture::DesktopTextureLayout desktopLayout_;
     capture::DesktopRenderStageStatistics desktopStatistics_;
+    D3D11SceneStatistics sceneStatistics_;
     std::uint64_t desktopUploadSourceChecksum_{};
     std::uint64_t uploadReadbackChecksum_{};
     std::uint64_t renderTargetReadbackChecksum_{};
@@ -1615,6 +1859,16 @@ bool D3D11Renderer::render(
         matrix, grid, axes, ready, desktopContent, desktopBackground, desktopStale);
 }
 
+bool D3D11Renderer::renderScene(
+    std::span<const rendering::PanelRenderInstance> panels,
+    bool grid,
+    bool axes,
+    bool ready,
+    capture::DesktopBackground desktopBackground)
+{
+    return implementation_->renderScene(panels, grid, axes, ready, desktopBackground);
+}
+
 bool D3D11Renderer::present(bool vsync) { return implementation_->present(vsync); }
 
 const D3D11RendererInformation& D3D11Renderer::information() const noexcept
@@ -1625,6 +1879,11 @@ const D3D11RendererInformation& D3D11Renderer::information() const noexcept
 capture::DesktopRenderStageStatistics D3D11Renderer::desktopStatistics() const noexcept
 {
     return implementation_->desktopStatistics_;
+}
+
+D3D11SceneStatistics D3D11Renderer::sceneStatistics() const noexcept
+{
+    return implementation_->sceneStatistics_;
 }
 
 const std::string& D3D11Renderer::error() const noexcept { return implementation_->error_; }

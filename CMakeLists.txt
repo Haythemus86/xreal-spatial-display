@@ -121,6 +121,7 @@ add_library(
     xreal-platform-windows
     src/platform/windows/DisplayTopology.cpp
     src/platform/windows/HidDeviceCapabilities.cpp
+    src/platform/windows/ProcessMemory.cpp
     src/platform/windows/RenderWindow.cpp
 )
 
@@ -137,6 +138,7 @@ target_link_libraries(
         dxgi
         user32
         gdi32
+        psapi
 )
 
 add_library(
@@ -145,6 +147,10 @@ add_library(
     src/rendering/DesktopPanelDiagnostics.cpp
     src/rendering/DemoOrientationSource.cpp
     src/rendering/OrientationRenderBridge.cpp
+    src/rendering/PanelContentRegistry.cpp
+    src/rendering/PanelLayoutSerialization.cpp
+    src/rendering/PanelPerformance.cpp
+    src/rendering/PanelScene.cpp
     src/rendering/RenderDiagnostics.cpp
     src/rendering/RendererOptions.cpp
     src/rendering/RendererSummary.cpp
@@ -879,4 +885,21 @@ if(BUILD_TESTING)
             $<$<CXX_COMPILER_ID:MSVC>:/permissive->
     )
     add_test(NAME xreal-render-diagnostics-tests COMMAND xreal-render-diagnostics-tests)
+
+    add_executable(
+        xreal-multi-panel-tests
+        tests/MultiPanelTests.cpp
+    )
+    target_link_libraries(
+        xreal-multi-panel-tests
+        PRIVATE
+            xreal-rendering-core
+    )
+    target_compile_options(
+        xreal-multi-panel-tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+            $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    )
+    add_test(NAME xreal-multi-panel-tests COMMAND xreal-multi-panel-tests)
 endif()

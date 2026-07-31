@@ -3,6 +3,7 @@
 #include "capture/DesktopCaptureOptions.hpp"
 #include "rendering/DesktopPanelDiagnostics.hpp"
 #include "rendering/OrientationRenderBridge.hpp"
+#include "rendering/PanelScene.hpp"
 #include "sensors/OrientationPrediction.hpp"
 
 #include <optional>
@@ -33,6 +34,17 @@ struct RendererOptions
     double panelDistance{2.0};
     double panelWidth{1.6};
     double panelHeight{0.9};
+    PanelScene panelScene{makeDefaultPanelScene()};
+    std::optional<std::string> panelLayoutFilePath;
+    std::optional<std::string> panelLayoutSavePath;
+    bool savePanelLayoutOnExit{};
+    bool overwritePanelLayout{};
+    bool multiPanelBenchmark{};
+    double multiPanelBenchmarkSeconds{10.0};
+    double multiPanelBenchmarkWarmupSeconds{2.0};
+    std::size_t multiPanelBenchmarkPanels{3U};
+    PanelContentKind multiPanelBenchmarkContent{PanelContentKind::synthetic};
+    std::optional<std::string> multiPanelBenchmarkJsonPath;
     double fieldOfViewDegrees{60.0};
     double nearPlane{0.05};
     double farPlane{100.0};

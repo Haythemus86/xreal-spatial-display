@@ -6,9 +6,11 @@
 #include "platform/windows/DisplayTopology.hpp"
 #include "rendering/DesktopPanelDiagnostics.hpp"
 #include "rendering/RenderMath.hpp"
+#include "rendering/PanelScene.hpp"
 
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 
 namespace xreal::graphics
@@ -48,6 +50,27 @@ struct D3D11RendererInformation
     bool exclusiveFullscreen{};
 };
 
+struct D3D11SceneStatistics
+{
+    std::uint64_t frames{};
+    std::uint64_t presents{};
+    std::uint64_t drawCalls{};
+    std::uint64_t baseDrawCalls{};
+    std::uint64_t overlayDrawCalls{};
+    std::uint64_t auxiliaryDrawCalls{};
+    std::uint64_t stateSetCalls{};
+    std::uint64_t shaderResourceBindCalls{};
+    std::uint64_t samplerBindCalls{};
+    std::uint64_t constantBufferUpdates{};
+    std::uint64_t instanceBufferUpdates{};
+    std::uint64_t visiblePanels{};
+    std::uint64_t culledPanels{};
+    std::uint64_t textureUploads{};
+    std::uint64_t resourcesCreatedAtStartup{};
+    std::uint64_t resourcesCreatedSteadyState{};
+    std::uint64_t flushCalls{};
+};
+
 class D3D11Renderer
 {
 public:
@@ -73,9 +96,16 @@ public:
         bool desktopContent = false,
         capture::DesktopBackground desktopBackground = capture::DesktopBackground::black,
         bool desktopStale = false);
+    [[nodiscard]] bool renderScene(
+        std::span<const rendering::PanelRenderInstance> panels,
+        bool backgroundGrid,
+        bool worldAxes,
+        bool ready,
+        capture::DesktopBackground desktopBackground = capture::DesktopBackground::black);
     [[nodiscard]] bool present(bool vsync);
     [[nodiscard]] const D3D11RendererInformation& information() const noexcept;
     [[nodiscard]] capture::DesktopRenderStageStatistics desktopStatistics() const noexcept;
+    [[nodiscard]] D3D11SceneStatistics sceneStatistics() const noexcept;
     [[nodiscard]] const std::string& error() const noexcept;
 
 private:

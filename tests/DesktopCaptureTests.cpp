@@ -142,10 +142,13 @@ void testBridge()
     expect(latest.has_value() && latest->sequence == 2U
             && latest->recoveryGeneration == 4U,
         "sequence and recovery generation survive publication");
+    const auto nonBlockingLatest = bridge.tryLatest();
+    expect(nonBlockingLatest.has_value() && nonBlockingLatest->sequence == 2U,
+        "non-blocking latest-frame access preserves the bounded snapshot");
     (void)bridge.latest();
     const auto statistics = bridge.statistics();
     expect(statistics.publications == 2U && statistics.droppedPublications == 1U
-            && statistics.repeatedReads == 1U,
+            && statistics.repeatedReads == 2U && statistics.contendedReads == 0U,
         "bounded bridge reports drops and repeats deterministically");
 
     DesktopCaptureBridge concurrent;
