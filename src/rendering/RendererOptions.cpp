@@ -180,6 +180,7 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
         if (argument == "--background-grid") { options.backgroundGrid = true; continue; }
         if (argument == "--world-axes") { options.worldAxes = true; continue; }
         if (argument == "--recenter-on-start") { options.recenterOnStart = true; continue; }
+        if (argument == "--xreal-sdk-pose") { options.xrealSdkPose = true; continue; }
         if (argument == "--orientation-demo-mode") { options.orientationDemoMode = true; continue; }
         if (argument == "--orientation-demo-static")
         {
@@ -1053,6 +1054,14 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
     {
         options.orientationDemoMode = true;
     }
+    if (options.xrealSdkPose && options.orientationDemoMode)
+    {
+        return fail("--xreal-sdk-pose cannot be combined with orientation demo or smoke-test modes.");
+    }
+    if (options.xrealSdkPose && options.predictOrientation)
+    {
+        return fail("--predict-orientation is not used with the XREAL PC SDK pose source.");
+    }
     if (options.captureBenchmark)
     {
         options.multiPanelBenchmark = true;
@@ -1171,7 +1180,7 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
 
 std::string rendererUsage()
 {
-    return "xreal-spatial-renderer [--orientation-demo-mode] [--window-width <pixels>] "
+    return "xreal-spatial-renderer [--orientation-demo-mode|--xreal-sdk-pose] [--window-width <pixels>] "
            "[--window-height <pixels>] [--window-x <pixels>] [--window-y <pixels>] "
            "[--fullscreen|--borderless] [--monitor-index <index>|--render-monitor-index <index>] "
            "[--render-monitor-device-name <name>] [--vsync|--no-vsync] "
@@ -1219,6 +1228,7 @@ std::string rendererUsage()
            "[--field-of-view-degrees <value>] [--near-plane <value>] [--far-plane <value>] "
            "[--background-grid] [--world-axes] "
            "[--orientation-demo-static] "
+           "[--xreal-sdk-pose] "
            "[--render-orientation-source <measured|predicted>] "
            "[--render-orientation-frame <absolute|relative>] [--recenter-on-start] "
            "[--predict-orientation] [--prediction-mode <constant-velocity|constant-acceleration>] "

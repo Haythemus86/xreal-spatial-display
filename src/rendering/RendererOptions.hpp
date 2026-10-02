@@ -66,6 +66,7 @@ struct RendererOptions
     char resetRecenterKey{'C'};
     bool orientationDemoMode{};
     bool orientationDemoStatic{};
+    bool xrealSdkPose{};
     bool smokeTest{};
     unsigned int smokeTestFrames{10};
     bool desktopCaptureSmokeTest{};

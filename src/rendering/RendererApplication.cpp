@@ -17,6 +17,7 @@
 #include "rendering/RenderDiagnostics.hpp"
 #include "rendering/RendererSummary.hpp"
 #include "rendering/SensorOrientationService.hpp"
+#include "rendering/XrealSdkPoseUdpReceiver.hpp"
 
 #include <algorithm>
 #include <array>
@@ -179,10 +180,12 @@ void printControls(const RendererOptions& options)
 {
     std::cout << "Controls:\n"
               << "  Escape: exit\n"
-              << "  " << options.recenterKey << ": recenter relative orientation\n"
-              << "  " << options.resetRecenterKey << ": clear recenter reference\n"
-              << "  P: toggle measured/predicted\n"
-              << "  F: toggle absolute/relative\n"
+              << (options.xrealSdkPose
+                    ? "  Recenter: press R in the XREAL SDK pose publisher window\n"
+                    : "  " + std::string(1U, options.recenterKey) + ": recenter relative orientation\n"
+                        + "  " + std::string(1U, options.resetRecenterKey) + ": clear recenter reference\n"
+                        + "  P: toggle measured/predicted\n"
+                        + "  F: toggle absolute/relative\n")
               << "  G: toggle background grid\n"
               << "  X: toggle world axes\n"
               << "  V: toggle vsync\n"
@@ -388,10 +391,10 @@ int RendererApplication::run()
         constexpr unsigned int right = 0x27U;
         constexpr unsigned int down = 0x28U;
         if (key == escape) { exitRequested = true; }
-        else if (key == static_cast<unsigned int>(options_.recenterKey)) { bridge.requestRecenter(); }
-        else if (key == static_cast<unsigned int>(options_.resetRecenterKey)) { bridge.requestClearRecenter(); }
-        else if (key == 'P') { toggleSource = true; }
-        else if (key == 'F') { toggleFrame = true; }
+        else if (!options_.xrealSdkPose && key == static_cast<unsigned int>(options_.recenterKey)) { bridge.requestRecenter(); }
+        else if (!options_.xrealSdkPose && key == static_cast<unsigned int>(options_.resetRecenterKey)) { bridge.requestClearRecenter(); }
+        else if (!options_.xrealSdkPose && key == 'P') { toggleSource = true; }
+        else if (!options_.xrealSdkPose && key == 'F') { toggleFrame = true; }
         else if (key == 'G') { toggleGrid = true; }
         else if (key == 'X') { toggleAxes = true; }
         else if (key == 'V') { toggleVsync = true; }
@@ -728,8 +731,20 @@ int RendererApplication::run()
     RendererStartupState state = RendererStartupState::initializingRenderer;
     std::unique_ptr<DemoOrientationSource> demo;
     std::unique_ptr<SensorOrientationService> sensor;
+    std::unique_ptr<XrealSdkPoseUdpReceiver> xrealSdkPoseReceiver;
     std::string startupError;
-    if (options_.orientationDemoMode)
+    if (options_.xrealSdkPose)
+    {
+        xrealSdkPoseReceiver = std::make_unique<XrealSdkPoseUdpReceiver>();
+        if (!xrealSdkPoseReceiver->start())
+        {
+            std::cerr << xrealSdkPoseReceiver->error() << '\n';
+            return 1;
+        }
+        state = RendererStartupState::waitingForXrealSdkPose;
+        std::cout << "Waiting for the XREAL PC SDK pose publisher on UDP 127.0.0.1:45871.\n";
+    }
+    else if (options_.orientationDemoMode)
     {
         demo = std::make_unique<DemoOrientationSource>(bridge,
             options_.orientationDemoStatic ? 0.0 : options_.predictionHorizonMilliseconds);
@@ -775,6 +790,8 @@ int RendererApplication::run()
                 ? options_.multiPanelBenchmarkWarmupSeconds : 0.0));
     auto nextDiagnostics = start;
     auto nextPacedFrame = start;
+    std::optional<XrealSdkHeadPose> latestSdkPose;
+    auto lastSdkPoseArrival = std::chrono::steady_clock::time_point{};
     std::uint64_t previousSnapshotSequence{};
     std::uint64_t renderedFrames{};
     std::array<std::optional<capture::DesktopCaptureFrame>,
@@ -808,6 +825,49 @@ int RendererApplication::run()
         {
             window.waitForMessageWhenMinimized();
             continue;
+        }
+
+        if (xrealSdkPoseReceiver)
+        {
+            if (const auto pose = xrealSdkPoseReceiver->poll(); pose.has_value())
+            {
+                lastSdkPoseArrival = std::chrono::steady_clock::now();
+                latestSdkPose = pose;
+                if (pose->valid)
+                {
+                    const auto normalized = sensors::Quaternion{
+                        pose->orientation.w, -pose->orientation.x,
+                        -pose->orientation.y, pose->orientation.z}.normalized();
+                    if (normalized.has_value())
+                    {
+                        RenderOrientationSnapshot sdkSnapshot;
+                        sdkSnapshot.measuredAbsolute = *normalized;
+                        sdkSnapshot.measuredRelative = *normalized;
+                        sdkSnapshot.measuredValid = true;
+                        sdkSnapshot.measuredPositionRelative = {
+                            pose->position.x, pose->position.y, -pose->position.z};
+                        sdkSnapshot.measuredPositionValid =
+                            sdkSnapshot.measuredPositionRelative.finite();
+                        (void)bridge.publish(sdkSnapshot);
+                        state = RendererStartupState::ready;
+                    }
+                    else
+                    {
+                        state = RendererStartupState::waitingForXrealSdkPose;
+                    }
+                }
+                else
+                {
+                    state = RendererStartupState::waitingForXrealSdkPose;
+                }
+            }
+            else if (lastSdkPoseArrival == std::chrono::steady_clock::time_point{}
+                || std::chrono::steady_clock::now() - lastSdkPoseArrival
+                    > std::chrono::milliseconds(100)
+                || (latestSdkPose.has_value() && !latestSdkPose->valid))
+            {
+                state = RendererStartupState::waitingForXrealSdkPose;
+            }
         }
         const auto panelFrameStart = std::chrono::steady_clock::now();
         const bool recordPanelFrame = panelFrameStart >= benchmarkMeasurementStart;
@@ -1017,8 +1077,16 @@ int RendererApplication::run()
         SelectedRenderOrientation selected;
         if (snapshot.has_value())
         {
-            selected = selector.select(*snapshot, options_.orientationSource,
-                options_.orientationFrame, mapping);
+            if (options_.xrealSdkPose)
+            {
+                selected = {snapshot->measuredRelative, snapshot->measuredValid,
+                    false, snapshot->sequence};
+            }
+            else
+            {
+                selected = selector.select(*snapshot, options_.orientationSource,
+                    options_.orientationFrame, mapping);
+            }
             finalImu = snapshot->imu;
             finalRecenterGeneration = snapshot->recenterGeneration;
         }
@@ -1026,8 +1094,13 @@ int RendererApplication::run()
             && snapshot->sequence == previousSnapshotSequence;
         if (snapshot.has_value()) { previousSnapshotSequence = snapshot->sequence; }
         const bool ready = state == RendererStartupState::ready && selected.valid;
-        const auto viewProjection = makeViewProjection(
-            ready ? selected.orientation : sensors::Quaternion::identity(), projection);
+        const Vector3 headPosition = options_.xrealSdkPose && ready && snapshot.has_value()
+            && snapshot->measuredPositionValid ? snapshot->measuredPositionRelative : Vector3{};
+        const auto viewProjection = options_.xrealSdkPose
+            ? makeViewProjection(ready ? selected.orientation : sensors::Quaternion::identity(),
+                headPosition, projection)
+            : makeViewProjection(
+                ready ? selected.orientation : sensors::Quaternion::identity(), projection);
         if (!viewProjection.matrix.has_value())
         {
             runtimeError = viewProjection.error;

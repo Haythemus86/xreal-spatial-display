@@ -168,6 +168,7 @@ add_library(
     src/rendering/RendererSummary.cpp
     src/rendering/RenderMath.cpp
     src/rendering/SensorOrientationService.cpp
+    src/rendering/XrealSdkPoseUdpReceiver.cpp
 )
 
 add_library(
@@ -216,6 +217,8 @@ target_link_libraries(
     PUBLIC
         xreal-sensors
         xreal-desktop-capture
+    PRIVATE
+        ws2_32
 )
 
 add_library(

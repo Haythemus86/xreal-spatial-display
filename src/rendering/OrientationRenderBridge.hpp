@@ -53,6 +53,8 @@ struct RenderOrientationSnapshot
     double predictionHorizonMilliseconds{};
     bool measuredValid{};
     bool predictionValid{};
+    Vector3 measuredPositionRelative;
+    bool measuredPositionValid{};
     std::uint64_t recenterGeneration{};
     ImuHealthCounters imu;
     std::uint64_t sequence{};
