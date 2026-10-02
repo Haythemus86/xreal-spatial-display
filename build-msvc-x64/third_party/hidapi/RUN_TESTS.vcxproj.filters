@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build-msvc-x64\CMakeFiles\ccdff626481c089c39dcc6cae199577f\RUN_TESTS_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{91E07EB3-6A17-338A-A0C1-579234EFFBDF}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

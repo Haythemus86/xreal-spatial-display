@@ -306,7 +306,9 @@ IMU counters and shutdown details. Non-finite numbers serialize as `null`.
 
 - experimental gyroscope scale and axis mappings;
 - yaw is not absolutely corrected;
-- orientation-only 3DoF, no positional 6DoF;
+- the default HID source remains orientation-only 3DoF; optional XREAL PC SDK
+  pose input and positional camera motion are documented in
+  [XREAL PC SDK 6DoF](xreal-sdk-pc-6dof.md);
 - no desktop capture or virtual desktop texture;
 - no stereoscopic/per-eye rendering or lens distortion correction;
 - no OpenXR, spatial anchors, hand tracking or production UI;

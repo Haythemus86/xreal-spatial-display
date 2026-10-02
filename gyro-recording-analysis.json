@@ -1,0 +1,21 @@
+{
+  "schema_version":1,
+  "mode":"record-only",
+  "device":{"vendor_id":"0x3318","product_id":"0x0426","interface_number":2,"product":"XREAL Air 2 Ultra"},
+  "bias_calibration":{"accepted":true,"bias_raw":{"x":-4764.0679320679292,"y":1317.6423576423526,"z":-2367.2807192807195}},
+  "recording":{"requested_duration_seconds":15,"measured_duration_seconds":15.016994174000001,"sample_count":15018,"valid_timestamp_samples":15018,"invalid_timestamp_samples":0,"sequence_gaps":0,"malformed_packets":0,"out_of_sequence_events":0,"diagnostic_queue_drops":0},
+  "analysis":{"usable":true,"failure_reason":"","dominant_axis":"z"},
+  "axis_analysis":{
+    "x":{"sample_count":15018,"valid_sample_count":15018,"capture_duration_seconds":15.016994174000001,"minimum_corrected_raw":-32835.932067932074,"maximum_corrected_raw":3196.0679320679292,"mean_corrected_raw":-15445.836982034032,"standard_deviation":11499.177432710692,"rms":19256.296676789465,"peak_absolute_corrected_raw":32835.932067932074,"positive_integrated_raw_angle":662.64272252067872,"negative_integrated_raw_angle":-232628.05329605355,"signed_integrated_raw_angle":-231965.41057353286,"absolute_integrated_raw_angle":233290.69601857424,"duration_above_start_seconds":10.303000712999999,"duration_above_stop_seconds":10.928995963,"rotational_energy_percent":2.1815608516035656,"dominant_axis_score":0.021815608516035655},
+    "y":{"sample_count":15018,"valid_sample_count":15018,"capture_duration_seconds":15.016994174000001,"minimum_corrected_raw":-2469.6423576423526,"maximum_corrected_raw":56602.357642357645,"mean_corrected_raw":26069.049878337504,"standard_deviation":19324.716780011615,"rms":32450.578426076034,"peak_absolute_corrected_raw":56602.357642357645,"positive_integrated_raw_angle":391985.82053383259,"negative_integrated_raw_angle":-480.51682145238442,"signed_integrated_raw_angle":391505.30371238024,"absolute_integrated_raw_angle":392466.33735528495,"duration_above_start_seconds":10.614999213999999,"duration_above_stop_seconds":11.259997673000001,"rotational_energy_percent":6.1953607140555436,"dominant_axis_score":0.061953607140555436},
+    "z":{"sample_count":15018,"valid_sample_count":15018,"capture_duration_seconds":15.016994174000001,"minimum_corrected_raw":-4064.7192807192805,"maximum_corrected_raw":206847.28071928071,"mean_corrected_raw":100237.77426036433,"standard_deviation":74335.574851204714,"rms":124793.38555040013,"peak_absolute_corrected_raw":206847.28071928071,"positive_integrated_raw_angle":1506313.7943477063,"negative_integrated_raw_angle":-942.92919582262562,"signed_integrated_raw_angle":1505370.8651518836,"absolute_integrated_raw_angle":1507256.7235435289,"duration_above_start_seconds":11.014998755000001,"duration_above_stop_seconds":11.423013636,"rotational_energy_percent":91.623078434340897,"dominant_axis_score":0.91623078434340899}
+  },
+  "segments":[
+    {"start_device_timestamp":2481450146141,"end_device_timestamp":2493246156397,"duration_seconds":11.796010256000001,"dominant_axis":"z","direction":"positive","integrated_raw_angle":{"x":-231951.84798671157,"y":391496.9977830131,"z":1504981.3228336086},"peak_absolute_corrected_raw":{"x":32835.932067932074,"y":56602.357642357645,"z":206847.28071928071},"cross_axis_ratio":0.27364322820938886,"dominance_score":0.9162331259361417,"stillness_before":false,"stillness_after":true,"sample_count":11797,"selection_score":0.81417829660668062}
+  ],
+  "best_segment_index":0,
+  "best_segment_selection":"highest deterministic weighted score: 50% axis dominance, 25% inverse cross-axis ratio, 15% endpoint stillness, 10% duration quality",
+  "scale_estimate":{"available":true,"experimental":true,"axis":"z","expected_degrees":360,"raw_units_per_degree_per_second":4180.503674537802,"raw_units_per_radian_per_second":239525.21678994838,"degrees_per_second_per_raw_unit":0.00023920562636763149,"radians_per_second_per_raw_unit":4.1749257694105334e-06,"direction_matches_request":true,"confidence":0.4566970443064694},
+  "configuration":{"axis":"auto","direction":"auto","start_threshold_raw":5000,"stop_threshold_raw":1500,"stillness_duration_ns":1000000000,"maximum_device_delta_ns":20000000},
+  "warnings":[]
+}

@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build\CMakeFiles\66757001b121485221672e23217b1c23\Experimental.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\build\CMakeFiles\Experimental" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{DD445E04-E6D2-3402-A996-FEF2063200BE}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

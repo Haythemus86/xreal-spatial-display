@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "units": "raw",
+  "device": {"vendor_id":"0x3318","product_id":"0x0426","interface_number":2,"product":"XREAL Air 2 Ultra"},
+  "calibration": {"type":"gyroscope-bias","accepted":true,"rejection_reason":"","duration_seconds":2.0010009590000002,"sample_count":2002,"bias_valid":true,"bias_raw":{"x":-4719.3126873126894,"y":1238.4415584415601,"z":-2353.1028971028982}},
+  "statistics": {"mean_raw":{"x":-4719.3126873126894,"y":1238.4415584415601,"z":-2353.1028971028982},"stddev_raw":{"x":362.23893507295463,"y":255.16885720142923,"z":347.3882781353056},"min_raw":{"x":-6016,"y":288,"z":-3424},"max_raw":{"x":-3264,"y":2112,"z":-1056},"range_raw":{"x":2752,"y":1824,"z":2368},"device_timestamp_delta_ns":{"count":2001,"mean":1000000.4792603712,"min":986583,"max":1014000,"stddev":1777.5528058839209},"packet_rate":999.9995207398598},
+  "configuration": {"calibration_duration_ns":2000000000,"minimum_sample_count":1500,"maximum_standard_deviation_raw":750,"maximum_range_raw":5000,"warmup_sample_count":100,"warmup_duration_ns":null,"acceptable_packet_rate":{"minimum":800,"maximum":1200}}
+}

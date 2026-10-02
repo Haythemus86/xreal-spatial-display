@@ -13,6 +13,7 @@ namespace xreal::rendering
 enum class RendererStartupState
 {
     initializingRenderer,
+    waitingForXrealSdkPose,
     openingImu,
     warmingUpGyro,
     calibratingGyro,

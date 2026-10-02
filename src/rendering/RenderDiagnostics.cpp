@@ -110,6 +110,7 @@ std::string rendererStartupStateText(RendererStartupState state)
     switch (state)
     {
     case RendererStartupState::initializingRenderer: return "initializing_renderer";
+    case RendererStartupState::waitingForXrealSdkPose: return "waiting_for_xreal_sdk_pose";
     case RendererStartupState::openingImu: return "opening_imu";
     case RendererStartupState::warmingUpGyro: return "warming_up_gyro";
     case RendererStartupState::calibratingGyro: return "calibrating_gyro";

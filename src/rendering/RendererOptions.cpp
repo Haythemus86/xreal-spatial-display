@@ -16,6 +16,7 @@ struct PanelOptionOverrides
     std::optional<PanelContentKind> content;
     std::optional<unsigned int> captureMonitorIndex;
     std::optional<std::string> captureMonitorDeviceName;
+    std::optional<std::string> captureMonitorStableId;
     std::optional<double> width;
     std::optional<double> height;
     std::optional<double> positionX;
@@ -179,6 +180,7 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
         if (argument == "--background-grid") { options.backgroundGrid = true; continue; }
         if (argument == "--world-axes") { options.worldAxes = true; continue; }
         if (argument == "--recenter-on-start") { options.recenterOnStart = true; continue; }
+        if (argument == "--xreal-sdk-pose") { options.xrealSdkPose = true; continue; }
         if (argument == "--orientation-demo-mode") { options.orientationDemoMode = true; continue; }
         if (argument == "--orientation-demo-static")
         {
@@ -386,13 +388,21 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
                 }
                 continue;
             }
-            if (panelOption->property == "capture-monitor-device-name")
+            if (panelOption->property == "capture-monitor-device-name"
+                || panelOption->property == "capture-monitor-stable-id")
             {
                 if (value.empty())
                 {
                     return fail(std::string(argument) + " requires a non-empty value.");
                 }
-                override.captureMonitorDeviceName = std::string(value);
+                if (panelOption->property == "capture-monitor-device-name")
+                {
+                    override.captureMonitorDeviceName = std::string(value);
+                }
+                else
+                {
+                    override.captureMonitorStableId = std::string(value);
+                }
                 continue;
             }
             if (panelOption->property == "capture-monitor-index"
@@ -847,6 +857,10 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
         {
             panel.content.captureMonitorDeviceName = *override.captureMonitorDeviceName;
         }
+        if (override.captureMonitorStableId.has_value())
+        {
+            panel.content.captureMonitorStableId = *override.captureMonitorStableId;
+        }
         if (override.width.has_value()) { panel.dimensions.width = *override.width; }
         if (override.height.has_value()) { panel.dimensions.height = *override.height; }
         if (override.positionX.has_value()) { panel.transform.position.x = *override.positionX; }
@@ -1002,7 +1016,8 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
         const auto& panel = options.panelScene.panels[panelIndex];
         if (panel.content.kind == PanelContentKind::desktop
             && !panel.content.captureMonitorIndex.has_value()
-            && !panel.content.captureMonitorDeviceName.has_value())
+            && !panel.content.captureMonitorDeviceName.has_value()
+            && !panel.content.captureMonitorStableId.has_value())
         {
             return fail("Each desktop panel requires its own capture monitor selector.");
         }
@@ -1038,6 +1053,14 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
     if (options.smokeTest)
     {
         options.orientationDemoMode = true;
+    }
+    if (options.xrealSdkPose && options.orientationDemoMode)
+    {
+        return fail("--xreal-sdk-pose cannot be combined with orientation demo or smoke-test modes.");
+    }
+    if (options.xrealSdkPose && options.predictOrientation)
+    {
+        return fail("--predict-orientation is not used with the XREAL PC SDK pose source.");
     }
     if (options.captureBenchmark)
     {
@@ -1157,7 +1180,7 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
 
 std::string rendererUsage()
 {
-    return "xreal-spatial-renderer [--orientation-demo-mode] [--window-width <pixels>] "
+    return "xreal-spatial-renderer [--orientation-demo-mode|--xreal-sdk-pose] [--window-width <pixels>] "
            "[--window-height <pixels>] [--window-x <pixels>] [--window-y <pixels>] "
            "[--fullscreen|--borderless] [--monitor-index <index>|--render-monitor-index <index>] "
            "[--render-monitor-device-name <name>] [--vsync|--no-vsync] "
@@ -1170,6 +1193,7 @@ std::string rendererUsage()
            "[--panel-curvature-degrees <value>] "
            "[--panel-1-content <synthetic|checkerboard|desktop|unavailable>] "
            "[--panel-N-capture-monitor-index <index>] "
+           "[--panel-N-capture-monitor-stable-id <identity>] "
            "[--panel-N-width-m <value>] [--panel-N-position-x-m <value>] "
            "[--panel-N-yaw-degrees <value>] [--panel-N-target-fps <value>] "
            "[--panel-layout-file <file.json>] [--panel-layout-save-file <file.json>] "
@@ -1204,6 +1228,7 @@ std::string rendererUsage()
            "[--field-of-view-degrees <value>] [--near-plane <value>] [--far-plane <value>] "
            "[--background-grid] [--world-axes] "
            "[--orientation-demo-static] "
+           "[--xreal-sdk-pose] "
            "[--render-orientation-source <measured|predicted>] "
            "[--render-orientation-frame <absolute|relative>] [--recenter-on-start] "
            "[--predict-orientation] [--prediction-mode <constant-velocity|constant-acceleration>] "

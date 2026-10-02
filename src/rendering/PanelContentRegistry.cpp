@@ -104,11 +104,16 @@ PanelSourceKey makePanelSourceKey(const PanelDefinition& panel)
     {
         result.monitorDeviceName = *panel.content.captureMonitorDeviceName;
     }
+    if (panel.content.captureMonitorStableId.has_value())
+    {
+        result.monitorStableId = *panel.content.captureMonitorStableId;
+    }
     // Synthetic and checkerboard content is generated once per content kind.
     if (result.kind != PanelContentKind::desktop)
     {
         result.monitorIndex.reset();
         result.monitorDeviceName.clear();
+        result.monitorStableId.clear();
         result.requestedWidth = 0U;
         result.requestedHeight = 0U;
         result.requestedScale = 1.0;

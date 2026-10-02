@@ -93,6 +93,21 @@ void testLuidText()
            "adapter LUID text preserves high and low 32-bit parts");
 }
 
+void testStableIdentitySelection()
+{
+    using namespace xreal::platform::windows;
+    std::array monitors{
+        MonitorInformation{0U, R"(\\.\DISPLAY1)", 0, 0, 1920, 1080,
+            0, 0, 1920, 1040, true, std::nullopt, "stable-one", "First"},
+        MonitorInformation{1U, R"(\\.\DISPLAY2)", 1920, 0, 3840, 1080,
+            1920, 0, 3840, 1040, false, std::nullopt, "stable-two", "Second"},
+    };
+    expect(findMonitorByStableIdentity(monitors, "stable-two") == &monitors[1],
+        "stable identity resolves independently from monitor index");
+    expect(findMonitorByStableIdentity(monitors, "missing") == nullptr,
+        "unknown stable identity fails without a fallback");
+}
+
 } // namespace
 
 int main()
@@ -100,6 +115,7 @@ int main()
     testDxgiAssociation();
     testWindowPlacement();
     testLuidText();
+    testStableIdentitySelection();
     if (failures != 0)
     {
         std::cerr << failures << " display topology test(s) failed.\n";

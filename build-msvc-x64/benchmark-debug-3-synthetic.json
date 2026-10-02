@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "configuration": {"panels":3,"sources":1,"adapter":"Intel(R) Graphics","output":"\\.\DISPLAY5","build":"Debug"},
+  "elapsed_seconds": 1.0153862,
+  "frames": 122,
+  "presents": 122,
+  "frame_timing": {"samples":122,"average_ms":8.30715,"p50_ms":8.3063,"p95_ms":8.85864,"p99_ms":9.137292,"max_ms":11.2569,"over_33_ms":0},
+  "present_timing": {"samples":122,"average_ms":8.09837704918,"p50_ms":8.08825,"p95_ms":8.6566,"p99_ms":8.931407,"max_ms":11.0941,"over_33_ms":0},
+  "cpu_update_timing": {"samples":122,"average_ms":0.170367213115,"p50_ms":0.1454,"p95_ms":0.33737,"p99_ms":0.509502,"max_ms":0.6016,"over_33_ms":0},
+  "draw_submission_timing": {"samples":122,"average_ms":0.0384057377049,"p50_ms":0.03005,"p95_ms":0.07898,"p99_ms":0.16846,"max_ms":0.2171,"over_33_ms":0},
+  "draw_calls": 726,
+  "constant_buffer_updates": 363,
+  "texture_uploads": 0,
+  "capture_frames": 0,
+  "repeated_frames": 0,
+  "dropped_frames": 0,
+  "resources_created_at_startup": 18,
+  "resources_created_steady_state": 0,
+  "flush_calls": 0,
+  "working_set_bytes": 77504512,
+  "private_bytes": 62488576
+}

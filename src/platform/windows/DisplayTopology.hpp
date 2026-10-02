@@ -47,6 +47,11 @@ struct MonitorInformation
     int workBottom{};
     bool primary{};
     std::optional<DxgiOutputInformation> dxgiOutput;
+    // DISPLAYCONFIG_TARGET_DEVICE_NAME::monitorDevicePath. Unlike the renderer
+    // index, this identity survives ordinary output re-enumeration. These fields
+    // remain last to preserve existing aggregate initializers.
+    std::string stableIdentity;
+    std::string friendlyName;
 };
 
 struct DisplayTopologyResult
@@ -76,6 +81,9 @@ void associateDxgiOutputs(
     bool fullscreen) noexcept;
 
 [[nodiscard]] DisplayTopologyResult enumerateDisplayTopology();
+[[nodiscard]] const MonitorInformation* findMonitorByStableIdentity(
+    std::span<const MonitorInformation> monitors,
+    std::string_view stableIdentity) noexcept;
 [[nodiscard]] inline std::string dxgiAdapterLuidText(DxgiAdapterLuid luid)
 {
     std::ostringstream output;

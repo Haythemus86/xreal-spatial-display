@@ -21,6 +21,7 @@ struct MonitorSelector
 {
     std::optional<unsigned int> index;
     std::optional<std::string> deviceName;
+    std::optional<std::string> stableIdentity;
 };
 
 struct DesktopCaptureOptions
