@@ -40,6 +40,9 @@
     <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\rendering\SensorOrientationService.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\rendering\XrealSdkPoseUdpReceiver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\CMakeLists.txt" />

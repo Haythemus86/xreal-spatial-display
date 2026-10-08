@@ -13,6 +13,9 @@
     <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\capture\DesktopCaptureManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\capture\DesktopCaptureManagerFrameSource.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\capture\DesktopCaptureOptions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

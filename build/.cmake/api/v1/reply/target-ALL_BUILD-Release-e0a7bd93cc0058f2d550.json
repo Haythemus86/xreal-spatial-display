@@ -1,0 +1,174 @@
+{
+	"backtrace" : 0,
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : 
+		[
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			}
+		]
+	},
+	"dependencies" : 
+	[
+		{
+			"id" : "xreal-platform-windows::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-rendering-core::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-gyro-scale-calibration-support::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-gyro-recording-analyzer-support::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-sensors::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-interface-probe-support::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-imu-diagnostic-support::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-virtual-display-protocol::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-sensor-diagnostic::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-desktop-capture::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-virtual-display-service::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-virtual-display-control::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-graphics-d3d11::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-interface-probe::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-imu-diagnostic::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-calibration-analyzer::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-gyro-scale-calibration::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-gyro-scale-profile::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-orientation-analyzer::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-spatial-renderer::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-gyro-recording-analyzer::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-gyroscope-offline-analysis-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-gyroscope-physical-units-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-gyroscope-orientation-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-gyro-scale-calibration-options-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-display-topology-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-gyro-recording-analyzer-options-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-imu-diagnostic-options-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-orientation-prediction-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-gyroscope-bias-calibration-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-orientation-prediction-analysis-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-orientation-fusion-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-gyroscope-scale-calibration-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-imu-packet-decoder-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-orientation-comparison-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-desktop-capture-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-interface-probe-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-accelerometer-calibration-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-gyroscope-recording-analysis-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-imu-calibration-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-rendering-math-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-multi-panel-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-renderer-options-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-render-diagnostics-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-virtual-display-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "xreal-virtual-display-driver-model-tests::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "hidapi_winapi::@0070ffda23339cec89fa"
+		},
+		{
+			"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df"
+		}
+	],
+	"id" : "ALL_BUILD::@6890427a1f51a3e7e1df",
+	"isGeneratorProvided" : true,
+	"name" : "ALL_BUILD",
+	"paths" : 
+	{
+		"build" : ".",
+		"source" : "."
+	},
+	"sources" : [],
+	"type" : "UTILITY"
+}

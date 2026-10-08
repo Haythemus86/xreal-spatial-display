@@ -1,3 +1,4 @@
+C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/xreal-virtual-display-protocol.dir
 C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/xreal-sensors.dir
 C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/xreal-sensor-diagnostic.dir
 C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/xreal-interface-probe-support.dir
@@ -7,6 +8,8 @@ C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/xreal-gyro-r
 C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/xreal-platform-windows.dir
 C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/xreal-rendering-core.dir
 C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/xreal-desktop-capture.dir
+C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/xreal-virtual-display-service.dir
+C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/xreal-virtual-display-control.dir
 C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/xreal-graphics-d3d11.dir
 C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/xreal-interface-probe.dir
 C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/xreal-imu-diagnostic.dir
@@ -43,6 +46,8 @@ C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/xreal-render
 C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/xreal-renderer-options-tests.dir
 C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/xreal-render-diagnostics-tests.dir
 C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/xreal-multi-panel-tests.dir
+C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/xreal-virtual-display-tests.dir
+C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/xreal-virtual-display-driver-model-tests.dir
 C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/RUN_TESTS.dir
 C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/ALL_BUILD.dir
 C:/Users/i-tem/Documents/dev/xreal-spatial-display/build/CMakeFiles/ZERO_CHECK.dir
