@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "model": "axis_aligned_ellipsoid",
+  "units": {"offset":"raw","scale":"raw_units_per_g","corrected_magnitude":"g"},
+  "offset_raw": {"x":-977.40765288074635,"y":594.07200886237661,"z":15221.033085708183},
+  "raw_units_per_g": {"x":524628.92912459513,"y":524758.38647404185,"z":524390.1036666123},
+  "fit": {
+    "rms_residual": 1.5032490816276445e-16,
+    "maximum_residual": 2.2204460492503131e-16,
+    "normal_equation_pivot_ratio": 0.85968259131726332,
+    "poor_quality": false,
+    "warnings": ["The six captures exactly determine the six model coefficients; residuals are not an independent validation set."]
+  },
+  "captures": [
+    {"name":"stationary-flat","source":"stationary-flat.json","stationary_accepted":true,"accel_mean_raw":{"x":-3831.3558441558416,"y":128254.08191808189,"z":523849.21958041989},"residual":-1.1102230246251565e-16,"corrected_gravity_magnitude":0.99999999999999989},
+    {"name":"stationary-inverted","source":"stationary-inverted.json","stationary_accepted":true,"accel_mean_raw":{"x":2227.6937837297573,"y":-87263.712172696396,"z":-501757.26244253397},"residual":-2.2204460492503131e-16,"corrected_gravity_magnitude":0.99999999999999978},
+    {"name":"left-side","source":"left-side.json","stationary_accepted":true,"accel_mean_raw":{"x":-524606.05905825889,"y":-28439.508379888295,"z":874.31763766959432},"residual":-1.1102230246251565e-16,"corrected_gravity_magnitude":0.99999999999999989},
+    {"name":"right-side-retry","source":"right-side-retry.json","stationary_accepted":true,"accel_mean_raw":{"x":521969.36558065226,"y":-39922.683190085932,"z":26233.642214671199},"residual":-1.1102230246251565e-16,"corrected_gravity_magnitude":0.99999999999999989},
+    {"name":"face-up","source":"face-up.json","stationary_accepted":true,"accel_mean_raw":{"x":-14430.83752495009,"y":-523501.78363273386,"z":37872.594011975954},"residual":0,"corrected_gravity_magnitude":1},
+    {"name":"face-down","source":"face-down.json","stationary_accepted":true,"accel_mean_raw":{"x":235.59050089802452,"y":525339.61285172624,"z":18684.066254240613},"residual":-2.2204460492503131e-16,"corrected_gravity_magnitude":0.99999999999999978}
+  ]
+}

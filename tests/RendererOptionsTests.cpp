@@ -247,6 +247,13 @@ int main()
             && multi.options->panelScene.panels[0].targetFramesPerSecondExplicit
             && multi.options->panelScene.performanceProfile == PerformanceProfile::performance,
         "multi-panel options preserve independent content, transforms and rate policy");
+    const auto stableVirtualMonitor = parse({"--orientation-demo-static",
+        "--panel-count", "1", "--panel-1-content", "desktop",
+        "--panel-1-capture-monitor-stable-id", "stable-virtual-monitor-1"});
+    expect(stableVirtualMonitor.options.has_value()
+            && stableVirtualMonitor.options->panelScene.panels[0]
+                .content.captureMonitorStableId == "stable-virtual-monitor-1",
+        "desktop panel accepts a stable virtual-monitor identity");
     const auto scaledDesktop = parse({"--orientation-demo-static", "--panel-count", "1",
         "--panel-1-content", "desktop", "--panel-1-capture-monitor-index", "0",
         "--desktop-source-1-crop", "center-16x9",

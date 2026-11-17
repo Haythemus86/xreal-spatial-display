@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "units": "raw",
+  "calibration": "validation-angle-01",
+  "sample_count": 5011,
+  "capture_duration_ns": 5008887300,
+  "packet_rate": 1000.0923853053598,
+  "sequence_gaps": 0,
+  "out_of_sequence_events": 0,
+  "malformed_packets": 0,
+  "queue_drops": 0,
+  "gyro_raw": {"x":{"count":5011,"mean":-4754.3787667132347,"min":-6048,"max":-3648,"stddev":330.17363800195574},"y":{"count":5011,"mean":1252.9044102973476,"min":320,"max":2144,"stddev":251.49672942545561},"z":{"count":5011,"mean":-2407.2991418878537,"min":-3584,"max":-1088,"stddev":346.37763278735571}},
+  "accel_raw": {"x":{"count":5011,"mean":-8364.7016563560137,"min":-11840,"max":-4864,"stddev":1018.5146949312555},"y":{"count":5011,"mean":-185094.39872280948,"min":-188736,"max":-181440,"stddev":989.55308286215961},"z":{"count":5011,"mean":506341.53661943693,"min":499648,"max":511552,"stddev":1481.8001441281929}},
+  "device_timestamp_delta_ns": {"count":5010,"mean":999999.97544910142,"min":980166,"max":1020000,"stddev":1853.4000132668868},
+  "host_timestamp_delta_ns": {"count":5010,"mean":999777.90419161692,"min":21300,"max":1720700,"stddev":78487.917836481065},
+  "stationary": {"accepted":true,"gyro_bias_raw":{"x":-4754.3787667132347,"y":1252.9044102973476,"z":-2407.2991418878537},"gyro_stddev_raw":{"x":330.17363800195574,"y":251.49672942545561,"z":346.37763278735571},"accel_mean_raw":{"x":-8364.7016563560137,"y":-185094.39872280948,"z":506341.53661943693},"accel_vector_magnitude_raw":539176.83219746267,"sample_count":5011,"capture_duration_ns":5008887300}
+}

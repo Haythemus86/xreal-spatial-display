@@ -8,6 +8,24 @@ MonitorResolution resolveMonitor(
     const MonitorSelector& selector,
     std::string_view role)
 {
+    if (selector.stableIdentity.has_value())
+    {
+        for (const auto& monitor : monitors)
+        {
+            if (monitor.stableIdentity == *selector.stableIdentity)
+            {
+                if (!monitor.dxgiOutput.has_value())
+                {
+                    return {nullptr, std::string(role) + " monitor " + monitor.deviceName
+                        + " has no matching active DXGI output."};
+                }
+                return {&monitor, {}};
+            }
+        }
+        return {nullptr, std::string(role) + " stable monitor identity "
+            + *selector.stableIdentity
+            + " was not found; no unstable monitor-index fallback was selected."};
+    }
     if (selector.deviceName.has_value())
     {
         for (const auto& monitor : monitors)

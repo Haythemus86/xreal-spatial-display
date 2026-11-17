@@ -26,8 +26,15 @@ struct MatrixResult
     const PerspectiveProjection& projection) noexcept;
 [[nodiscard]] MatrixResult makeHeadViewMatrix(
     const sensors::Quaternion& worldFromHead) noexcept;
+[[nodiscard]] MatrixResult makeHeadViewMatrix(
+    const sensors::Quaternion& worldFromHead,
+    Vector3 worldHeadPosition) noexcept;
 [[nodiscard]] MatrixResult makeViewProjection(
     const sensors::Quaternion& worldFromHead,
+    const PerspectiveProjection& projection) noexcept;
+[[nodiscard]] MatrixResult makeViewProjection(
+    const sensors::Quaternion& worldFromHead,
+    Vector3 worldHeadPosition,
     const PerspectiveProjection& projection) noexcept;
 
 } // namespace xreal::rendering

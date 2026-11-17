@@ -56,11 +56,54 @@ MatrixResult makeHeadViewMatrix(const sensors::Quaternion& worldFromHead) noexce
     return {view, {}};
 }
 
+MatrixResult makeHeadViewMatrix(
+    const sensors::Quaternion& worldFromHead,
+    Vector3 worldHeadPosition) noexcept
+{
+    if (!worldHeadPosition.finite())
+    {
+        return {std::nullopt, "Head position must be finite."};
+    }
+    const auto rotation = makeHeadViewMatrix(worldFromHead);
+    if (!rotation.matrix.has_value())
+    {
+        return rotation;
+    }
+
+    Matrix4 view = *rotation.matrix;
+    const Vector3 translated = transformDirection(view, worldHeadPosition);
+    view.at(0U, 3U) = -translated.x;
+    view.at(1U, 3U) = -translated.y;
+    view.at(2U, 3U) = -translated.z;
+    return view.finite() ? MatrixResult{view, {}}
+                         : MatrixResult{std::nullopt, "Head view matrix is not finite."};
+}
+
 MatrixResult makeViewProjection(
     const sensors::Quaternion& worldFromHead,
     const PerspectiveProjection& projection) noexcept
 {
     const auto view = makeHeadViewMatrix(worldFromHead);
+    if (!view.matrix.has_value())
+    {
+        return view;
+    }
+    const auto projected = makePerspectiveProjection(projection);
+    if (!projected.matrix.has_value())
+    {
+        return projected;
+    }
+    Matrix4 combined = *projected.matrix * *view.matrix;
+    return combined.finite() ? MatrixResult{combined, {}}
+                             : MatrixResult{std::nullopt, "View-projection matrix is not finite."};
+}
+
+MatrixResult makeViewProjection(
+    const sensors::Quaternion& worldFromHead,
+    Vector3 worldHeadPosition,
+    const PerspectiveProjection& projection) noexcept
+{
+    const auto view = makeHeadViewMatrix(worldFromHead, worldHeadPosition);
     if (!view.matrix.has_value())
     {
         return view;

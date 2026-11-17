@@ -60,7 +60,9 @@ std::array<xreal::platform::windows::MonitorInformation, 3> monitors()
 void testSelection()
 {
     using namespace xreal::capture;
-    const auto topology = monitors();
+    auto topology = monitors();
+    topology[0].stableIdentity = "stable-display-1";
+    topology[1].stableIdentity = "stable-display-5";
     MonitorSelector selector;
     selector.index = 0U;
     selector.deviceName = R"(\\.\DISPLAY5)";
@@ -70,6 +72,15 @@ void testSelection()
     selector.deviceName = R"(\\.\MISSING)";
     expect(resolveMonitor(topology, selector, "Capture").monitor == nullptr,
         "missing named monitor never falls back to another index");
+    selector.deviceName.reset();
+    selector.stableIdentity = "stable-display-5";
+    expect(resolveMonitor(topology, selector, "Capture").monitor == &topology[1],
+        "stable monitor identity survives an index change");
+    selector.stableIdentity = "stable-missing";
+    selector.index = 0U;
+    expect(resolveMonitor(topology, selector, "Capture").monitor == nullptr,
+        "missing stable identity never falls back to an unstable index");
+    selector.stableIdentity.reset();
     selector.deviceName.reset();
     selector.index = 2U;
     expect(resolveMonitor(topology, selector, "Capture").monitor == nullptr,

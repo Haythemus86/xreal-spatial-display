@@ -1,0 +1,22 @@
+#pragma once
+
+#include <Windows.h>
+#include <wdf.h>
+#include <iddcx.h>
+
+extern "C" DRIVER_INITIALIZE DriverEntry;
+
+EVT_WDF_DRIVER_DEVICE_ADD XrealVirtualDisplayDeviceAdd;
+EVT_WDF_DEVICE_D0_ENTRY XrealVirtualDisplayDeviceD0Entry;
+EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL XrealVirtualDisplayDeviceControl;
+EVT_WDF_OBJECT_CONTEXT_CLEANUP XrealVirtualDisplayDeviceCleanup;
+EVT_WDF_OBJECT_CONTEXT_CLEANUP XrealVirtualDisplayMonitorCleanup;
+
+EVT_IDD_CX_ADAPTER_INIT_FINISHED XrealVirtualDisplayAdapterInitFinished;
+EVT_IDD_CX_PARSE_MONITOR_DESCRIPTION XrealVirtualDisplayParseMonitorDescription;
+EVT_IDD_CX_MONITOR_GET_DEFAULT_DESCRIPTION_MODES
+    XrealVirtualDisplayGetDefaultDescriptionModes;
+EVT_IDD_CX_MONITOR_QUERY_TARGET_MODES XrealVirtualDisplayQueryTargetModes;
+EVT_IDD_CX_ADAPTER_COMMIT_MODES XrealVirtualDisplayCommitModes;
+EVT_IDD_CX_MONITOR_ASSIGN_SWAPCHAIN XrealVirtualDisplayAssignSwapChain;
+EVT_IDD_CX_MONITOR_UNASSIGN_SWAPCHAIN XrealVirtualDisplayUnassignSwapChain;

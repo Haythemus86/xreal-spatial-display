@@ -90,6 +90,7 @@ struct PanelContentSource
     PanelContentKind kind{PanelContentKind::synthetic};
     std::optional<unsigned int> captureMonitorIndex;
     std::optional<std::string> captureMonitorDeviceName;
+    std::optional<std::string> captureMonitorStableId;
     unsigned int requestedWidth{};
     unsigned int requestedHeight{};
     double requestedScale{1.0};

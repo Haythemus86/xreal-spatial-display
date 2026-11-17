@@ -1,0 +1,17 @@
+{
+  "schema_version":1,
+  "type":"orientation-driven-d3d11-render",
+  "experimental":true,
+  "motion_to_photon_latency":"not_measured",
+  "adapter":{"name":"Intel(R) Graphics","feature_level":"11.1","device_type":"hardware","debug_layer":false,"luid":"0x00000000:00013366","selected_monitor_match":true,"output":"\\\\.\\DISPLAY5"},
+  "swap_chain":{"format":"DXGI_FORMAT_B8G8R8A8_UNORM","effect":"flip-discard","maximum_frame_latency":1,"waitable_object":false,"vsync":true},
+  "window":{"width":1280,"height":720,"monitor_index":1,"monitor_device":"\\\\.\\DISPLAY5","monitor_bounds":[5120,0,7040,1080],"dxgi_output_matched":true},
+  "orientation":{"source":"measured","frame":"relative","demo_mode":false,"calibration_accepted":true,"recenter_generation":6},
+  "fusion":{"mode":"complementary","startup":"gravity","experimental":true},
+  "prediction":{"enabled":true,"horizon_ms":15,"experimental":true},
+  "render_mapping":{"sensor_x":"+X","sensor_y":"-Z","sensor_z":"+Y","handedness":"right-handed","experimental":true,"verified":true},
+  "frame_statistics":{"render_frames":4836,"presents":4836,"elapsed_seconds":80.627824399999994,"average_fps":59.979294195119081,"minimum_fps":18.090412262405049,"maximum_fps":2210.9219544550078,"average_frame_time_ms":16.406027584780777,"maximum_frame_time_ms":32.485199999999999,"slow_frames":1},
+  "orientation_snapshot_statistics":{"repeated":1,"invalid":181,"prediction_fallbacks":0,"sensor_publish_rate":962.47170970422474,"average_snapshot_age_ms":0.51464242749731504,"maximum_snapshot_age_ms":2.0569999999999999,"average_approximate_effective_lead_ms":14.485357572502679,"latest_device_timestamp":12275963537478},
+  "device_counters":{"received":80608,"dropped":0,"invalid":0,"out_of_sequence":0},
+  "shutdown":{"state":"shutting_down","reason":"escape_key","error":null}
+}

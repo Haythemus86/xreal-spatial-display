@@ -119,6 +119,10 @@ std::string renderMappingText(const OrientationToRenderMapping& mapping)
 
 bool OrientationRenderBridge::publish(RenderOrientationSnapshot snapshot) noexcept
 {
+    if (snapshot.measuredPositionValid && !snapshot.measuredPositionRelative.finite())
+    {
+        snapshot.measuredPositionValid = false;
+    }
     if (snapshot.measuredValid)
     {
         const auto absolute = snapshot.measuredAbsolute.normalized();

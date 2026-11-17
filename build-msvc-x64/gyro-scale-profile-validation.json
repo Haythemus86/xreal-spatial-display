@@ -1,0 +1,5 @@
+{
+  "schema_version":1,
+  "device":{"vid":"0x3318","pid":"0x426","interface_number":2,"product":"XREAL Air 2 Ultra"},
+  "calibration":{"type":"gyroscope-scale","source":"experimental-manual-calibration","experimental":true,"verified":false,"axes_share_same_scale":true,"axes_share_same_scale_verified":false,"validity":{"x":true,"y":true,"z":true},"scale":{"raw_units_per_degree_per_second":{"x":4090,"y":4090,"z":4090},"raw_units_per_radian_per_second":{"x":234339.73820850669,"y":234339.73820850669,"z":234339.73820850669}},"axis_mapping":{"experimental":true,"verified":false,"sensor_x_sign":1,"sensor_y_sign":1,"sensor_z_sign":1},"notes":"Candidate scale selected from manual measurements and Q12 comparison; equal axis scales are unverified."}
+}

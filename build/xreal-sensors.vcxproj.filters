@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\AccelerometerCalibration.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\AccelerometerPhysicalUnits.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\GyroscopeBiasCalibration.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\GyroscopeOfflineAnalysis.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\GyroscopeOrientation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\GyroscopePhysicalUnits.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\GyroscopeRecordingAnalysis.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\GyroscopeRecordingCsv.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\GyroscopeScaleCalibration.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\ImuCalibration.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\LiveOrientationPrediction.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\OrientationFusion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\OrientationComparison.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\OrientationPrediction.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\OrientationPredictionEvaluation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\OrientationPredictionAnalysis.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\XrealDevice.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\XrealHidConnection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\XrealImuPacketDecoder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\src\sensors\XrealImuStream.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\i-tem\Documents\dev\xreal-spatial-display\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{8B6CDA0E-965A-3B2D-BD04-F8A7D16181DD}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

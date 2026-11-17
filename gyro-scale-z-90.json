@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "units": "raw_and_angular_rate",
+  "device": {"vendor_id":"0x3318","product_id":"0x0426","interface_number":2,"product":"XREAL Air 2 Ultra"},
+  "calibration": {"type":"gyroscope-scale","axis":"z","accepted":false,"rejection_reason":"too few trials remained after rejection","expected_angle_degrees":90,"accepted_trials":0,"rejected_trials":4,"scale":{"valid":false,"raw_units_per_degree_per_second":0,"raw_units_per_radian_per_second":0,"degrees_per_second_per_raw_unit":0,"radians_per_second_per_raw_unit":0}},
+  "statistics": {"mean":0,"median":0,"stddev":0,"coefficient_of_variation":0,"minimum":0,"maximum":0,"relative_spread":0},
+  "trials": [
+    {"accepted":false,"rejection_reason":"cross-axis motion exceeded the configured ratio","direction":"auto","duration_seconds":3.1429992100000002,"integrated_raw_angle":-342518.33524912928,"positive_contribution":0,"negative_contribution":-342518.33524912928,"packet_rate":1000.0002513522744,"scale_raw_per_degree_per_second":0,"dominant_axis":"z","peak_corrected_raw":179564.56343656345},
+    {"accepted":false,"rejection_reason":"cross-axis motion exceeded the configured ratio","direction":"auto","duration_seconds":2.528999459,"integrated_raw_angle":322767.99893498578,"positive_contribution":322767.99893498578,"negative_contribution":0,"packet_rate":1000.0002139185906,"scale_raw_per_degree_per_second":0,"dominant_axis":"z","peak_corrected_raw":172653.70514742628},
+    {"accepted":false,"rejection_reason":"cross-axis motion exceeded the configured ratio","direction":"auto","duration_seconds":0.057000083999999999,"integrated_raw_angle":-301.5658417825851,"positive_contribution":0,"negative_contribution":-301.5658417825851,"packet_rate":999.99852631796125,"scale_raw_per_degree_per_second":0,"dominant_axis":"z","peak_corrected_raw":8627.5644355644308},
+    {"accepted":false,"rejection_reason":"runtime gyroscope bias was not accepted","direction":"auto","duration_seconds":0,"integrated_raw_angle":0,"positive_contribution":0,"negative_contribution":0,"packet_rate":0,"scale_raw_per_degree_per_second":0,"dominant_axis":"x","peak_corrected_raw":0}
+  ],
+  "configuration": {"start_threshold_raw":5000,"stop_threshold_raw":1500,"stillness_duration_ns":1000000000,"minimum_rotation_duration_ns":200000000,"maximum_rotation_duration_ns":10000000000,"maximum_timestamp_delta_ns":20000000,"maximum_cross_axis_ratio":0.80000000000000004,"maximum_trial_variation_percent":10,"minimum_accepted_trials":4}
+}
