@@ -34,6 +34,15 @@ xreal::rendering::RendererOptionResult parse(std::initializer_list<const char*> 
 int main()
 {
     using namespace xreal::rendering;
+    for (const auto flag : {"--xreal-sdk-pose", "--native-stereo-pose"})
+    {
+        const auto external = parse({flag});
+        expect(external.options && external.options->xrealSdkPose
+            && external.options->orientationSource == RenderOrientationSource::measured,
+            "External pose works without HID calibration");
+        expect(!parse({flag, "--orientation-demo-mode"}).options,
+            "Demo and external pose conflict");
+    }
     const auto demo = parse({"--orientation-demo-mode"});
     expect(demo.options.has_value() && demo.options->windowWidth == 1280U
                && demo.options->windowHeight == 720U && demo.options->vsync,

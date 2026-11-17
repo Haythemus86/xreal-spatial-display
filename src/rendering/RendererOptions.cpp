@@ -180,7 +180,11 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
         if (argument == "--background-grid") { options.backgroundGrid = true; continue; }
         if (argument == "--world-axes") { options.worldAxes = true; continue; }
         if (argument == "--recenter-on-start") { options.recenterOnStart = true; continue; }
-        if (argument == "--xreal-sdk-pose") { options.xrealSdkPose = true; continue; }
+        if (argument == "--xreal-sdk-pose" || argument == "--native-stereo-pose")
+        {
+            options.xrealSdkPose = true; // Both publishers use the same local pose protocol.
+            continue;
+        }
         if (argument == "--orientation-demo-mode") { options.orientationDemoMode = true; continue; }
         if (argument == "--orientation-demo-static")
         {
@@ -1054,13 +1058,9 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
     {
         options.orientationDemoMode = true;
     }
-    if (options.xrealSdkPose && options.orientationDemoMode)
-    {
-        return fail("--xreal-sdk-pose cannot be combined with orientation demo or smoke-test modes.");
-    }
     if (options.xrealSdkPose && options.predictOrientation)
     {
-        return fail("--predict-orientation is not used with the XREAL PC SDK pose source.");
+        return fail("--predict-orientation is not used with an external pose publisher.");
     }
     if (options.captureBenchmark)
     {
@@ -1156,7 +1156,10 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
         options.renderDurationSeconds = options.multiPanelBenchmarkWarmupSeconds
             + options.multiPanelBenchmarkSeconds;
     }
-    if (!options.orientationDemoMode)
+    if (options.xrealSdkPose && options.orientationDemoMode)
+        return fail("An external pose publisher cannot be used with a demo or benchmark.");
+    if (options.xrealSdkPose) options.orientationSource = RenderOrientationSource::measured;
+    if (!options.orientationDemoMode && !options.xrealSdkPose)
     {
         if (!options.applyGyroscopeBias || !options.gyroscopeScaleRawPerDegreePerSecond.has_value()
             || !options.accelerometerProfilePath.has_value())
@@ -1180,7 +1183,7 @@ RendererOptionResult parseRendererOptions(int argc, char* argv[])
 
 std::string rendererUsage()
 {
-    return "xreal-spatial-renderer [--orientation-demo-mode|--xreal-sdk-pose] [--window-width <pixels>] "
+    return "xreal-spatial-renderer [--orientation-demo-mode|--native-stereo-pose|--xreal-sdk-pose] [--window-width <pixels>] "
            "[--window-height <pixels>] [--window-x <pixels>] [--window-y <pixels>] "
            "[--fullscreen|--borderless] [--monitor-index <index>|--render-monitor-index <index>] "
            "[--render-monitor-device-name <name>] [--vsync|--no-vsync] "

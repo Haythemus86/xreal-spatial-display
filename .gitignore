@@ -404,6 +404,10 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 **/.ionide/
 
+# Native stereo build and local runnable preview
+/out/native-preview/
+/out/native/
+
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 

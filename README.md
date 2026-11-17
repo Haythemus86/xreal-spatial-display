@@ -1,4 +1,7 @@
 # xreal-spatial-display
+
+For experimental 6DoF on Air 2 Ultra using the two tracking cameras on Windows,
+see [native stereo tracking: build, probe and run](docs/native-stereo.md).
 Low-latency spatial display for XREAL glasses on Windows, with 3DoF head tracking, adjustable virtual screen size, and support for Intel, AMD, and NVIDIA GPUs.
 
 An experimental XREAL PC SDK 6DoF pose input path is available for Air 2 Ultra.

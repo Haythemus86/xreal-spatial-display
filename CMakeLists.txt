@@ -1007,3 +1007,8 @@ if(BUILD_TESTING)
         COMMAND xreal-virtual-display-driver-model-tests
     )
 endif()
+
+option(XREAL_BUILD_NATIVE_STEREO "Build native Air 2 Ultra stereo pose publisher" OFF)
+if(XREAL_BUILD_NATIVE_STEREO)
+    add_subdirectory(src/native_stereo)
+endif()

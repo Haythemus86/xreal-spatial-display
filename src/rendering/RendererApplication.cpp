@@ -181,7 +181,7 @@ void printControls(const RendererOptions& options)
     std::cout << "Controls:\n"
               << "  Escape: exit\n"
               << (options.xrealSdkPose
-                    ? "  Recenter: press R in the XREAL SDK pose publisher window\n"
+                    ? "  Recenter: press R in the pose publisher window\n"
                     : "  " + std::string(1U, options.recenterKey) + ": recenter relative orientation\n"
                         + "  " + std::string(1U, options.resetRecenterKey) + ": clear recenter reference\n"
                         + "  P: toggle measured/predicted\n"
@@ -742,7 +742,7 @@ int RendererApplication::run()
             return 1;
         }
         state = RendererStartupState::waitingForXrealSdkPose;
-        std::cout << "Waiting for the XREAL PC SDK pose publisher on UDP 127.0.0.1:45871.\n";
+        std::cout << "Waiting for a pose publisher on UDP 127.0.0.1:45871.\n";
     }
     else if (options_.orientationDemoMode)
     {
@@ -841,6 +841,9 @@ int RendererApplication::run()
                     if (normalized.has_value())
                     {
                         RenderOrientationSnapshot sdkSnapshot;
+                        sdkSnapshot.hostPublishTimestampNanoseconds =
+                            std::chrono::duration_cast<std::chrono::nanoseconds>(
+                                lastSdkPoseArrival.time_since_epoch()).count();
                         sdkSnapshot.measuredAbsolute = *normalized;
                         sdkSnapshot.measuredRelative = *normalized;
                         sdkSnapshot.measuredValid = true;
